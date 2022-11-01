@@ -39,6 +39,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # own apps
+    'register',
+    'organization_info',
+    'user_info',
+    
+    # third party apps
+    'rest_framework',
+    'rest_framework.authtoken',
+    'corsheaders',
+    'drf_yasg',
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -92,23 +103,24 @@ if 'test' in sys.argv:
         }
     }
 else:
-    
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': 'kumbiodb',
             'USER': 'kumbio',
-            'PASSWORD': 'kW3e4Ljx3cpp',
+            'PASSWORD': 'fcAaFhJWMaBr',
             'HOST': '167.235.147.49',
             'PORT': '5432',
         }
     }
+
 
 REST_FRAMEWORK = {
    'DEFAULT_AUTHENTICATION_CLASSES': (
        'rest_framework.authentication.TokenAuthentication',
        )
 }
+
 
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
@@ -160,7 +172,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# AUTH_USER_MODEL = 'register.CustomUser'
+AUTH_USER_MODEL = 'user_info.KumbioUser'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')

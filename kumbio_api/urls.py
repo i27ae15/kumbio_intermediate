@@ -5,7 +5,7 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
 
-from register.views import CustomObtainAuthToken
+# from register.views import CustomObtainAuthToken
 
 from django.conf.urls.static import static
 from django.conf import settings
@@ -28,7 +28,9 @@ from django.urls import path
 
 urlpatterns = [
    path('admin/', admin.site.urls),  
-   re_path(r'^authenticate/', CustomObtainAuthToken.as_view()),
+   # re_path(r'^authenticate/', CustomObtainAuthToken.as_view()),
+   path('register/', include('register.urls')),
+   path('user/', include('user_info.urls')),
    
    # drf urls
    

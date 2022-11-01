@@ -23,7 +23,7 @@ class SendEmail:
         self.html = html
         self.attach_file = attach_file
         
-        key:bytes = os.environ['EMAIL_KEY'].encode()
+        # key:bytes = os.environ['EMAIL_KEY'].encode()
         
         # self.from_email = organization.notification_email
         # self.password = Fernet(key).decrypt(organization.notification_email_password.tobytes()).decode()
