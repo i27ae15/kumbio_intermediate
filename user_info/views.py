@@ -29,14 +29,19 @@ from user_info.serializers import UserCustomSerializer, CreateUserSerializer
 
 
 # others
+from print_pp.logging import Print
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 def authenticate_user(request):
     
-    calendar_token:str = request.data['calendar_token']
+    try:    
+        calendar_token:str = request.data['calendar_token']
+    except KeyError:
+        return Response({'error': 'calendar_token is required'}, status=status.HTTP_400_BAD_REQUEST)
+    
     
     try: KumbioUser.objects.get(calendar_token=calendar_token)
-    except: return Response({'exists': False})
-    return Response({'exists': True})
+    except: return Response({'is_valid_user': False})
+    return Response({'is_valid_user': True})
 
