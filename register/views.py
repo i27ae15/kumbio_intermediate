@@ -24,7 +24,7 @@ from organization_info.models.email_template_models import MailTemplate, MailTem
 
 # serializers 
 from organization_info.serializers import OrganizationSerializer
-from user_info.serializers import UserCustomSerializer, CreateUserSerializer
+from user_info.serializers import KumbioUserSerializer, CreateKumbioUserSerializer
 
 
 # others
@@ -230,7 +230,7 @@ class CreateUserAPI(APIView):
         
         request.data['organization'] = organization_id
         
-        serializer = CreateUserSerializer(data=request.data)
+        serializer = CreateKumbioUserSerializer(data=request.data)
         
         if serializer.is_valid():
             serializer.save()

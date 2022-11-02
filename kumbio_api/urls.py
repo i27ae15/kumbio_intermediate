@@ -23,14 +23,13 @@ schema_view = get_schema_view(
    permission_classes=[permissions.AllowAny],
 )
 
-from django.urls import path
-
 
 urlpatterns = [
    path('admin/', admin.site.urls),  
    # re_path(r'^authenticate/', CustomObtainAuthToken.as_view()),
    path('register/', include('register.urls')),
    path('user/', include('user_info.urls')),
+   path('organization/', include('organization_info.urls')),
    
    # drf urls
    

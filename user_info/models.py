@@ -16,6 +16,7 @@ from django.contrib.auth.models import (
 from utils.send_email import SendEmail
 from utils.numbers import random_with_N_digits
 
+from print_pp.logging import Print
 
 
 class KumbioUserPermission(models.Model):
@@ -72,7 +73,9 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     
     organization = models.ForeignKey('organization_info.Organization', null=True, default=None, on_delete=models.CASCADE, related_name='organization_user')
     role:KumbioUserRole = models.ForeignKey(KumbioUserRole, on_delete=models.CASCADE, null=True, default=None)
-        
+    
+    extra_permissions = models.ManyToManyField(KumbioUserPermission, blank=True)
+    
     # -----------------------------------------------------------
     # fields 
     
@@ -143,8 +146,16 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
 
     
     def save(self, *args, **kwargs):
-        if not self.pk:
+        if not self.pk and not 'set_verified_email' in kwargs:
             self.send_verification_code(save=False)
+        
+        elif 'set_verified_email' in kwargs:
+            # Print('set_verified_email')
+            print('-'*100)
+            print('verified email')
+            print('-'*100)
+            self.is_email_verified = True
+            del kwargs['set_verified_email']
             
         super().save(*args, **kwargs)
 

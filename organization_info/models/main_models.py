@@ -253,36 +253,31 @@ class OrganizationProfessional(models.Model):
     organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='organization_professionals')
     kumbio_user:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='user_professional')
     
+    specialities = models.ManyToManyField('ProfessionalSpeciality', blank=True)
+    services = models.ManyToManyField(OrganizationService)
+    
     # -----------------------------------------------------------
     # fields
-    academic_formation:str = models.TextField(default='')
-    about_me:str = models.TextField(default='')
+    academic_formation:str = models.TextField(blank=True, null=True)
+    about_me:str = models.TextField(blank=True, null=True)
     
     certificates = models.FileField(upload_to=f'{organization.name}/professionals/certificates/', null=True, blank=True)
-    
-    email:str = models.EmailField(max_length=255, unique=True)
-    experience:str = models.TextField(default='')
-    
-    first_name:str = models.CharField(max_length=255)
-    
-    last_name:str = models.CharField(max_length=255)
-    
-    phone:str = models.CharField(max_length=120, default='')
-    photos = models.FileField(upload_to=f'{organization.name}/professionals/photos/', null=True, blank=True)
-    profile_picture:str = models.CharField(max_length=120, default='')
-    
-    specialities = models.ManyToManyField('ProfessionalSpeciality')
 
-    services = models.ManyToManyField(OrganizationService)
+    experience:str = models.TextField(blank=True, null=True)
+    
+    photos = models.FileField(upload_to=f'{organization.name}/professionals/photos/', null=True, blank=True)
+    profile_photo = models.ImageField(upload_to=f'{organization.name}/professionals/profile_photos/', null=True, blank=True)
+    
+    
     # -----------------------------------------------------------
     # Logs 
     datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetimne_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
-    datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    datetimne_updated:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+    datetime_deleted:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
 
     created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='professional_created_by')
-    updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='professional_updated_by')
-    deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='professional_deleted_by')
+    updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='professional_updated_by')
+    deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='professional_deleted_by')
     
     # -----------------------------------------------------------
     # properties
@@ -298,13 +293,13 @@ class OrganizationProfessional(models.Model):
 
     @property
     def full_name(self) -> str:
-        return f'{self.first_name} {self.last_name}'
+        return f'{self.kumbio_user.first_name} {self.kumbio_user.last_name}'
     
     # -----------------------------------------------------------
     # methods
         
     def __str__(self) -> str:
-        return f'{self.id} - {self.first_name} {self.last_name} - {self.organization.name}'
+        return f'{self.id} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
 
 
 class OrganizationClient(models.Model):
