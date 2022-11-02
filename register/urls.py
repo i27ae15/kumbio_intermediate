@@ -1,6 +1,7 @@
 from django.urls import path, re_path
 from .views import check_if_invited, verify_user, send_email_verification, check_if_email_and_username_exist, CreateUserAPI, CustomObtainAuthToken
 
+app_name = 'register'
 
 urlpatterns = [
     path('check-link/<str:link>', check_if_invited),
@@ -8,5 +9,5 @@ urlpatterns = [
     path('send-email-verification/', send_email_verification),
     path('check-if-user-exists/', check_if_email_and_username_exist),
     path('create-user/', CreateUserAPI.as_view()),
-    re_path(r'^authenticate/', CustomObtainAuthToken.as_view()),
+    re_path(r'^authenticate/', CustomObtainAuthToken.as_view(), name='obtain_auth_token'),
 ]

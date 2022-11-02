@@ -242,7 +242,7 @@ class OrganizationPlace(models.Model):
         super().save(*args, **kwargs)
         
         if first_time:
-            if not self.payment_methods:
+            if not self.payment_methods_accepted:
                 self.payment_methods.add(*self.organization.payment_methods_accepted.all())
     
     
