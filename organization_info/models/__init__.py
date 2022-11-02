@@ -1,6 +1,6 @@
 from .email_template_models import (MailTemplate, MailTemplatesManager)
 from .main_models import (Organization, OrganizationClient, OrganizationProfessional, OrganizationService, OrganizationCampaings,
-                        OrganizationOffice, OrganizationPromotion, OrganizationProduct, FrequentlyAskedQuestion, 
+                        OrganizationPlace, OrganizationPromotion, OrganizationProduct, FrequentlyAskedQuestion, 
                         ProfessionalSpeciality, Rating, Sector)
 from .payment_models import (Invoice, PaymentMethodAcceptedByOrg)
 from .app_setting_models import (CalendarSettings)

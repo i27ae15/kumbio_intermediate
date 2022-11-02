@@ -7,7 +7,7 @@ from django.utils import timezone
 
 # Models
 from .main_models import (Organization, OrganizationClient, OrganizationProfessional, OrganizationService, 
-                          OrganizationPromotion, OrganizationOffice)
+                          OrganizationPromotion, OrganizationPlace)
 
 from user_info.models import KumbioUser
 
@@ -32,7 +32,7 @@ class Invoice(models.Model):
     service:OrganizationService = models.ForeignKey(OrganizationService, on_delete=models.CASCADE)
     professional:OrganizationProfessional = models.ForeignKey(OrganizationProfessional, on_delete=models.CASCADE)
     promotion:OrganizationPromotion = models.ForeignKey(OrganizationPromotion, on_delete=models.CASCADE, null=True, blank=True)
-    office:OrganizationOffice = models.ForeignKey(OrganizationOffice, on_delete=models.CASCADE)
+    place:OrganizationPlace = models.ForeignKey(OrganizationPlace, on_delete=models.CASCADE, null=True, blank=True, default=None)
     
     
     amount:float = models.FloatField()
@@ -49,8 +49,8 @@ class Invoice(models.Model):
     datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
     created_by:KumbioUser = models.ForeignKey(KumbioUser, on_delete=models.CASCADE, related_name='invoice_created_by')
-    updated_by:KumbioUser = models.ForeignKey(KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='invoice_updated_by')
-    deleted_by:KumbioUser = models.ForeignKey(KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='invoice_deleted_by')
+    updated_by:KumbioUser = models.ForeignKey(KumbioUser, null=True, blank=True, on_delete=models.CASCADE, default=None, related_name='invoice_updated_by')
+    deleted_by:KumbioUser = models.ForeignKey(KumbioUser, null=True, blank=True, on_delete=models.CASCADE, default=None, related_name='invoice_deleted_by')
 
     
     def __str__(self):

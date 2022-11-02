@@ -192,31 +192,31 @@ class OrganizationService(models.Model):
         return f'{self.id} {self.organization.name} - {self.service}'
 
 
-class OrganizationOffice(models.Model):
+class OrganizationPlace(models.Model):
     # foreignkeys
     organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    payment_methods_accepted = models.ManyToManyField('PaymentMethodAcceptedByOrg', blank=True)
+    services = models.ManyToManyField(OrganizationService, blank=True)
     
     # fields
 
     address:str = models.CharField(max_length=255)
     accepts_children:bool = models.BooleanField(default=True)
     accepts_pets:bool = models.BooleanField(default=True)
-    additional_info:str = models.CharField(max_length=255)
+    additional_info:str = models.CharField(max_length=255, null=True, blank=True)
 
-    email:str = models.EmailField(max_length=255, unique=True)
+    email:str = models.EmailField(max_length=255, null=True, blank=True)
 
     name:str = models.CharField(max_length=255)
 
-    phone:str = models.CharField(max_length=255)
+    phone:str = models.CharField(max_length=255, null=True, blank=True)
 
-    schedule:str = models.CharField(max_length=255)
+    opens_at = models.TimeField(default=datetime.time(8, 0, 0))
+    closes_at = models.TimeField(default=datetime.time(18, 0, 0))
 
-    photo:str = models.CharField(max_length=255)
-    payment_methods = models.ManyToManyField('PaymentMethodAcceptedByOrg', blank=True)
-
-    services:QuerySet = models.ManyToManyField(OrganizationService)
+    photo:str = models.CharField(max_length=255, null=True, blank=True)
     
-    local_timezone:str = models.CharField(max_length=120, null=True, default='America/Bogota')
+    local_timezone:str = models.CharField(max_length=120, default='America/Bogota')
 
     # -----------------------------------------------------------
     # Logs 
@@ -224,9 +224,9 @@ class OrganizationOffice(models.Model):
     datetimne_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
     datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
-    created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='office_created_by')
-    updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='office_updated_by')
-    deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='office_deleted_by')
+    created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='organizaion_place_created_by')
+    updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='organizaion_place_updated_by')
+    deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='organizaion_place_deleted_by')
 
     # -----------------------------------------------------------
     # Properties
@@ -235,11 +235,15 @@ class OrganizationOffice(models.Model):
     # Methods
 
     def save(self, *args, **kwargs):
+        first_time = False
         if not self.pk:
-            if not self.payment_methods:
-                self.payment_methods.add(*self.organization.payment_methods_accepted.all())
+            first_time = True
             
         super().save(*args, **kwargs)
+        
+        if first_time:
+            if not self.payment_methods:
+                self.payment_methods.add(*self.organization.payment_methods_accepted.all())
     
     
     def __str__(self):

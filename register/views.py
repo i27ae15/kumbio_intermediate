@@ -212,7 +212,7 @@ class CreateUserAPI(APIView):
         
         try: organization_id = int(organization_data)
         # this will create the organization, assuming that the person that is being created is the owner of the organization
-        except TypeError:            
+        except TypeError:
             organization:Organization = Organization.objects.create(
                 # org info
                 name=organization_data['name'],

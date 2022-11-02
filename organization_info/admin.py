@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import (Organization, Invoice, FrequentlyAskedQuestion, OrganizationCampaings, OrganizationClient, OrganizationOffice, 
+from .models import (Organization, Invoice, FrequentlyAskedQuestion, OrganizationCampaings, OrganizationClient, OrganizationPlace, 
                     OrganizationProduct, OrganizationProfessional, OrganizationPromotion, OrganizationService, ProfessionalSpeciality, 
                     PaymentMethodAcceptedByOrg, Sector, MailTemplate, MailTemplatesManager)
 
@@ -9,7 +9,7 @@ admin.site.register(Invoice)
 admin.site.register(FrequentlyAskedQuestion)
 admin.site.register(OrganizationCampaings)
 admin.site.register(OrganizationClient)
-admin.site.register(OrganizationOffice)
+admin.site.register(OrganizationPlace)
 admin.site.register(OrganizationProduct)
 admin.site.register(OrganizationProfessional)
 admin.site.register(OrganizationPromotion)
