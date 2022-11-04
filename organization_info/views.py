@@ -1,4 +1,6 @@
 # python
+import requests
+import os
 
 # django
 from django.utils import timezone
@@ -17,35 +19,82 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 # models
-from user_info.models import KumbioUser
+from user_info.models import KumbioUser, KumbioUserRole
 from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace
 
 # serializers
 from user_info.serializers import KumbioUserSerializer, CreateKumbioUserSerializer
 
-from .query_serializers import PlaceQuerySerializer
+from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer
 from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer
 
 # others
 from print_pp.logging import Print
+from dotenv import load_dotenv
+from user_info.info import ADMIN_ROLE_ID, PROFESSIONAL_ROLE_ID
+
+load_dotenv()
+
+
+CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
+
 
 # Functions
 
-def check_if_user_is_admin(func):
+def check_if_user_is_admin_decorator(func):
     def wrapper(self, request, *args, **kwargs):
-        if request.user.role.name == 'ORGANIZATION ADMIN':
+        if request.user.role.id == ADMIN_ROLE_ID:
             return func(self, request, *args, **kwargs)
         else:
             return Response({"message": "You are not authorized to perform this action"}, status=status.HTTP_401_UNAUTHORIZED)
     return wrapper
 
 
+def check_if_user_is_admin(request) -> 'True | Response':
+    if request.user.role.id == ADMIN_ROLE_ID:
+        return True
+    else:
+        return Response({"message": "You are not authorized to perform this action"}, status=status.HTTP_401_UNAUTHORIZED)
+
 # classes
 
 
 class OrganizationProfessionalAPI(APIView):
     permission_classes = (IsAuthenticated,) 
-    authentication_classes = (TokenAuthentication,) 
+    authentication_classes = (TokenAuthentication,)
+
+    @swagger_auto_schema(
+        query_serializer=OrganizationProfessionalQuerySerializer()
+    )
+    def get(self, request):
+        """
+            Get all the professionals of the organization
+        """
+
+        query_serializer = OrganizationProfessionalQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        query_params = query_serializer.validated_data
+
+        if not query_params['kumbio_user_id']:
+            # check if the user is an admin
+            if check_if_user_is_admin(request) != True:
+                return check_if_user_is_admin(request)
+
+            # if the user is an admin, then we get all the professionals
+            organization_professionals = OrganizationProfessional.objects.filter(organization__id=request.user.organization.id)
+
+        else:
+            
+            # check if the user is the professional they are asking for
+            if request.user.id != query_params['kumbio_user_id']:
+                if check_if_user_is_admin(request) != True:
+                    return Response({"message": "You are not authorized to perform this action"}, status=status.HTTP_401_UNAUTHORIZED)
+                    
+            organization_professionals = OrganizationProfessional.objects.filter(kumbio_user__id=int(query_params['kumbio_user_id']))
+
+        serializer = OrganizationProfessionalSerializer(organization_professionals, many=True)
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
     
     def post(self, request):
@@ -68,12 +117,29 @@ class OrganizationProfessionalAPI(APIView):
         
         # First we create the KumbioUser
         kumbio_user_serializer = CreateKumbioUserSerializer(data=request.data, context={'set_verified_email': True})
+
+
+        # we should handle this petition that if not successfull delete the created user, due to the fact that this cannot continue
+        res = requests.post(f'{CALENDAR_ENDPOINT}register/api/v2/create-user/', json={
+                'organization_id': request.data['organization_id'],
+                'email':request.data['email'],
+                'first_name': request.data['first_name'],
+                'last_name': request.data['last_name'],
+                'role': PROFESSIONAL_ROLE_ID, 
+            })
         
         if not kumbio_user_serializer.is_valid():
             return Response(kumbio_user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         kumbio_user_serializer.save()
         kumbio_user:KumbioUser = kumbio_user_serializer.instance
+        
+        # somehow this information is not getting saved within the serializer, so we have to do it manually
+        kumbio_user.role = KumbioUserRole.objects.get(id=PROFESSIONAL_ROLE_ID) # getting the role as organization_professional
+        kumbio_user.organization = Organization.objects.get(id=request.data['organization_id'])
+        kumbio_user.calendar_token = res.json()['token']
+        kumbio_user.set_password(request.data['password'])
+        kumbio_user.save()
         
         request.data['created_by_id'] = request.user.id
         request.data['kumbio_user_id'] = kumbio_user.id
@@ -83,12 +149,8 @@ class OrganizationProfessionalAPI(APIView):
         if not professional_serializer.is_valid():
             return Response(professional_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        Print('before save')
         professional_serializer.save()
-        Print('after save')
-        professional:OrganizationProfessional = professional_serializer.instance
-        
-        
+            
         return Response(professional_serializer.data, status=status.HTTP_201_CREATED)
         
         
@@ -105,12 +167,12 @@ class OrganizationPlaceAPI(APIView):
         Get places 
         """
 
-        qp = PlaceQuerySerializer(data=request.query_params)
-        qp.is_valid(raise_exception=True)
-        qp = qp.data
+        query_serializer = PlaceQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        query_params = query_serializer.data
 
-        if qp['place_id']:
-            places = self.check_if_place_exists(request.user, int(qp['place_id']))
+        if query_params['place_id']:
+            places = self.check_if_place_exists(request.user, int(query_params['place_id']))
 
             if places:
                 place_serializer = OrganizationPlaceSerializer(places)
@@ -131,7 +193,7 @@ class OrganizationPlaceAPI(APIView):
         request_body = OrganizationPlaceSerializer(),
         responses={200: OrganizationPlaceSerializer()},
     )
-    @check_if_user_is_admin
+    @check_if_user_is_admin_decorator
     def post(self, request):
         """
             Create a new Place
@@ -154,7 +216,7 @@ class OrganizationPlaceAPI(APIView):
         request_body = OrganizationPlaceSerializer(),
         responses={200: OrganizationPlaceSerializer()},
     )
-    @check_if_user_is_admin
+    @check_if_user_is_admin_decorator
     def put(self, request):
         """
         Update a Place
@@ -196,7 +258,7 @@ class OrganizationPlaceAPI(APIView):
             description='indica si se quiere eliminar los calendarios asociados al place', default=False),
     },
     required=['place_id']))
-    @check_if_user_is_admin
+    @check_if_user_is_admin_decorator
     def delete(self, request):
         """
         Delete a Place

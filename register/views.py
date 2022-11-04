@@ -36,7 +36,6 @@ load_dotenv()
 
 CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
 
-
 # functions
 
 def create_default_templates(organization:Organization) -> int:
@@ -149,7 +148,14 @@ class CustomObtainAuthToken(ObtainAuthToken):
         response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)
         token:Token = Token.objects.get(key=response.data['token'])
         token.user:KumbioUser = token.user
-        
+        token_to_return:str = None
+        if request.data.get('for_kumbio'):
+            token_to_return = token.key
+        elif request.data.get('for_calendar'):
+            token_to_return = token.user.calendar_token
+        else:
+            return Response({'error':'No se ha especificado para que se va a usar el token'}, status=status.HTTP_400_BAD_REQUEST)
+            
         
         if not token.user.is_email_verified:
             return Response({'error': 'Email no verificado', 'user_id': token.user.id}, status=status.HTTP_401_UNAUTHORIZED)
@@ -159,7 +165,7 @@ class CustomObtainAuthToken(ObtainAuthToken):
         organization_serializer = OrganizationSerializer(organization)
         return Response(
             {
-                'token': token.key, 
+                'token': token_to_return, 
                 'name': token.user.get_full_name(),
                 'role': token.user.role.name,
                 'id': token.user.id,
