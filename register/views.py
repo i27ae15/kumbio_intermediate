@@ -20,7 +20,6 @@ from drf_yasg.utils import swagger_auto_schema
 # models 
 from user_info.models import KumbioUser
 from organization_info.models.main_models import Organization
-from organization_info.models.email_template_models import MailTemplate, MailTemplatesManager
 
 # serializers 
 from organization_info.serializers import OrganizationSerializer
@@ -39,15 +38,18 @@ CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
 # functions
 
 def create_default_templates(organization:Organization) -> int:
+    
+    # send connection to communications microservice
 
     template_manager:MailTemplatesManager = MailTemplatesManager.objects.get(id=1)
-    starts_at:int = template_manager.next_template_to_start_at
+    starts_at:int = 0
+    # starts_at:int = template_manager.next_template_to_start_at
 
-    for template in DEFAULT_TEMPLATES:
-        template['organization'] = organization
-        MailTemplate.objects.create(**template)
+    # for template in DEFAULT_TEMPLATES:
+    #     template['organization'] = organization
+    #     MailTemplate.objects.create(**template)
 
-    template_manager.increase_next_template_to_start_at()
+    # template_manager.increase_next_template_to_start_at()
     
     return starts_at
 

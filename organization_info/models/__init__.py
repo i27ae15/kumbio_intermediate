@@ -1,4 +1,3 @@
-from .email_template_models import (MailTemplate, MailTemplatesManager)
 from .main_models import (Organization, OrganizationClient, OrganizationProfessional, OrganizationService, OrganizationCampaings,
                         OrganizationPlace, OrganizationPromotion, OrganizationProduct, FrequentlyAskedQuestion, 
                         ProfessionalSpeciality, Rating, Sector)

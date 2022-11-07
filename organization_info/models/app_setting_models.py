@@ -4,7 +4,6 @@ from django.utils import timezone
 
 from user_info.models import KumbioUser
 from .main_models import Organization
-from .email_template_models import MailTemplate
 
 class CalendarSettings(models.Model):
     
@@ -15,15 +14,15 @@ class CalendarSettings(models.Model):
     send_second_notification:int = models.IntegerField(null=True, blank=True, default=None)
     send_third_notification:int = models.IntegerField(null=True, blank=True, default=None)
     
-    template_to_send_as_confirmation = models.ForeignKey(MailTemplate, related_name='confirmation_template', null=True, on_delete=models.CASCADE, default=None)
-    template_to_send_as_reminder_1 = models.ForeignKey(MailTemplate, related_name='first_reminder_template', null=True, on_delete=models.CASCADE, default=None)
-    template_to_send_as_reminder_2 = models.ForeignKey(MailTemplate, related_name='second_reminder_template', null=True, on_delete=models.CASCADE, default=None)
-    template_to_send_as_reminder_3 = models.ForeignKey(MailTemplate, related_name='third_reminder_template', null=True, on_delete=models.CASCADE, default=None)
-    template_to_send_as_rescheduled = models.ForeignKey(MailTemplate, related_name='rescheduled_template', null=True, on_delete=models.CASCADE, default=None)
-    template_to_send_as_canceled = models.ForeignKey(MailTemplate, related_name='cancel_template', null=True, on_delete=models.CASCADE, default=None)
-    template_to_send_as_new_client_to_calendar_user = models.ForeignKey(MailTemplate, related_name='new_client_to_organization_template', null=True, on_delete=models.CASCADE, default=None)
-    template_to_send_as_rescheduled_to_calendar_user = models.ForeignKey(MailTemplate, related_name='rescheduled_to_calendar_user_template', null=True, on_delete=models.CASCADE, default=None)
-    template_to_send_as_canceled_to_calendar_user = models.ForeignKey(MailTemplate, related_name='canceled_to_calendar_user_template', null=True, on_delete=models.CASCADE, default=None)
+    template_to_send_as_confirmation = models.IntegerField(null=True, default=None)
+    template_to_send_as_reminder_1 = models.IntegerField(null=True, default=None)
+    template_to_send_as_reminder_2 = models.IntegerField(null=True, default=None)
+    template_to_send_as_reminder_3 = models.IntegerField(null=True, default=None)
+    template_to_send_as_rescheduled = models.IntegerField(null=True, default=None)
+    template_to_send_as_canceled = models.IntegerField(null=True, default=None)
+    template_to_send_as_new_client_to_calendar_user = models.IntegerField(null=True, default=None)
+    template_to_send_as_rescheduled_to_calendar_user = models.IntegerField(null=True, default=None)
+    template_to_send_as_canceled_to_calendar_user = models.IntegerField(null=True, default=None)
     
     # logs fields
     

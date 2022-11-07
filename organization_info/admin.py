@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (Organization, Invoice, FrequentlyAskedQuestion, OrganizationCampaings, OrganizationClient, OrganizationPlace, 
                     OrganizationProduct, OrganizationProfessional, OrganizationPromotion, OrganizationService, ProfessionalSpeciality, 
-                    PaymentMethodAcceptedByOrg, Sector, MailTemplate, MailTemplatesManager)
+                    PaymentMethodAcceptedByOrg, Sector)
 
 
 admin.site.register(Organization)
@@ -17,5 +17,3 @@ admin.site.register(OrganizationService)
 admin.site.register(Sector)
 admin.site.register(ProfessionalSpeciality)
 admin.site.register(PaymentMethodAcceptedByOrg)
-admin.site.register(MailTemplate)
-admin.site.register(MailTemplatesManager)

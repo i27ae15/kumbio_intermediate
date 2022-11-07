@@ -21,7 +21,6 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 # models 
 from user_info.models import KumbioUser
 from organization_info.models.main_models import Organization
-from organization_info.models.email_template_models import MailTemplate, MailTemplatesManager
 
 # serializers 
 from organization_info.serializers import OrganizationSerializer
