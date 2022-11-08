@@ -175,7 +175,7 @@ class CustomObtainAuthToken(ObtainAuthToken):
             })
     
 
-class CreateUserAPI(APIView):   
+class CreateUserAPI(APIView):
     @swagger_auto_schema()
     def post(self, request):
         
@@ -252,7 +252,8 @@ class CreateUserAPI(APIView):
                 'role': 1,
             })
             
-            organization.set_default_template_starts_at(create_default_templates(organization))
+            # organization.set_default_template_starts_at(create_default_templates(organization))
+            organization.set_default_template_starts_at = 115
             
             user:KumbioUser = serializer.instance
             user.set_password(request.data['password'])

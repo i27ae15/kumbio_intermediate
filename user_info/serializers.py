@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from .models import KumbioUser
 
+from print_pp.logging import Print, check_caller_line
+
 class KumbioUserSerializer(serializers.ModelSerializer):    
     class Meta:
         model = KumbioUser

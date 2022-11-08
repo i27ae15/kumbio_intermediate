@@ -1,4 +1,5 @@
 # python
+import os
 import datetime
 
 # django
@@ -16,7 +17,17 @@ from django.contrib.auth.models import (
 from utils.send_email import SendEmail
 from utils.numbers import random_with_N_digits
 
+
+# notifications
+from kumbio_notifications.notifications import send_notification
+
 from print_pp.logging import Print
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TOKEN_FOR_CALENDAR = "Token Calendar-90b150bc4c827d4ca6828006ce7097be17b8b41150"
 
 
 class KumbioUserPermission(models.Model):
@@ -130,13 +141,12 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         self.code_to_verify_email = random_with_N_digits(6)
         if save:
             self.save()
-            
-        # SendEmail(
-        #     self.organization.id, 
-        #     self.email,
-        #     'Verify your email',
-        #     f'Your verification code is {self.code_to_verify_email}',
-        # )
+        
+        send_notification(token_for_app=TOKEN_FOR_CALENDAR, 
+                          organization_id=self.organization.pk,
+                          send_to=['andresruse18@gmail.com'],
+                          messages=[f'Your verification code is {self.code_to_verify_email}'],
+                          subjects=['Verify your email'])
         
     
     def verify_code(self):
@@ -146,11 +156,10 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
 
     
     def save(self, *args, **kwargs):
-        if not self.pk and not 'set_verified_email' in kwargs:
+        if not self.pk and not kwargs.get('set_verified_email'):
             self.send_verification_code(save=False)
         
-        elif 'set_verified_email' in kwargs:
-            # Print('set_verified_email')
+        elif kwargs.get('set_verified_email'):
             print('-'*100)
             print('verified email')
             print('-'*100)
