@@ -37,18 +37,42 @@ def create_user(organization:Organization, role:KumbioUserRole) -> KumbioUser:
         role=role)
     
 
-def create_organization() -> Organization:
+def create_organization(use_user=False) -> Organization:
     
-    return Organization.objects.create(
+    org = Organization.objects.create(
         name='test organization',
         description='test organization description',
         email='organization@email.com',
         phone='132456789',
-        owner_email='organization@email.com',
+        owner_email='organizariononwer@email.com',
         owner_first_name='test',
         owner_last_name='organization',
-        owner_phone='132456789')
+        owner_phone='123456789')
 
+    if use_user:
+        role = create_kumbio_role()
+        user = create_user(org, role)
+        org.owner_email = user.email
+        org.save()
+    
+    return org
+
+
+class TestOrganizationCreation(APITestCase):
+    
+    def test_organization_creation(self):
+        organization = create_organization(use_user=True)
+        Print((
+            'organization information',
+            organization.email_templates, 
+            organization.name,
+            organization.description, 
+            organization.phone,
+            organization.owner_email,
+            organization.owner_first_name,
+            organization.owner_last_name,
+            organization.owner_phone,
+        ))
 
 
 class TestPlace(APITestCase):

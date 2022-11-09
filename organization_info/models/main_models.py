@@ -1,6 +1,7 @@
 # python
 import secrets
 import datetime
+import requests
 import os
 from dotenv import load_dotenv
 
@@ -15,8 +16,12 @@ import user_info.models as user_models
 # utils
 from utils.integer_choices import RatingMadeBy
 
+from print_pp.logging import Print
+
 
 load_dotenv()
+
+KUMBIO_COMMUNICATIONS_ENDPOINT = os.getenv('KUMBIO_COMMUNICATIONS_ENDPOINT')
 
 class Sector(models.Model):
     name:str = models.CharField(max_length=100)
@@ -32,6 +37,8 @@ class Organization(models.Model):
     # plan:KumbioPlan = models.ForeignKey(KumbioPlan, on_delete=models.CASCADE, default=1)
     sector:Sector = models.ForeignKey(Sector, on_delete=models.CASCADE, null=True, blank=True)
     id:str = models.CharField(max_length=100, primary_key=True)
+    
+    email_templates:list = models.JSONField(default=list)
     
     # ------------------------------------------------------------------------
     # Fields -----------------------------------------------------------------
@@ -61,7 +68,6 @@ class Organization(models.Model):
     
     website:str = models.CharField(max_length=120, null=True, blank=True)
     
-    default_template_starts_at:int = models.IntegerField(default=0)
     
     # owner data
 
@@ -78,6 +84,10 @@ class Organization(models.Model):
 
 
     # Properties -------------------------------------------------------------
+    @property
+    def owner(self) -> user_models.KumbioUser:
+        return user_models.KumbioUser.objects.get(email=self.owner_email)
+    
     @property
     def services(self) -> QuerySet:
         return self.organizationservice.all()       
@@ -114,21 +124,29 @@ class Organization(models.Model):
     @property
     def number_of_appointments(self) -> int:
         return self.appointment_set.count()
-    
-    
-    # methods
-    def set_default_template_starts_at(self, starts_at:int) -> None:
-        self.default_template_starts_at = starts_at
-        self.save()
-        
+            
         
     # other methods    
     def save(self, *args, **kwargs):
         if not self.pk:
-            # create the default templates for this organization on the communications microservice
             self.invitation_link = secrets.token_urlsafe(21)
             self.link_dashboard = secrets.token_urlsafe(21)
             self.id = secrets.token_urlsafe(21)
+            
+            res = requests.post(
+                f'{KUMBIO_COMMUNICATIONS_ENDPOINT}message-templates/mail-templates/',
+                headers={'Authorization': os.environ["TOKEN_FOR_CALENDAR"]},
+                json={
+                    'organization_id': self.id,
+                    'created_by': 0, # id 0 is for owner of the organization
+                    'use_default_templates': True
+                })
+            
+            Print('res', res.json())
+            
+            for template_id in res.json()['template_ids']:
+                self.email_templates.append(template_id)
+                        
         super().save(*args, **kwargs)
                 
         
@@ -149,6 +167,8 @@ class OrganizationService(models.Model):
     description:str = models.TextField(blank=True, null=True)
 
     time_interval:float = models.FloatField(default=1)
+    
+    price:float = models.FloatField(default=0)
 
     # logs fields
     created_at:datetime.datetime = models.DateTimeField(default=datetime.datetime.utcnow)
@@ -218,6 +238,16 @@ class OrganizationPlace(models.Model):
     photo:str = models.CharField(max_length=255, null=True, blank=True)
     
     local_timezone:str = models.CharField(max_length=120, default='America/Bogota')
+    
+    # if this place has a custom price for a service
+    custom_price:list[dict] = models.JSONField(default=list)
+    
+    """ 
+        custom_price = [{
+            place_id: 1,
+            price: 25,
+        }]
+    """
 
     # -----------------------------------------------------------
     # Logs 
@@ -273,6 +303,15 @@ class OrganizationProfessional(models.Model):
     photos = models.FileField(upload_to=f'{organization.name}/professionals/photos/', null=True, blank=True)
     profile_photo = models.ImageField(upload_to=f'{organization.name}/professionals/profile_photos/', null=True, blank=True)
     
+    # if this professional has a custom price for a service
+    custom_price:list[dict] = models.JSONField(default=list)
+    
+    """
+        custom_price = [{
+            place_id: 1,
+            price: 25,
+        }]
+    """
     
     # -----------------------------------------------------------
     # Logs 

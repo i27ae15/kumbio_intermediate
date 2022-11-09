@@ -1,5 +1,4 @@
 # python
-import os
 import datetime
 
 # django
@@ -14,12 +13,11 @@ from django.contrib.auth.models import (
 # models 
 
 # utils
-from utils.send_email import SendEmail
 from utils.numbers import random_with_N_digits
 
 
 # notifications
-from kumbio_notifications.notifications import send_notification
+from kumbio_communications import send_notification
 
 from print_pp.logging import Print
 
