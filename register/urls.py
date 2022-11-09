@@ -8,6 +8,6 @@ urlpatterns = [
     path('verify-user/', verify_user),
     path('send-email-verification/', send_email_verification),
     path('check-if-user-exists/', check_if_email_and_username_exist),
-    path('create-user/', CreateUserAPI.as_view()),
+    path('create-user/', CreateUserAPI.as_view(), name='create_user'),
     re_path(r'^authenticate/', CustomObtainAuthToken.as_view(), name='obtain_auth_token'),
 ]

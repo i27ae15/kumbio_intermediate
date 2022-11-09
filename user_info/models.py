@@ -27,7 +27,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TOKEN_FOR_CALENDAR = "Token Calendar-90b150bc4c827d4ca6828006ce7097be17b8b41150"
+TOKEN_FOR_CALENDAR = "Token Calendar-8795fc177ff14ecb9199c83a4625dfd93bca76c0c0"
 
 
 class KumbioUserPermission(models.Model):
@@ -143,7 +143,7 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
             self.save()
         
         send_notification(token_for_app=TOKEN_FOR_CALENDAR, 
-                          organization_id=self.organization.pk,
+                          organization_id=0,
                           send_to=['andresruse18@gmail.com'],
                           messages=[f'Your verification code is {self.code_to_verify_email}'],
                           subjects=['Verify your email'])
@@ -160,11 +160,13 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
             self.send_verification_code(save=False)
         
         elif kwargs.get('set_verified_email'):
-            print('-'*100)
-            print('verified email')
-            print('-'*100)
             self.is_email_verified = True
+        
+        try:
             del kwargs['set_verified_email']
+        except KeyError:
+            pass
+            # we set pass here because we need to assure that set_verified_email is not in kwargs, so, if keyerror is raised, we just pass
             
         super().save(*args, **kwargs)
 

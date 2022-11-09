@@ -125,7 +125,7 @@ class Organization(models.Model):
     # other methods    
     def save(self, *args, **kwargs):
         if not self.pk:
-            # create the default templates for this organization on the communications project
+            # create the default templates for this organization on the communications microservice
             self.invitation_link = secrets.token_urlsafe(21)
             self.link_dashboard = secrets.token_urlsafe(21)
             self.id = secrets.token_urlsafe(21)

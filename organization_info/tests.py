@@ -121,7 +121,9 @@ class TestPlace(APITestCase):
     def set_authorization(self):
         url = reverse('register:obtain_auth_token')
         # TODO: Check why we have to passs the email as username
-        resp = self.client.post(url, {'username':EMAIL, 'password':PASSWORD}, format='json')
+        resp = self.client.post(url, {'username':EMAIL, 'password':PASSWORD, 'for_kumbio': True}, format='json')
+        
+        Print('Response from auth', resp.json())
     
         self.assertTrue('token' in resp.data)
         token = resp.data['token']

@@ -248,7 +248,7 @@ class CreateUserAPI(APIView):
                 'organization_id': organization_id,
                 'email':request.data['email'],
                 'first_name': organization_data['name'],
-                'last_name': organization_data['name'],
+                'last_name': organization_data['name'], 
                 'role': 1,
             })
             

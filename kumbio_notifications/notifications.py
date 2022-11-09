@@ -3,7 +3,9 @@ import requests
 from .validators import validate_email, validate_phone_number
 from .enums import MessageChannel
 
-KUMBIO_COMMUNICATIONS_ENDPOINT = 'https://communications-api.kumbio.com/'
+from print_pp.logging import Print
+
+KUMBIO_COMMUNICATIONS_ENDPOINT = 'http://localhost:8003/'
 
 def send_notification(token_for_app:str, organization_id:int, send_to:list[str], date_time_to_send:list[str]=['NOW'], 
                       templates:list[int]=None, messages:list[str]=None, subjects:list[str]=None, 
@@ -115,7 +117,7 @@ def send_notification(token_for_app:str, organization_id:int, send_to:list[str],
             res = requests.post(
                 url=f'{KUMBIO_COMMUNICATIONS_ENDPOINT}notifications/',
                 headers={
-                    'Authorization': f'Token {token_for_app}'
+                    'Authorization': token_for_app
                 },
                 data=data_to_send
             )
@@ -123,4 +125,4 @@ def send_notification(token_for_app:str, organization_id:int, send_to:list[str],
             if res.status_code != 201:
                 raise Exception(res.json())
     
-    # TODO: Check the models and add the necessary fields to save the 
+    # TODO: Check the models and add the necessary fields to save them
