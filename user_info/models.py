@@ -90,6 +90,7 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     # fields 
 
     available_places = models.ManyToManyField('organization_info.OrganizationPlace', blank=True, related_name='available_places')
+    available_services = models.ManyToManyField('organization_info.OrganizationService', blank=True, related_name='available_services')
     
     code_to_verify_email:str = models.CharField(max_length=256, default=None, null=True)
     
@@ -145,7 +146,7 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         
         send_notification(token_for_app=TOKEN_FOR_CALENDAR, 
                           organization_id=0,
-                          send_to=['andresruse18@gmail.com'],
+                          send_to=[self.email],
                           messages=[f'Your verification code is {self.code_to_verify_email}'],
                           subjects=['Verify your email'])
         

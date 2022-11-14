@@ -226,7 +226,7 @@ class OrganizationPlaceAPI(APIView):
     )
     def get(self, request):
         """
-        Get places 
+            Get places 
         """
 
         query_serializer = PlaceQuerySerializer(data=request.query_params)

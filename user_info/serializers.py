@@ -28,9 +28,17 @@ class CreateKumbioUserSerializer(serializers.ModelSerializer):
         fields = ( "id", "email", "username", "password", "organization", "first_name", "last_name")
 
 
-class KumbioUserAvailablePlaces(serializers.ModelSerializer):
+class KumbioUserAvailablePlacesSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = KumbioUser
         fields = ("available_places",)
+        depth = 1
+        
+        
+class KumbioUserAvailableServicesSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = KumbioUser
+        fields = ("available_services",)
         depth = 1

@@ -177,10 +177,10 @@ class OrganizationService(models.Model):
     created_at:datetime.datetime = models.DateTimeField(default=datetime.datetime.utcnow)
 
     deleted_at:datetime.datetime = models.DateTimeField(null=True, blank=True, default=None)
-    deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='service_deleted_by')
+    deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, blank=True, on_delete=models.CASCADE, default=None, related_name='service_deleted_by')
 
-    updated_at:datetime.datetime = models.DateTimeField(null=True, default=None)
-    updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='service_updated_by')
+    updated_at:datetime.datetime = models.DateTimeField(null=True, blank=True, default=None)
+    updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, blank=True, on_delete=models.CASCADE, default=None, related_name='service_updated_by')
 
         
     @property

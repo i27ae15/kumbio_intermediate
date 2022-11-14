@@ -1,7 +1,7 @@
 # python 
 # django
 from django.urls import reverse
-from .models.main_models import Organization, OrganizationPlace
+from .models.main_models import Organization, OrganizationPlace, OrganizationService
 
 from rest_framework.test import APITestCase
 
@@ -9,7 +9,7 @@ from rest_framework.test import APITestCase
 from user_info.models import KumbioUser, KumbioUserRole
 
 # serializers 
-from .serializers import OrganizationPlaceSerializer
+from .serializers import OrganizationPlaceSerializer, OrganizationServiceSerializer
 
 from print_pp.logging import Print
 
@@ -25,10 +25,10 @@ def create_kumbio_role() -> KumbioUserRole:
         description='ORGANIZATION ADMIN')
    
    
-def create_user(organization:Organization, role:KumbioUserRole) -> KumbioUser:
+def create_user(organization:Organization, role:KumbioUserRole, username=USERNAME, email=EMAIL) -> KumbioUser:
     return KumbioUser.objects.create_user(
-        username=USERNAME,
-        email=EMAIL,
+        username=username,
+        email=email,
         first_name='test',
         last_name='user',
         password=PASSWORD,
@@ -69,6 +69,24 @@ def create_place(data_to_create_place:dict, organization:Organization, user:Kumb
             name='testing name')
 
     serializer = OrganizationPlaceSerializer(data=data_to_create_place)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    initial_data = serializer.data
+
+    return initial_data
+
+
+def create_service(data_to_create_service:dict, organization:Organization, create_with_serializer=False) -> OrganizationService:
+    # create a post
+    
+    if not create_with_serializer:
+        return OrganizationService.objects.create(
+            organization=organization,
+            service='testing service',
+            description='testing description',
+            price=100)
+
+    serializer = OrganizationServiceSerializer(data=data_to_create_service)
     serializer.is_valid(raise_exception=True)
     serializer.save()
     initial_data = serializer.data

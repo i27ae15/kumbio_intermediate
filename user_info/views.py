@@ -1,15 +1,8 @@
-import requests
-import os
-
+# python
 # django 
-import secrets
-from django.contrib.auth import get_user_model # If used custom user model
-from django.db.models.query import QuerySet
-
 # rest-framework
 from rest_framework import status
-from rest_framework.authtoken.views import ObtainAuthToken, APIView
-from rest_framework.authtoken.models import Token
+
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
@@ -20,11 +13,9 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 
 # models 
 from user_info.models import KumbioUser
-from organization_info.models.main_models import Organization
 
 # serializers 
-from organization_info.serializers import OrganizationSerializer
-from .serializers import KumbioUserSerializer, CreateKumbioUserSerializer, KumbioUserAvailablePlaces
+from .serializers import KumbioUserSerializer, KumbioUserAvailablePlacesSerializer, KumbioUserAvailableServicesSerializer
 
 
 # others
@@ -45,7 +36,6 @@ def authenticate_user(request):
     return Response({'is_valid_user': True})
 
 
-
 @swagger_auto_schema()
 @api_view(['GET'])
 def get_available_places_for_user(request):
@@ -55,10 +45,23 @@ def get_available_places_for_user(request):
     try: user:KumbioUser = KumbioUser.objects.get(id=user_id)
     except KumbioUser.DoesNotExist: return Response({'error':'El usuario no existe'}, status=status.HTTP_400_BAD_REQUEST)
     
-    available_places = KumbioUserAvailablePlaces(user)
+    available_places = KumbioUserAvailablePlacesSerializer(user)
 
     return Response(available_places.data, status=status.HTTP_200_OK)
 
+
+@swagger_auto_schema()
+@api_view(['GET'])
+def get_available_services_for_user(request):
+
+    user_id = request.GET.get('user_id')
+
+    try: user:KumbioUser = KumbioUser.objects.get(id=user_id)
+    except KumbioUser.DoesNotExist: return Response({'error':'El usuario no existe'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    available_services = KumbioUserAvailableServicesSerializer(user)
+
+    return Response(available_services.data, status=status.HTTP_200_OK)
 
 
 @swagger_auto_schema()
