@@ -58,6 +58,68 @@ def check_if_user_is_admin(request) -> 'True | Response':
 
 # classes
 
+class OrganizationView(APIView):
+
+    @swagger_auto_schema(
+        operation_description="Get organization",
+        responses={
+            200: openapi.Response(
+                description="Organization",
+                schema=OrganizationProfessionalSerializer
+            )
+        }
+    )
+    def get(self, request):
+
+        organization_id = request.GET.get('organization_id')
+
+        if not organization_id:
+            return Response({"message": "organization_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            organization_id = int(organization_id)
+        except ValueError:
+            return Response({"message": "organization_id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        organization = Organization.objects.get(pk=organization_id)
+        serializer = OrganizationProfessionalSerializer(organization)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+    @swagger_auto_schema(
+        operation_description="Update organization",
+        request_body=OrganizationProfessionalSerializer,
+        responses={
+            200: openapi.Response(
+                description="Organization",
+                schema=OrganizationProfessionalSerializer
+            )
+        }
+    )
+    def put(self, request):
+        organization = Organization.objects.get(pk=request.user.organization.id)
+        serializer = OrganizationProfessionalSerializer(organization, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    @swagger_auto_schema(
+        operation_description="Delete organization",
+        responses={
+            200: openapi.Response(
+                description="Organization",
+                schema=OrganizationProfessionalSerializer
+            )
+        }
+    )
+    def delete(self, request):
+        organization = Organization.objects.get(pk=request.user.organization.id)
+        organization.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class OrganizationProfessionalAPI(APIView):
     permission_classes = (IsAuthenticated,) 
@@ -303,29 +365,3 @@ class OrganizationPlaceAPI(APIView):
             return False
 
 
-
-
-    # def add_default_templates_to_calendar(self, user_id:int, def_start:int, data:dict) -> dict:
-
-    #     templates = self.check_if_templates_exist(user_id, def_start)
-
-    #     data['template_to_send_as_confirmation'] = templates[0]
-    #     data['template_to_send_as_reminder_1'] = templates[1]
-    #     data['template_to_send_as_reminder_2'] = templates[1]
-    #     data['template_to_send_as_reminder_3'] = templates[1]
-    #     data['template_to_send_as_rescheduled'] = templates[2]
-    #     data['template_to_send_as_canceled'] = templates[3]
-    #     data['template_to_send_as_new_client_to_calendar_user'] = templates[4]
-    #     data['template_to_send_as_rescheduled_to_calendar_user'] = templates[5]
-    #     data['template_to_send_as_canceled_to_calendar_user'] = templates[6]
-    
-    # def check_if_templates_exist(slef, user_id:int, def_start:int) -> list:
-    #     templates = []
-    #     for i in range(def_start, def_start + 7):
-    #         try:
-    #             'MailTemplate'.objects.get(id=i, user=user_id)
-    #             templates.append(i)
-    #         except 'MailTemplate'.DoesNotExist:
-    #             templates.append(None)
-        
-    #     return templates

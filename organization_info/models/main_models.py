@@ -3,6 +3,8 @@ import secrets
 import datetime
 import requests
 import os
+import sys
+
 from dotenv import load_dotenv
 
 # django
@@ -133,19 +135,20 @@ class Organization(models.Model):
             self.link_dashboard = secrets.token_urlsafe(21)
             self.id = secrets.token_urlsafe(21)
             
-            res = requests.post(
-                f'{KUMBIO_COMMUNICATIONS_ENDPOINT}message-templates/mail-templates/',
-                headers={'Authorization': os.environ["TOKEN_FOR_CALENDAR"]},
-                json={
-                    'organization_id': self.id,
-                    'created_by': 0, # id 0 is for owner of the organization
-                    'use_default_templates': True
-                })
+            if not 'test' in sys.argv:
+                res = requests.post(
+                    f'{KUMBIO_COMMUNICATIONS_ENDPOINT}message-templates/mail-templates/',
+                    headers={'Authorization': os.environ["TOKEN_FOR_CALENDAR"]},
+                    json={
+                        'organization_id': self.id,
+                        'created_by': 0, # id 0 is for owner of the organization
+                        'use_default_templates': True
+                    })
+                
+                Print('res', res.json())
             
-            Print('res', res.json())
-            
-            for template_id in res.json()['template_ids']:
-                self.email_templates.append(template_id)
+                for template_id in res.json()['template_ids']:
+                    self.email_templates.append(template_id)
                         
         super().save(*args, **kwargs)
                 

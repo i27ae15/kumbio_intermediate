@@ -23,11 +23,12 @@ from organization_info.models.main_models import Organization
 
 # serializers 
 from organization_info.serializers import OrganizationSerializer
-from user_info.serializers import KumbioUserSerializer, CreateKumbioUserSerializer
+from user_info.serializers import CreateKumbioUserSerializer
 
 
 # others
 from utils.default_templates import DEFAULT_TEMPLATES
+from print_pp.logging import Print
 
 from dotenv import load_dotenv
 
@@ -37,6 +38,7 @@ CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
 
 # functions
 
+# deprecated
 def create_default_templates(organization:Organization) -> int:
     
     # send connection to communications microservice
@@ -239,7 +241,7 @@ class CreateUserAPI(APIView):
         request.data['organization'] = organization_id
         
         serializer = CreateKumbioUserSerializer(data=request.data)
-        
+
         if serializer.is_valid():
             serializer.save()
             
@@ -252,15 +254,12 @@ class CreateUserAPI(APIView):
                 'role': 1,
             })
             
-            # organization.set_default_template_starts_at(create_default_templates(organization))
-            organization.set_default_template_starts_at = 115
-            
             user:KumbioUser = serializer.instance
             user.set_password(request.data['password'])
             user.calendar_token = res.json()['token']
             user.save()
             
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
+
         organization.delete()
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

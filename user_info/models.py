@@ -1,5 +1,6 @@
 # python
 import datetime
+import sys
 
 # django
 from django.db import models
@@ -87,6 +88,8 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     
     # -----------------------------------------------------------
     # fields 
+
+    available_places = models.ManyToManyField('organization_info.OrganizationPlace', blank=True, related_name='available_places')
     
     code_to_verify_email:str = models.CharField(max_length=256, default=None, null=True)
     
@@ -154,7 +157,7 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
 
     
     def save(self, *args, **kwargs):
-        if not self.pk and not kwargs.get('set_verified_email'):
+        if not self.pk and not kwargs.get('set_verified_email') and not 'test' in sys.argv:
             self.send_verification_code(save=False)
         
         elif kwargs.get('set_verified_email'):

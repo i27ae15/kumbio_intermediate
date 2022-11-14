@@ -24,7 +24,7 @@ from organization_info.models.main_models import Organization
 
 # serializers 
 from organization_info.serializers import OrganizationSerializer
-from user_info.serializers import KumbioUserSerializer, CreateKumbioUserSerializer
+from .serializers import KumbioUserSerializer, CreateKumbioUserSerializer, KumbioUserAvailablePlaces
 
 
 # others
@@ -44,3 +44,32 @@ def authenticate_user(request):
     except: return Response({'is_valid_user': False})
     return Response({'is_valid_user': True})
 
+
+
+@swagger_auto_schema()
+@api_view(['GET'])
+def get_available_places_for_user(request):
+
+    user_id = request.GET.get('user_id')
+
+    try: user:KumbioUser = KumbioUser.objects.get(id=user_id)
+    except KumbioUser.DoesNotExist: return Response({'error':'El usuario no existe'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    available_places = KumbioUserAvailablePlaces(user)
+
+    return Response(available_places.data, status=status.HTTP_200_OK)
+
+
+
+@swagger_auto_schema()
+@api_view(['GET'])
+def get_kumbio_user(request):
+
+    user_id = request.GET.get('user_id')
+
+    try: user:KumbioUser = KumbioUser.objects.get(id=user_id)
+    except KumbioUser.DoesNotExist: return Response({'error':'El usuario no existe'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    available_places = KumbioUserSerializer(user)
+
+    return Response(available_places.data, status=status.HTTP_200_OK)

@@ -58,6 +58,24 @@ def create_organization(use_user=False) -> Organization:
     return org
 
 
+def create_place(data_to_create_place:dict, organization:Organization, user:KumbioUser, create_with_serializer=False) -> OrganizationPlace:
+    # create a post
+
+    if not create_with_serializer:
+        return OrganizationPlace.objects.create(
+            organization=organization,
+            created_by=user,
+            address='testing address',
+            name='testing name')
+
+    serializer = OrganizationPlaceSerializer(data=data_to_create_place)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    initial_data = serializer.data
+
+    return initial_data
+    
+
 class TestOrganizationCreation(APITestCase):
     
     def test_organization_creation(self):
@@ -88,7 +106,7 @@ class TestPlace(APITestCase):
             "name": "Dresden",
             "created_by": self.user.id
         }
-        self.place = self.create_place(self.organization, self.user)
+        self.place = create_place(self.organization, self.user)
         
         Print('Testing setup for TestPlace completed')
 
@@ -97,7 +115,7 @@ class TestPlace(APITestCase):
 
         self.assertTrue(self.client.login(email=EMAIL, password=PASSWORD))
 
-        initial_data = self.create_place(self.organization, self.user, create_with_serializer=True)
+        initial_data = create_place(self.data_to_create_place, self.organization, self.user, create_with_serializer=True)
         
         del initial_data['datetime_created']
         del initial_data['id']
@@ -118,28 +136,6 @@ class TestPlace(APITestCase):
 
 
     # helper functoins ---------------------------------------------------------
-
-    def create_place(self, organization:Organization, user:KumbioUser, create_with_serializer=False, data_to_create_place=None) -> OrganizationPlace:
-        # create a post
-
-        if data_to_create_place is None:
-            data_to_create_place = self.data_to_create_place
-
-
-        if not create_with_serializer:
-            return OrganizationPlace.objects.create(
-                organization=organization,
-                created_by=user,
-                address='testing address',
-                name='testing name')
-
-
-        serializer = OrganizationPlaceSerializer(data=data_to_create_place)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        initial_data = serializer.data
-
-        return initial_data
 
     
     def set_authorization(self):

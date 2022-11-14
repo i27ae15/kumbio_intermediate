@@ -4,9 +4,6 @@ from django.urls import reverse
 
 from rest_framework.test import APITestCase
 
-# models
-from user_info.models import KumbioUser, KumbioUserRole
-
 # serializers
 
 from print_pp.logging import Print
@@ -38,3 +35,4 @@ class TestCreateUser(APITestCase):
         response = self.client.post(url, self.data_to_create_user, format='json').json()
         
         Print(response)
+
