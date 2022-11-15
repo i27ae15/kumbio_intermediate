@@ -45,7 +45,7 @@ class Invoice(models.Model):
     status:int = models.IntegerField(choices=InvoiceStatus.choices)
     
     datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetimne_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    datetime_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
     datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
     created_by:KumbioUser = models.ForeignKey(KumbioUser, on_delete=models.CASCADE, related_name='invoice_created_by')

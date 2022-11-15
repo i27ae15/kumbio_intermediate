@@ -4,10 +4,7 @@ from django.urls import reverse
 
 from rest_framework.test import APITestCase
 from organization_info.tests import create_organization, create_place, create_user, create_kumbio_role, create_service
-from organization_info.serializers import OrganizationPlaceSerializer, OrganizationServiceSerializer
-
-# models
-from user_info.models import KumbioUser, KumbioUserRole
+from organization_info.serializers import OrganizationServiceSerializer
 
 # serializers
 
@@ -40,7 +37,7 @@ class TestGetAvailablePlacesForUser(APITestCase):
         Print(response)
         
 
-class TestGetAvailableSerivicesForUser(APITestCase):
+class TestGetAvailableServicesForUser(APITestCase):
     
     def setUp(self) -> None:
         self.organization = create_organization()

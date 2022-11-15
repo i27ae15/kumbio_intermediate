@@ -27,7 +27,7 @@ class CalendarSettings(models.Model):
     # logs fields
     
     datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetimne_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    datetime_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
     datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
     created_by:KumbioUser = models.ForeignKey(KumbioUser, on_delete=models.CASCADE, related_name='calendar_settings_created_by')
