@@ -4,15 +4,13 @@ from email.mime.text import MIMEText
 from email import encoders
 import smtplib, ssl
 
-from cryptography.fernet import Fernet
-
 from dotenv import load_dotenv
-import os
-
 # from register.models import Organization
 
 
 load_dotenv()
+
+# the code here should be deprecated
 
 
 class SendEmail:
