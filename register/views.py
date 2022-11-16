@@ -75,7 +75,7 @@ def verify_user(request):
 
     body parameters:
     
-        code (str): el codigo para verificar al usuario
+        code (str): el código para verificar al usuario
     
     Returns:
         _type_: _description_
@@ -85,7 +85,7 @@ def verify_user(request):
     code = request.data['code']
 
     try: user:KumbioUser = KumbioUser.objects.get(code_to_verify_email=code)
-    except KumbioUser.DoesNotExist: return Response({'error':'El codigo no es valido'}, status=status.HTTP_400_BAD_REQUEST)
+    except KumbioUser.DoesNotExist: return Response({'error':'El código no es valido'}, status=status.HTTP_400_BAD_REQUEST)
     
     user.verify_code()
     
@@ -100,7 +100,7 @@ def send_email_verification(request):
     
     body parameters:
 
-        user_id (int): id del usuario al que se le va a enviar el correo de verificacion
+        user_id (int): id del usuario al que se le va a enviar el correo de verificación
 
     Returns:
         _type_: _description_
@@ -112,7 +112,7 @@ def send_email_verification(request):
     except KumbioUser.DoesNotExist: return Response({'error':'El usuario no existe'}, status=status.HTTP_400_BAD_REQUEST)
     user.send_verification_code()
     
-    return Response({'message':'El codigo ha sido enviado'}, status=status.HTTP_200_OK)
+    return Response({'message':'El código ha sido enviado'}, status=status.HTTP_200_OK)
 
 
 @swagger_auto_schema()
@@ -138,11 +138,13 @@ class CustomObtainAuthToken(ObtainAuthToken):
     
     def post(self, request, *args, **kwargs):
         
-        """Iniciar sesion
+        """Iniciar sesión
         
-        Se necesita el email, pero por alguna razon que no voy a ver ahorita, tienes que pasar el campo del email 
+        Se necesita el email, pero por alguna razón que no voy a ver ahorita, tienes que pasar el campo del email 
         con el nombre del username, es decir:
         
+        Hola, como estas?
+
         username: ejemplode@email.com
 
         Returns:
@@ -183,30 +185,30 @@ class CreateUserAPI(APIView):
         
         """Crear a un nuevo usuario
         
-        Para crear al usuario se debe pasar el id de la organizacion a la que pertenece; de no tener un id valido,
-        el usuario debe crear la organzacion, pasando el nombre de la organizacion y el numer de telefono del usuario que la creara.
+        Para crear al usuario se debe pasar el id de la organización a la que pertenece; de no tener un id valido,
+        el usuario debe crear la organización, pasando el nombre de la organización y el numero de teléfono del usuario que la creara.
         
         
         body parameters:
             
-            En caso de que el usuario tenga un id valido de organizacion:
+            En caso de que el usuario tenga un id valido de organización:
                 
-                organization (int): id de la organizacion a la que pertenece el usuario
+                organization (int): id de la organización a la que pertenece el usuario
     
             ----------------------------------------------------------------------------        
             
-            En caso de que el usuario no tenga un id valido de organizacion:
+            En caso de que el usuario no tenga un id valido de organización:
     
                 organization (dict): {
-                    name (str): nombre de la organizacion,
-                    phone (str): telefono del usuario que creara la organizacion
-                    email (str): email del usuario que creara la organizacion
+                    name (str): nombre de la organización,
+                    phone (str): teléfono del usuario que creara la organización
+                    email (str): email del usuario que creara la organización
                 }
-                phone (str): numero de telefono del usuario que creara la organizacion
+                phone (str): numero de teléfono del usuario que creara la organización
                 
             para ambos casos:
             
-                firts_name (str): nombre del usuario
+                first_name (str): nombre del usuario
                 last_name (str): apellido del usuario
                 email (str): email del usuario
                 username (str): username del usuario
