@@ -30,7 +30,6 @@ TOKEN_FOR_CALENDAR = "Token Calendar-8795fc177ff14ecb9199c83a4625dfd93bca76c0c0"
 
 
 class KumbioUserPermission(models.Model):
-    
     name:str = models.CharField(max_length=100)
     description:str = models.TextField()
     

@@ -37,24 +37,6 @@ load_dotenv()
 CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
 
 # functions
-
-# deprecated
-def create_default_templates(organization:Organization) -> int:
-    
-    # send connection to communications microservice
-
-    template_manager:MailTemplatesManager = MailTemplatesManager.objects.get(id=1)
-    starts_at:int = 0
-    # starts_at:int = template_manager.next_template_to_start_at
-
-    # for template in DEFAULT_TEMPLATES:
-    #     template['organization'] = organization
-    #     MailTemplate.objects.create(**template)
-
-    # template_manager.increase_next_template_to_start_at()
-    
-    return starts_at
-
     
 @api_view(['GET'])
 def check_if_invited(request, link):
@@ -142,8 +124,6 @@ class CustomObtainAuthToken(ObtainAuthToken):
         
         Se necesita el email, pero por alguna razón que no voy a ver ahorita, tienes que pasar el campo del email 
         con el nombre del username, es decir:
-        
-        Hola, como estas?
 
         username: ejemplode@email.com
 
