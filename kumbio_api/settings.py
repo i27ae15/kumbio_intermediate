@@ -27,8 +27,8 @@ SECRET_KEY = 'django-insecure-41nwz$6_#7(+h)-#6ek7dkuwnvz_+p!ft=ayw=sktx-5q7wd7s
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ["api.kumbio.com"]
+CSRF_TRUSTED_ORIGINS = ['https://api.kumbio.com']
 
 # Application definition
 
