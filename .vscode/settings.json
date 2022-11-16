@@ -1,13 +1,8 @@
 {
     "editor.mouseWheelZoom": true,
-    "cSpell.words": [
-        "kumbio",
-        "organizationprofessional"
-    ],
-
     "background.fullscreen": {
-        "image": "https://www.gamerfocus.co/wp-content/uploads/2013/08/destiny_desktop.jpg",
-        "opacity": 0.92, // 0.85 ~ 0.95 recommended
+        "image": "https://www.gamerfocus.co/wp-content/uploads/2013/08/destiny_desktop.jpg", // url of your image
+        "opacity": 0.95, // 0.85 ~ 0.95 recommended
         "size": "cover" // also css, `cover` to self-adaption (recommended)，or `contain`、`200px 200px`
     },
     "workbench.colorCustomizations": {
