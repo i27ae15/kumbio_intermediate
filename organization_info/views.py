@@ -20,13 +20,13 @@ from drf_yasg import openapi
 
 # models
 from user_info.models import KumbioUser, KumbioUserRole
-from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace
+from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace, Sector
 
 # serializers
 from user_info.serializers import CreateKumbioUserSerializer
 
-from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer
-from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer
+from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer
+from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer
 
 # others
 from print_pp.logging import Print
@@ -368,3 +368,31 @@ class OrganizationPlaceAPI(APIView):
             return False
 
 
+class OrganizationSectorView(APIView):
+
+    permission_classes = (IsAuthenticated,) 
+    authentication_classes = (TokenAuthentication,) 
+
+    
+    @swagger_auto_schema(
+        query_serializer=OrganizationSectorQuerySerializer(),
+    )
+    def get(self, request):
+
+        qp = OrganizationSectorQuerySerializer(data=request.query_params)
+        qp.is_valid(raise_exception=True)
+        query_params = qp.data
+        
+        if query_params['sector_id']:
+            sectors = Sector.objects.filter(id=query_params['sector_id'])
+            if not sectors:
+                return Response(
+                    {
+                        'error': 'el sector no existe'
+                    }, status=status.HTTP_404_NOT_FOUND)
+        else:
+            sectors = Sector.objects.all()
+
+
+        sector_serializer = OrganizationSectorSerializer(sectors, many=True)
+        return Response(sector_serializer.data, status=status.HTTP_200_OK)

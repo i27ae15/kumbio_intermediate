@@ -37,7 +37,7 @@ class Organization(models.Model):
     
     # Foreign Keys -----------------------------------------------------------
     # plan:KumbioPlan = models.ForeignKey(KumbioPlan, on_delete=models.CASCADE, default=1)
-    sector:Sector = models.ForeignKey(Sector, on_delete=models.CASCADE, null=True, blank=True)
+    sector:Sector = models.ForeignKey(Sector, on_delete=models.CASCADE, null=True, default=None, blank=True)
     id:str = models.CharField(max_length=100, primary_key=True)
     
     email_templates:list = models.JSONField(default=list)
@@ -232,26 +232,26 @@ class OrganizationPlace(models.Model):
     
     # fields
 
-    address:str = models.CharField(max_length=255)
+    address:str = models.CharField(max_length=255, null=True, default=None, blank=True)
     accepts_children:bool = models.BooleanField(default=True)
     accepts_pets:bool = models.BooleanField(default=True)
-    additional_info:str = models.CharField(max_length=255, null=True, blank=True)
+    additional_info:str = models.CharField(max_length=255, null=True, default=None, blank=True)
 
-    email:str = models.EmailField(max_length=255, null=True, blank=True)
+    email:str = models.EmailField(max_length=255, null=True, default=None, blank=True)
 
     name:str = models.CharField(max_length=255)
 
-    phone:str = models.CharField(max_length=255, null=True, blank=True)
+    phone:str = models.CharField(max_length=255, null=True, default=None, blank=True)
 
-    opens_at = models.TimeField(default=datetime.time(8, 0, 0))
-    closes_at = models.TimeField(default=datetime.time(18, 0, 0))
+    opens_at = models.TimeField(default=datetime.time(8, 0, 0), null=True, blank=True)
+    closes_at = models.TimeField(default=datetime.time(18, 0, 0), null=True, blank=True)
 
-    photo:str = models.CharField(max_length=255, null=True, blank=True)
+    photo:str = models.CharField(max_length=255, null=True, default=None, blank=True)
     
-    local_timezone:str = models.CharField(max_length=120, default='America/Bogota')
+    local_timezone:str = models.CharField(max_length=120, default='', blank=True)
     
     # if this place has a custom price for a service
-    custom_price:list[dict] = models.JSONField(default=list)
+    custom_price:list[dict] = models.JSONField(default=list, null=True, blank=True)
     
     """ 
         custom_price = [{

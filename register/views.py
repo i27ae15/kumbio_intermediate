@@ -153,7 +153,7 @@ class CustomObtainAuthToken(ObtainAuthToken):
             {
                 'token': token_to_return, 
                 'name': token.user.get_full_name(),
-                'role': token.user.role,
+                'role': token.user.role.name,
                 'id': token.user.id,
                 'organization': organization_serializer.data,
             })
