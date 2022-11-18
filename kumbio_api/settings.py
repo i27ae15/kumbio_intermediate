@@ -57,7 +57,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5174",
     "http://localhost:5174",
-]
+    "http://10.0.0.206:5173",
+    "https://app.kumbio.com",
+    ]
 
 MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
