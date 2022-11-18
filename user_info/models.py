@@ -30,7 +30,6 @@ TOKEN_FOR_CALENDAR = "Token Calendar-8795fc177ff14ecb9199c83a4625dfd93bca76c0c0"
 
 
 class KumbioUserPermission(models.Model):
-    
     name:str = models.CharField(max_length=100)
     description:str = models.TextField()
     
@@ -52,7 +51,7 @@ class KumbioUserRole(models.Model):
 # --------------------------------------------------------------------------------
 
 class KumbioUserManager(BaseUserManager):
-    def create_user(self, email, username, organization, password=None, **extra_fields):
+    def create_user(self, email, username, organization, role, password=None, **extra_fields):
         
         if not email:
             raise ValueError("User must have an email")
@@ -155,7 +154,11 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         self.is_email_verified = True
         self.code_to_verify_email = None
         self.save()
-
+        
+    
+    def set_role(self, role:KumbioUserRole):
+        self.role = role
+        self.save()
     
     def save(self, *args, **kwargs):
         if not self.pk and not kwargs.get('set_verified_email') and not 'test' in sys.argv:

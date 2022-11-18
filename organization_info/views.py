@@ -23,7 +23,7 @@ from user_info.models import KumbioUser, KumbioUserRole
 from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace
 
 # serializers
-from user_info.serializers import KumbioUserSerializer, CreateKumbioUserSerializer
+from user_info.serializers import CreateKumbioUserSerializer
 
 from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer
 from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer
@@ -184,7 +184,7 @@ class OrganizationProfessionalAPI(APIView):
         kumbio_user_serializer = CreateKumbioUserSerializer(data=request.data, context={'set_verified_email': True})
 
 
-        # we should handle this petition that if not successfull delete the created user, due to the fact that this cannot continue
+        # we should handle this petition that if not successfully delete the created user, due to the fact that this cannot continue
         res = requests.post(f'{CALENDAR_ENDPOINT}register/api/v2/create-user/', json={
                 'organization_id': request.data['organization_id'],
                 'email':request.data['email'],

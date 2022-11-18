@@ -70,6 +70,14 @@ class Organization(models.Model):
     
     website:str = models.CharField(max_length=120, null=True, blank=True)
     
+    template_to_send_as_confirmation:int = models.IntegerField(default=0)
+    template_to_send_as_reminder_1:int = models.IntegerField(default=0)
+    template_to_send_as_reminder_2:int = models.IntegerField(default=0)
+    template_to_send_as_rescheduled:int = models.IntegerField(default=0)
+    template_to_send_as_canceled:int = models.IntegerField(default=0)
+    template_to_send_as_new_client_to_calendar_user:int = models.IntegerField(default=0)
+    template_to_send_as_rescheduled_to_calendar_user:int = models.IntegerField(default=0)
+    template_to_send_as_canceled_to_calendar_user:int = models.IntegerField(default=0)
     
     # owner data
 

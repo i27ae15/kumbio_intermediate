@@ -18,7 +18,7 @@ from rest_framework.decorators import api_view
 from drf_yasg.utils import swagger_auto_schema
 
 # models 
-from user_info.models import KumbioUser
+from user_info.models import KumbioUser, KumbioUserRole
 from organization_info.models.main_models import Organization
 
 # serializers 
@@ -37,24 +37,6 @@ load_dotenv()
 CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
 
 # functions
-
-# deprecated
-def create_default_templates(organization:Organization) -> int:
-    
-    # send connection to communications microservice
-
-    template_manager:MailTemplatesManager = MailTemplatesManager.objects.get(id=1)
-    starts_at:int = 0
-    # starts_at:int = template_manager.next_template_to_start_at
-
-    # for template in DEFAULT_TEMPLATES:
-    #     template['organization'] = organization
-    #     MailTemplate.objects.create(**template)
-
-    # template_manager.increase_next_template_to_start_at()
-    
-    return starts_at
-
     
 @api_view(['GET'])
 def check_if_invited(request, link):
@@ -142,8 +124,6 @@ class CustomObtainAuthToken(ObtainAuthToken):
         
         Se necesita el email, pero por alguna razón que no voy a ver ahorita, tienes que pasar el campo del email 
         con el nombre del username, es decir:
-        
-        Hola, como estas?
 
         username: ejemplode@email.com
 
@@ -194,6 +174,7 @@ class CreateUserAPI(APIView):
             En caso de que el usuario tenga un id valido de organización:
                 
                 organization (int): id de la organización a la que pertenece el usuario
+                role (int): id del rol que tendrá el usuario en la organización, 2 for organization_professional
     
             ----------------------------------------------------------------------------        
             
@@ -222,9 +203,12 @@ class CreateUserAPI(APIView):
         organization_data = request.data['organization']
         organization_id:int = None
         
-        try: organization_id = int(organization_data)
-        # this will create the organization, assuming that the person that is being created is the owner of the organization
+        try: 
+            organization_id = int(organization_data)
+            try: request.data['role']
+            except KeyError: return Response({'error':'El role no ha sido especificado'}, status=status.HTTP_400_BAD_REQUEST)
         except TypeError:
+        # this will create the organization, assuming that the person that is being creating it is the owner of the organization
             organization:Organization = Organization.objects.create(
                 # org info
                 name=organization_data['name'],
@@ -237,8 +221,8 @@ class CreateUserAPI(APIView):
                 owner_last_name=request.data['last_name'],
                 owner_phone=request.data['phone'],
                 )
-            organization_id = organization.id          
-        
+            organization_id = organization.id        
+            request.data['role'] = 1
         
         # Create the user role that comes by default when creating a new owner
 
@@ -255,11 +239,12 @@ class CreateUserAPI(APIView):
                 'email':request.data['email'],
                 'first_name': organization_data['name'],
                 'last_name': organization_data['name'], 
-                'role': 1,
+                'role': request.data['role'],
             })
             
             user:KumbioUser = serializer.instance
             user.set_password(request.data['password'])
+            user.set_role(KumbioUserRole.objects.get(id=int(request.data['role'])))
             user.calendar_token = res.json()['token']
             user.save()
             
