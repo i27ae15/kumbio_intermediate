@@ -26,7 +26,7 @@ from .models.main_models import Organization, OrganizationProfessional, Organiza
 from user_info.serializers import KumbioUserSerializer, CreateKumbioUserSerializer
 
 from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer
-from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer
+from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer
 
 # others
 from print_pp.logging import Print
@@ -60,12 +60,15 @@ def check_if_user_is_admin(request) -> 'True | Response':
 
 class OrganizationView(APIView):
 
+    permission_classes = (IsAuthenticated,) 
+    authentication_classes = (TokenAuthentication,)
+
     @swagger_auto_schema(
         operation_description="Get organization",
         responses={
             200: openapi.Response(
                 description="Organization",
-                schema=OrganizationProfessionalSerializer
+                schema=OrganizationSerializer
             )
         }
     )
@@ -83,23 +86,23 @@ class OrganizationView(APIView):
 
 
         organization = Organization.objects.get(pk=organization_id)
-        serializer = OrganizationProfessionalSerializer(organization)
+        serializer = OrganizationSerializer(organization)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
     @swagger_auto_schema(
         operation_description="Update organization",
-        request_body=OrganizationProfessionalSerializer,
+        request_body=OrganizationSerializer,
         responses={
             200: openapi.Response(
                 description="Organization",
-                schema=OrganizationProfessionalSerializer
+                schema=OrganizationSerializer
             )
         }
     )
     def put(self, request):
         organization = Organization.objects.get(pk=request.user.organization.id)
-        serializer = OrganizationProfessionalSerializer(organization, data=request.data)
+        serializer = OrganizationSerializer(organization, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -111,7 +114,7 @@ class OrganizationView(APIView):
         responses={
             200: openapi.Response(
                 description="Organization",
-                schema=OrganizationProfessionalSerializer
+                schema=OrganizationSerializer
             )
         }
     )

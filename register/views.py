@@ -96,7 +96,7 @@ def verify_user(request):
 @api_view(['POST'])
 def send_email_verification(request):
     
-    """ Send email verification
+    """Send email verification
     
     body parameters:
 
@@ -173,7 +173,7 @@ class CustomObtainAuthToken(ObtainAuthToken):
             {
                 'token': token_to_return, 
                 'name': token.user.get_full_name(),
-                'role': token.user.role.name,
+                'role': token.user.role,
                 'id': token.user.id,
                 'organization': organization_serializer.data,
             })
@@ -240,6 +240,8 @@ class CreateUserAPI(APIView):
             organization_id = organization.id          
         
         
+        # Create the user role that comes by default when creating a new owner
+
         request.data['organization'] = organization_id
         
         serializer = CreateKumbioUserSerializer(data=request.data)
