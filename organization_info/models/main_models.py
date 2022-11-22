@@ -49,6 +49,7 @@ class Organization(models.Model):
     
     cancellation_policy:str = models.TextField(null=True, blank=True)
     country:str = models.CharField(max_length=120, default='')
+    currency:str = models.CharField(max_length=120, default='')
     
     data_policy:str = models.TextField(null=True, blank=True)
     description:str = models.CharField(max_length=120, default='')
@@ -59,6 +60,7 @@ class Organization(models.Model):
     
     link_dashboard:str = models.CharField(max_length=120, null=True, blank=True)
     logo = models.ImageField(upload_to='organization_logos', null=True, blank=True)
+    language:str = models.CharField(max_length=120, default='')
     
     name:str = models.CharField(max_length=120, unique=True)
     notification_email:str = models.EmailField(default=os.environ['DEFAULT_EMAIL'])
@@ -80,7 +82,6 @@ class Organization(models.Model):
     template_to_send_as_canceled_to_calendar_user:int = models.IntegerField(default=0)
     
     # owner data
-
     owner_email:str = models.EmailField()
     owner_first_name:str = models.CharField(max_length=120)
     owner_last_name:str = models.CharField(max_length=120)
