@@ -19,6 +19,7 @@ import user_info.models as user_models
 from utils.integer_choices import RatingMadeBy
 
 from print_pp.logging import Print
+from organization_info.utils import get_start_and_end_time
 
 
 load_dotenv()
@@ -253,9 +254,6 @@ class OrganizationPlace(models.Model):
 
     phone:str = models.CharField(max_length=255, null=True, default=None, blank=True)
 
-    opens_at = models.TimeField(default=datetime.time(8, 0, 0), null=True, blank=True)
-    closes_at = models.TimeField(default=datetime.time(18, 0, 0), null=True, blank=True)
-
     photo:str = models.CharField(max_length=255, null=True, default=None, blank=True)
     
     local_timezone:str = models.CharField(max_length=120, default='', blank=True)
@@ -300,6 +298,40 @@ class OrganizationPlace(models.Model):
     
     def __str__(self):
         return f'{self.name} - {self.organization.name}'
+
+
+class DayName(models.IntegerChoices):
+    MONDAY = 0, 'Monday'
+    TUESDAY = 1, 'Tuesday'
+    WEDNESDAY = 2, 'Wednesday'
+    THURSDAY = 3, 'Thursday'
+    FRIDAY = 4, 'Friday'
+    SATURDAY = 5, 'Saturday'
+    SUNDAY = 6, 'Sunday'
+
+
+class DayAvailableForPlace(models.Model):
+
+    place:OrganizationPlace = models.ForeignKey(OrganizationPlace, on_delete=models.CASCADE)
+    
+    week_day:int = models.IntegerField(choices=DayName.choices)
+    exclude:list = models.JSONField(default=[[0, 7], [18, 23]], null=True, blank=True)
+
+    note:str = models.TextField(null=True, blank=True)
+
+    @property
+    def opens_at(self) -> str:
+        return get_start_and_end_time(self.exclude)[0]
+    
+
+    @property
+    def closes_at(self) -> str:
+        return get_start_and_end_time(self.exclude)[1]
+
+    
+    @property
+    def day_name(self) -> str:
+        return DayName(self.week_day).label
 
 
 class OrganizationProfessional(models.Model):

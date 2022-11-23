@@ -20,13 +20,13 @@ from drf_yasg import openapi
 
 # models
 from user_info.models import KumbioUser, KumbioUserRole
-from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService
+from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService, DayAvailableForPlace, DayName
 
 # serializers
 from user_info.serializers import CreateKumbioUserSerializer
 
 from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer
-from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, OrganizationServiceSerializer
+from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, OrganizationServiceSerializer, DayAvailableForPlaceSerializer
 
 # others
 from print_pp.logging import Print
@@ -255,7 +255,6 @@ class OrganizationPlaceAPI(APIView):
 
 
     @swagger_auto_schema(
-        request_body = OrganizationPlaceSerializer(),
         responses={200: OrganizationPlaceSerializer()},
     )
     @check_if_user_is_admin_decorator
@@ -263,14 +262,70 @@ class OrganizationPlaceAPI(APIView):
         """
             Create a new Place
             Solo los administradores pueden crear lugares
+
+            para esto es necesario pasar dos objectos uno de place, para crear el lugar y otro para los días que ese lugar acepta, iniciando con Monday = 0
+
+
+            request body:
+
+                place (object): {
+                    address:str = 'string'
+                    admin_email:str = 'string'
+                    accepts_children:bool = true
+                    accepts_pets:bool = true
+                    additional_info:str = 'string'
+                    after_hours_phone:str = 'string'
+
+                    email:str = 'email@email.com'
+
+                    google_maps_link:str = 'string'
+
+                    important_information:str = 'string'
+
+                    main_office_number:str = 'string'
+
+                    name:str = 'string'
+
+                    phone:str = 'string'
+
+                    photo:str = 'string'
+                    
+                    local_timezone:str = 'string'
+                    
+                    # if this place has a custom price for a service
+                    custom_price:list[dict] = [{
+                        place_id: 1,
+                        price: 25,
+                    }]
+                },
+
+                days = {
+                    week_day:int = 0 # donde Monday es = 0 y Sunday = 6
+                    exclude:list = [[0, 7], [18, 23]], null=True, blank=True)
+                    note:str = "Una nota de prueba"
+                }
+
+
         """
-        request.data['organization'] = request.user.organization.id
-        request.data['created_by'] = request.user.id
+        request.data['place']['organization'] = request.user.organization.id
+        request.data['place']['created_by'] = request.user.id
         
-        place_serializer = OrganizationPlaceSerializer(data=request.data)
+        place_serializer = OrganizationPlaceSerializer(data=request.data['place'])
     
         if place_serializer.is_valid():
             place_serializer.save()
+
+            daysAvailable:list[dict] = request.data['days']
+
+            for day in daysAvailable:
+                day['place'] = place_serializer.data['id']
+
+            days_available_serializer = DayAvailableForPlaceSerializer(data=daysAvailable, many=True)
+            if days_available_serializer.is_valid():
+                days_available_serializer.save()
+            else:
+                return Response(days_available_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
             return Response(place_serializer.data, status.HTTP_201_CREATED)
         
