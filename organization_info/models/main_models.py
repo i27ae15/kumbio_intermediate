@@ -234,11 +234,19 @@ class OrganizationPlace(models.Model):
     # fields
 
     address:str = models.CharField(max_length=255, null=True, default=None, blank=True)
+    admin_email:str = models.CharField(max_length=255, null=True, default=None, blank=True)
     accepts_children:bool = models.BooleanField(default=True)
     accepts_pets:bool = models.BooleanField(default=True)
     additional_info:str = models.CharField(max_length=255, null=True, default=None, blank=True)
+    after_hours_phone:str = models.CharField(max_length=255, null=True, default=None, blank=True)
 
     email:str = models.EmailField(max_length=255, null=True, default=None, blank=True)
+
+    google_maps_link:str = models.CharField(max_length=255, null=True, default=None, blank=True)
+
+    important_information:str = models.TextField(null=True, default=None, blank=True)
+
+    main_office_number:str = models.CharField(max_length=255, null=True, default=None, blank=True)
 
     name:str = models.CharField(max_length=255)
 
