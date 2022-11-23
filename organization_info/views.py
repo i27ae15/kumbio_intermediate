@@ -20,13 +20,13 @@ from drf_yasg import openapi
 
 # models
 from user_info.models import KumbioUser, KumbioUserRole
-from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace, Sector
+from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService
 
 # serializers
 from user_info.serializers import CreateKumbioUserSerializer
 
-from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer
-from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer
+from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer
+from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, OrganizationServiceSerializer
 
 # others
 from print_pp.logging import Print
@@ -396,3 +396,54 @@ class OrganizationSectorView(APIView):
 
         sector_serializer = OrganizationSectorSerializer(sectors, many=True)
         return Response(sector_serializer.data, status=status.HTTP_200_OK)
+
+
+class OrganizationServiceView(APIView):
+    
+        permission_classes = (IsAuthenticated,) 
+        authentication_classes = (TokenAuthentication,) 
+    
+        
+        @swagger_auto_schema(
+            query_serializer=OrganizationServiceQuerySerializer(),
+        )
+        def get(self, request):
+    
+            qp = OrganizationServiceQuerySerializer(data=request.query_params)
+            qp.is_valid(raise_exception=True)
+            query_params = qp.data
+            
+            if query_params['service_id']:
+                services = OrganizationService.objects.filter(id=query_params['service_id'])
+                if not services:
+                    return Response(
+                        {
+                            'error': 'el servicio no existe'
+                        }, status=status.HTTP_404_NOT_FOUND)
+            else:
+                services = OrganizationService.objects.all()
+    
+    
+            service_serializer = OrganizationServiceSerializer(services, many=True)
+            return Response(service_serializer.data, status=status.HTTP_200_OK)
+        
+        @swagger_auto_schema(
+            request_bod=OrganizationServiceSerializer(),
+        )
+        @check_if_user_is_admin_decorator
+        def post(self, request):
+            """
+                Create a new Service
+                Solo los administradores pueden crear servicios
+            """
+            request.data['organization'] = request.user.organization.id
+            request.data['created_by'] = request.user.id
+            
+            service_serializer = OrganizationServiceSerializer(data=request.data)
+        
+            if service_serializer.is_valid():
+                service_serializer.save()
+    
+                return Response(service_serializer.data, status.HTTP_201_CREATED)
+            
+            return Response(service_serializer.errors, status.HTTP_400_BAD_REQUEST)

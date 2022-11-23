@@ -215,6 +215,7 @@ class OrganizationService(models.Model):
                     
         super().save(*args, **kwargs)
     
+    
     def delete(self, *args, **kwargs):
         self.deleted_at = datetime.datetime.utcnow()
         self.deleted_by = kwargs.get('user')
