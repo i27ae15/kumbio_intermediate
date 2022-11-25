@@ -1,7 +1,7 @@
 # python 
 # django
 from django.urls import reverse
-from .models.main_models import Organization, OrganizationPlace, OrganizationService, Sector
+from .models.main_models import Organization, OrganizationPlace, OrganizationService, Sector, OrganizationClient, OrganizationClientType
 
 from rest_framework.test import APITestCase
 
@@ -75,7 +75,7 @@ def create_place(data_to_create_place:dict, organization:Organization, user:Kumb
             address='testing address',
             name='testing name')
 
-    serializer = OrganizationPlaceSerializer(data=data_to_create_place)
+    serializer = OrganizationPlaceSerializer(data=data_to_create_place['place'])
     serializer.is_valid(raise_exception=True)
     serializer.save()
     initial_data = serializer.data
@@ -101,21 +101,38 @@ def create_service(data_to_create_service:dict, organization:Organization, creat
     return initial_data
     
 
+
+def create_client_type(organization:Organization, name='testing client type', description='testing client type description', fields:dict=None) -> OrganizationClientType:
+
+    if not fields:
+        fields = {
+            'allergies': 'Black People',
+            'known_conditions': 'Racist',
+        }
+
+    return OrganizationClientType.objects.create(
+        organization=organization,
+        name=name,
+        description=description,
+        fields=fields,
+        created_by=create_user(organization, username='test_user_client',email='client_test@email.com'))
+
+
 class TestOrganizationCreation(APITestCase):
     
     def test_organization_creation(self):
         organization = create_organization(use_user=True)
-        Print((
-            'organization information',
-            organization.email_templates, 
-            organization.name,
-            organization.description, 
-            organization.phone,
-            organization.owner_email,
-            organization.owner_first_name,
-            organization.owner_last_name,
-            organization.owner_phone,
-        ))
+        # Print((
+        #     'organization information',
+        #     organization.email_templates, 
+        #     organization.name,
+        #     organization.description, 
+        #     organization.phone,
+        #     organization.owner_email,
+        #     organization.owner_first_name,
+        #     organization.owner_last_name,
+        #     organization.owner_phone,
+        # ))
 
 
 class TestPlace(APITestCase):
@@ -126,10 +143,20 @@ class TestPlace(APITestCase):
         self.set_authorization()
         
         self.data_to_create_place = {
-            "organization" : self.organization.id,
-            "address": "la calle de al lado",
-            "name": "Dresden",
-            "created_by": self.user.id
+            "place":{
+                "organization" : self.organization.id,
+                "address": "la calle de al lado",
+                "name": "Dresden",
+                "created_by": self.user.id
+            },
+            "days":[
+                {
+                    "week_day": 0,
+                    "exclude": [[0, 7], [18, 23]],
+                    "note": "Una nota de prueba"
+                }
+            ]
+            
         }
         self.place = create_place(self.data_to_create_place, self.organization, self.user)
         
@@ -152,10 +179,10 @@ class TestPlace(APITestCase):
             del response['datetime_created']
             del response['id']
         except KeyError:
-            self.assertEqual('youre not authorized', '')
+            self.assertEqual('you are not authorized', '')
             
 
-        Print('New place created', response)
+        # Print('New place created', response)
 
         self.assertEqual(response, initial_data)
 
@@ -213,9 +240,25 @@ class TestOrganizationSector(APITestCase):
         # TODO: Check why we have to pass the email as username
         resp = self.client.post(url, {'username':EMAIL, 'password':PASSWORD, 'for_kumbio': True}, format='json')
         
-        Print('Response from auth', resp.json())
+        # Print('Response from auth', resp.json())
     
         self.assertTrue('token' in resp.data)
         token = resp.data['token']
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+
+
+class TestOrganizationClient(APITestCase):
+
+    def setUp(self) -> None:
+        self.organization = create_organization()
+        self.user = create_user(self.organization)
+ 
+
+    def test_create_client_type(self):
+        client_type = create_client_type(self.organization)
+        self.assertTrue(client_type)
+        self.assertEqual(client_type.name, 'testing client type')
+        self.assertEqual(client_type.description, 'testing client type description')
+
+        Print(client_type.fields_available)

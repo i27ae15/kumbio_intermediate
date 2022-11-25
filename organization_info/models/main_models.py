@@ -4,6 +4,8 @@ import datetime
 import requests
 import os
 import sys
+import json
+from types import SimpleNamespace
 
 from dotenv import load_dotenv
 
@@ -399,32 +401,72 @@ class OrganizationProfessional(models.Model):
         return f'{self.id} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
 
 
+class OrganizationClientType(models.Model):
+    
+        organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='organization_client_types')
+        name:str = models.CharField(max_length=100)
+        description:str = models.TextField(blank=True, null=True, default='')
+
+        fields:dict = models.JSONField()
+
+        # Fields is going to be a JSON object where the person is going to be able to save as many fields as the want
+        # this way, we can assure that we can save any kind of information that the client wants to save    
+        # -----------------------------------------------------------
+        # Logs 
+        datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
+        datetime_updated:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+        datetime_deleted:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+    
+        created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='client_type_created_by')
+        updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_updated_by')
+        deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_deleted_by')
+        
+        # -----------------------------------------------------------
+        # properties
+
+        @property
+        def fields_available(self) -> list:
+            return list(self.fields.keys())
+        
+        # -----------------------------------------------------------
+        # methods
+
+        def convert_fields_to_object(self) -> object:
+            return json.loads(self.fields, object_hook=lambda d: SimpleNamespace(**d))
+
+        
+        def save(self, *args, **kwargs):
+
+            if not self.pk and not self.created_by:
+                self.created_by = user_models.KumbioUser.objects.get(pk=kwargs.get('created_by'))
+
+            super().save(*args, **kwargs)
+            
+            
+        def __str__(self) -> str:
+            return f'{self.pk} - {self.name} - {self.organization.name}'
+
+
 class OrganizationClient(models.Model):
     # Foreignkeys
     organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-
+    type:OrganizationClientType = models.ForeignKey(OrganizationClientType, on_delete=models.CASCADE, null=True, blank=True, default=None)
     # -----------------------------------------------------------
     
-    
-    allergies:str = models.TextField()
-
     birth_date:datetime.date = models.DateField()
 
     comments:str = models.TextField()
 
     emergency_contact:str = models.CharField(max_length=255)
-    email:str = models.CharField(max_length=255)
 
     first_name:str = models.CharField(max_length=255)
     last_name:str = models.CharField(max_length=255)
 
     identification:str = models.CharField(max_length=255)
 
-    phone:str = models.CharField(max_length=255)
-    phone2:str = models.CharField(max_length=255)
+    birthday:datetime.date = models.DateField(null=True, blank=True, default=None)
+    age:int = models.IntegerField(null=True, blank=True, default=None)
 
-    known_conditions:str = models.TextField()
-    
     rating:int = models.IntegerField()
     referral_link:str = models.CharField(max_length=255)
 
@@ -438,9 +480,40 @@ class OrganizationClient(models.Model):
 
     # to get the appointment that this client had done, we have to call the calendar api
 
+    @property
+    def full_name(self) -> str:
+        return f'{self.first_name} {self.last_name}'
+    
+
+    @property
+    def dependent(self):
+        return self.organizationclientdependent_set.all()[0]
+
+    
     def __str__(self):
         return f'{self.id} - {self.first_name} {self.last_name} - {self.organization.name}'
     
+
+class OrganizationClientDependent(models.Model):
+
+    # foreignkeys
+    client:OrganizationClient = models.ForeignKey(OrganizationClient, on_delete=models.CASCADE, related_name='client_dependent')
+
+    first_name:str = models.CharField(max_length=100)
+    last_name:str = models.CharField(max_length=100)
+    email:str = models.EmailField()
+    phone:str = models.CharField(max_length=20)
+    phone_2:str = models.CharField(max_length=20, blank=True, null=True)
+
+    same_as_client:bool = models.BooleanField(default=True)
+    
+    # -----------------------------------------------------------
+    # fields
+    birthday:datetime.date = models.DateField
+
+
+
+
 
 class OrganizationPromotion(models.Model):
     organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE)

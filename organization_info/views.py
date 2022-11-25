@@ -299,11 +299,13 @@ class OrganizationPlaceAPI(APIView):
                     }]
                 },
 
-                days = {
-                    week_day:int = 0 # donde Monday es = 0 y Sunday = 6
-                    exclude:list = [[0, 7], [18, 23]], null=True, blank=True)
-                    note:str = "Una nota de prueba"
-                }
+                days = [
+                    {
+                        week_day:int = 0 # donde Monday es = 0 y Sunday = 6
+                        exclude:list = [[0, 7], [18, 23]], null=True, blank=True)
+                        note:str = "Una nota de prueba"
+                    }
+                ]
 
 
         """
@@ -325,7 +327,6 @@ class OrganizationPlaceAPI(APIView):
                 days_available_serializer.save()
             else:
                 return Response(days_available_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
             return Response(place_serializer.data, status.HTTP_201_CREATED)
         
