@@ -20,15 +20,19 @@ from drf_yasg import openapi
 
 # models
 from user_info.models import KumbioUser, KumbioUserRole
-from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService, DayAvailableForPlace, DayName
+from .models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, Sector, 
+OrganizationService, OrganizationClientCreatedBy, DayAvailableForPlace, DayName)
 
 # serializers
 from user_info.serializers import CreateKumbioUserSerializer
 
 from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer
-from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, OrganizationServiceSerializer, DayAvailableForPlaceSerializer
+from .serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
+OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer)
 
 # others
+from authentication_manager.authenticate import KumbioAuthentication
+
 from print_pp.logging import Print
 from dotenv import load_dotenv
 from user_info.info import ADMIN_ROLE_ID, PROFESSIONAL_ROLE_ID
@@ -41,7 +45,7 @@ CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
 
 # Functions
 
-def check_if_user_is_admin_decorator(func):
+def check_if_user_is_admin_decorator(func, *args, **kwargs):
     def wrapper(self, request, *args, **kwargs):
         if request.user.role.id == ADMIN_ROLE_ID:
             return func(self, request, *args, **kwargs)
@@ -306,8 +310,6 @@ class OrganizationPlaceAPI(APIView):
                         note:str = "Una nota de prueba"
                     }
                 ]
-
-
         """
         request.data['place']['organization'] = request.user.organization.id
         request.data['place']['created_by'] = request.user.id
@@ -319,14 +321,15 @@ class OrganizationPlaceAPI(APIView):
 
             daysAvailable:list[dict] = request.data['days']
 
-            for day in daysAvailable:
-                day['place'] = place_serializer.data['id']
+            if daysAvailable:
+                for day in daysAvailable:
+                    day['place'] = place_serializer.data['id']
 
-            days_available_serializer = DayAvailableForPlaceSerializer(data=daysAvailable, many=True)
-            if days_available_serializer.is_valid():
-                days_available_serializer.save()
-            else:
-                return Response(days_available_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                days_available_serializer = DayAvailableForPlaceSerializer(data=daysAvailable, many=True)
+                if days_available_serializer.is_valid():
+                    days_available_serializer.save()
+                else:
+                    return Response(days_available_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
             return Response(place_serializer.data, status.HTTP_201_CREATED)
         
@@ -503,3 +506,31 @@ class OrganizationServiceView(APIView):
                 return Response(service_serializer.data, status.HTTP_201_CREATED)
             
             return Response(service_serializer.errors, status.HTTP_400_BAD_REQUEST)
+
+
+class OrganizationClientView(APIView):
+
+    # this needs authorization from calendar
+    # we need to create an authorization token for the calendar api to be able to access this endpoint
+    permission_classes = (IsAuthenticated,) 
+    authentication_classes = (KumbioAuthentication,)
+
+    @swagger_auto_schema(
+        request_body=OrganizationClientSerializer(),
+    )
+    def post(self, request):
+
+        client_data = request.data['client']
+        client_data['created_by'] = request.user.app
+        
+        Print('client_data', client_data)
+
+        client_serializer = OrganizationClientSerializer(data=client_data)
+        
+        if client_serializer.is_valid():
+            client_serializer.save()
+    
+            return Response(client_serializer.data, status.HTTP_201_CREATED)
+        
+        return Response(client_serializer.errors, status.HTTP_400_BAD_REQUEST)
+

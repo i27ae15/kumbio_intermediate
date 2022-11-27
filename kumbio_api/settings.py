@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'register',
     'organization_info',
     'user_info',
+    'authentication_manager',
     
     # third party apps
     'rest_framework',

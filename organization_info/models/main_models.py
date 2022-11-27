@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from django.db import models
 from django.utils import timezone
 from django.db.models.query import QuerySet
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 # models
 import user_info.models as user_models
@@ -92,9 +93,9 @@ class Organization(models.Model):
 
     # ------------------------------------------------------------------------
     # Logs -------------------------------------------------------------------
-    datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetime_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
-    datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    deleted_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
 
     # Properties -------------------------------------------------------------
@@ -272,9 +273,9 @@ class OrganizationPlace(models.Model):
 
     # -----------------------------------------------------------
     # Logs 
-    datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetime_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
-    datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    deleted_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
     created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='organization_place_created_by')
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='organization_place_updated_by')
@@ -317,7 +318,7 @@ class DayAvailableForPlace(models.Model):
     place:OrganizationPlace = models.ForeignKey(OrganizationPlace, on_delete=models.CASCADE)
     
     week_day:int = models.IntegerField(choices=DayName.choices)
-    exclude:list = models.JSONField(default=[[0, 7], [18, 23]], null=True, blank=True)
+    exclude:list = models.JSONField(default=list, null=True, blank=True)
 
     note:str = models.TextField(null=True, blank=True)
 
@@ -334,6 +335,13 @@ class DayAvailableForPlace(models.Model):
     @property
     def day_name(self) -> str:
         return DayName(self.week_day).label
+
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.exclude:
+            self.exclude = [[0, 7], [18, 23]]
+                    
+        super().save(*args, **kwargs)
 
 
 class OrganizationProfessional(models.Model):
@@ -370,9 +378,9 @@ class OrganizationProfessional(models.Model):
     
     # -----------------------------------------------------------
     # Logs 
-    datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetime_updated:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
-    datetime_deleted:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+    deleted_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
 
     created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='professional_created_by')
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='professional_updated_by')
@@ -413,9 +421,9 @@ class OrganizationClientType(models.Model):
         # this way, we can assure that we can save any kind of information that the client wants to save    
         # -----------------------------------------------------------
         # Logs 
-        datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-        datetime_updated:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
-        datetime_deleted:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+        created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+        updated_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+        deleted_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
     
         created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='client_type_created_by')
         updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_updated_by')
@@ -447,34 +455,41 @@ class OrganizationClientType(models.Model):
             return f'{self.pk} - {self.name} - {self.organization.name}'
 
 
+class OrganizationClientCreatedBy(models.IntegerChoices):
+    CALENDAR = 1
+    ORDERS = 2
+    KUMBIO = 3
+    COMMUNICATIONS = 4
+    
+
 class OrganizationClient(models.Model):
     # Foreignkeys
     organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     type:OrganizationClientType = models.ForeignKey(OrganizationClientType, on_delete=models.CASCADE, null=True, blank=True, default=None)
     # -----------------------------------------------------------
     
-    birth_date:datetime.date = models.DateField()
+    birth_date:datetime.date = models.DateField(null=True, blank=True, default=None)
 
-    comments:str = models.TextField()
+    comments:str = models.TextField(null=True, blank=True, default=None)
 
-    emergency_contact:str = models.CharField(max_length=255)
+    emergency_contact:str = models.CharField(max_length=255, null=True, blank=True, default=None)
 
     first_name:str = models.CharField(max_length=255)
     last_name:str = models.CharField(max_length=255)
 
-    identification:str = models.CharField(max_length=255)
+    identification:str = models.CharField(max_length=255, null=True, blank=True, default=None)
 
     birthday:datetime.date = models.DateField(null=True, blank=True, default=None)
     age:int = models.IntegerField(null=True, blank=True, default=None)
 
-    rating:int = models.IntegerField()
+    rating:int = models.IntegerField(null=True, blank=True, default=None, validators=[MinValueValidator(10), MaxValueValidator(100)])
     referral_link:str = models.CharField(max_length=255)
 
-    datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetime_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
-    datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    deleted_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
-    created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='organization_client_created_by')
+    created_by:int = models.IntegerField(choices=OrganizationClientCreatedBy.choices, default=OrganizationClientCreatedBy.CALENDAR)
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_client_updated_by')
     deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_client_deleted_by')
 
@@ -490,8 +505,15 @@ class OrganizationClient(models.Model):
         return self.organizationclientdependent_set.all()[0]
 
     
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.referral_link = secrets.token_urlsafe(16)
+
+        super().save(*args, **kwargs)
+
+    
     def __str__(self):
-        return f'{self.id} - {self.first_name} {self.last_name} - {self.organization.name}'
+        return f'{self.id} - {self.full_name} - {self.organization.name}'
     
 
 class OrganizationClientDependent(models.Model):
@@ -503,16 +525,11 @@ class OrganizationClientDependent(models.Model):
     last_name:str = models.CharField(max_length=100)
     email:str = models.EmailField()
     phone:str = models.CharField(max_length=20)
-    phone_2:str = models.CharField(max_length=20, blank=True, null=True)
+    phone_2:str = models.CharField(max_length=20, blank=True, null=True, default=None)
 
     same_as_client:bool = models.BooleanField(default=True)
     
     # -----------------------------------------------------------
-    # fields
-    birthday:datetime.date = models.DateField
-
-
-
 
 
 class OrganizationPromotion(models.Model):
@@ -528,9 +545,9 @@ class OrganizationPromotion(models.Model):
     
     photo = models.ImageField(upload_to=f'{organization.name}/promotions/photos/', null=True, blank=True)
     
-    datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetime_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
-    datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    deleted_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
     created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='organization_promotion_created_by')
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_promotion_updated_by')
@@ -558,9 +575,9 @@ class OrganizationCampaigns(models.Model):
     
     photo = models.ImageField(upload_to=f'{organization.name}/promotions/photos/', null=True, blank=True)
     
-    datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetime_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
-    datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    deleted_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
     created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='organization_campaign_created_by')
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_campaign_updated_by')
@@ -584,9 +601,9 @@ class OrganizationProduct(models.Model):
     is_available:bool = models.BooleanField(default=True)
     amount:int = models.IntegerField()
     
-    datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetime_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
-    datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    deleted_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
     created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='organization_product_created_by')
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_product_updated_by')
@@ -604,9 +621,9 @@ class Rating(models.Model):
     rating:int = models.IntegerField()
     comment:str = models.TextField()
     
-    datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetime_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
-    datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    deleted_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
     deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='rating_deleted_by')
 
@@ -621,8 +638,8 @@ class ProfessionalSpecialty(models.Model):
     
     name:str = models.CharField(max_length=255)
 
-    datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetime_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
     created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='professional_specialty_created_by')
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='professional_specialty_updated_by')
@@ -639,9 +656,9 @@ class FrequentlyAskedQuestion(models.Model):
     question:str = models.TextField()
     answer:str = models.TextField()
     
-    datetime_created:datetime.datetime = models.DateTimeField(default=timezone.now)
-    datetime_updated:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
-    datetime_deleted:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
+    deleted_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
     created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='faq_created_by')
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='faq_updated_by')
