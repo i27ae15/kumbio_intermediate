@@ -80,10 +80,10 @@ class OrganizationView(APIView):
         if not organization_id:
             return Response({"message": "organization_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            organization_id = int(organization_id)
-        except ValueError:
-            return Response({"message": "organization_id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+        # try:
+        #     organization_id = int(organization_id)
+        # except ValueError:
+        #     return Response({"message": "organization_id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
 
 
         organization = Organization.objects.get(pk=organization_id)
