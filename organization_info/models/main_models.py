@@ -491,7 +491,6 @@ class OrganizationProfessional(models.Model):
         return f'{self.id} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
 
 
-
 class OrganizationClient(models.Model):
     # Foreignkeys
     organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
@@ -545,6 +544,8 @@ class OrganizationClient(models.Model):
     deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_client_deleted_by')
 
     # to get the appointment that this client had done, we have to call the calendar api
+    
+    # TODO: Create referral_by field
 
     @property
     def full_name(self) -> str:
@@ -580,7 +581,6 @@ class OrganizationClientDependent(models.Model):
 
     same_as_client:bool = models.BooleanField(default=True)
     
-    # -----------------------------------------------------------
 
 
 class OrganizationPromotion(models.Model):

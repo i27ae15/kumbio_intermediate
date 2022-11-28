@@ -22,12 +22,13 @@ from drf_yasg import openapi
 # models
 from user_info.models import KumbioUser, KumbioUserRole
 from .models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, Sector, 
-OrganizationService, OrganizationClientCreatedBy, DayAvailableForPlace, DayName)
+OrganizationService, OrganizationClient)
 
 # serializers
 from user_info.serializers import CreateKumbioUserSerializer
 
-from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer
+from .query_serializers import (PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer, 
+OrganizationServiceQuerySerializer, OrganizationClientQuerySerializer)
 from .serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
 OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer)
 
@@ -515,6 +516,38 @@ class OrganizationClientView(APIView):
     # we need to create an authorization token for the calendar api to be able to access this endpoint
     permission_classes = (IsAuthenticated,) 
     authentication_classes = (KumbioAuthentication,)
+    
+    @swagger_auto_schema(
+        query_serializer=OrganizationClientQuerySerializer(),
+    )
+    def get(self, request):
+        """
+            Get all clients
+        """
+        
+        query_serializer = OrganizationClientQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        query_params = query_serializer.validated_data
+        
+        if query_params['client_id']:
+            clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(id=query_params['client_id'])
+            if not clients:
+                raise exceptions.NotFound(_('el cliente no existe'))
+
+        else: 
+            clients:QuerySet[OrganizationClient] = OrganizationClient.objects.all()
+            
+            clients = clients.filter(age__gte=query_params['min_age'], 
+                           age__lte=query_params['max_age'], 
+                           rating__gte=query_params['min_rating'], 
+                           rating__lte=query_params['max_rating'])
+            
+            if query_params['birth_date']:
+                clients = clients.filter(birth_date=query_params['birth_date'])
+            
+        client_serializer = OrganizationClientSerializer(clients, many=True)
+        return Response(client_serializer.data, status=status.HTTP_200_OK)
+
 
     @swagger_auto_schema(
         request_body=OrganizationClientSerializer(),
