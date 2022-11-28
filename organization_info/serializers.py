@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from .models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, OrganizationService, Sector, DayAvailableForPlace, OrganizationClient)
+from .models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, 
+OrganizationService, Sector, DayAvailableForPlace, OrganizationClient, OrganizationClientDependent,
+OrganizationClientType)
 from user_info.serializers import KumbioUserSerializer
 
 
@@ -53,9 +55,27 @@ class DayAvailableForPlaceSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class OrganizationClientDependentFromSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OrganizationClientDependent
+        fields = '__all__'
+
+
+class OrganizationClientTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OrganizationClientType
+        fields = '__all__'
+
+
 class OrganizationClientSerializer(serializers.ModelSerializer):
+
+    client_dependent = OrganizationClientDependentFromSerializer(many=True, read_only=True)
+    client_type = OrganizationClientTypeSerializer(many=True, read_only=True)
 
     class Meta:
         model = OrganizationClient
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at', 'deleted_at', 'deleted_by', 'updated_by', 'referral_link')
+

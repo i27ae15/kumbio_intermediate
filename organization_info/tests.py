@@ -7,10 +7,14 @@ from rest_framework.test import APITestCase
 
 # models
 from user_info.models import KumbioUser, KumbioUserRole
+from .models.default_values import DEFAULT_CLIENT_TYPES
 
 # serializers 
 from .serializers import OrganizationPlaceSerializer, OrganizationServiceSerializer, OrganizationSectorSerializer
 from authentication_manager.models import KumbioToken, AppToken
+
+# utils
+from organization_info.utils.enums import FieldType
 
 from print_pp.logging import Print
 
@@ -118,29 +122,32 @@ def create_service(data_to_create_service:dict, organization:Organization, creat
     return initial_data
     
 
-def create_client_type(organization:Organization, name='testing client type', description='testing client type description', fields:dict=None) -> OrganizationClientType:
+def create_client_type(organization:Organization, name='testing client type', description='testing client type description', fields:list[tuple[str, FieldType]]=None) -> OrganizationClientType:
 
     if not fields:
-        fields = {
-            'allergies': 'Black People',
-            'known_conditions': 'Racist',
-        }
+        fields = [('testing field', FieldType.TEXT.value), ('testing field 2', FieldType.NUMBER.value)]
 
     return OrganizationClientType.objects.create(
         organization=organization,
         name=name,
         description=description,
         fields=fields,
-        created_by=create_user(organization, username='test_user_client',email='client_test@email.com'))
+        created_by=create_user(organization, username='test_user_client', email='client_test@email.com'))
 
 
 def create_kumbio_token(app=AppToken):
     return KumbioToken.objects.create(app=app)
 
+
 class TestOrganizationCreation(APITestCase):
     
     def test_organization_creation(self):
-        create_organization(use_user=True)
+        org = create_organization(use_user=True)
+        self.assertEqual(org.name, 'test organization')
+
+        # we got to check if the default client types were created for this organization
+        
+        self.assertEqual(org.client_types.count(), DEFAULT_CLIENT_TYPES.__len__())
     
 
 class TestPlace(APITestCase):
@@ -269,8 +276,6 @@ class TestOrganizationClient(APITestCase):
         self.assertEqual(client_type.name, 'testing client type')
         self.assertEqual(client_type.description, 'testing client type description')
 
-        Print(client_type.fields_available)
-
     
     def test_create_client(self):
         
@@ -306,7 +311,9 @@ class TestOrganizationClient(APITestCase):
         kumbio_token = create_kumbio_token(app=AppToken.CALENDAR).token
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + kumbio_token)
 
-       
-        
         res = self.client.post(url, data_to_create_client, format='json')
-        Print(res.json())
+
+        new_org_client:OrganizationClient = OrganizationClient.objects.get(pk=res.json()['id'])
+
+        self.assertEqual(new_org_client.first_name, client_data['first_name'])
+        self.assertEqual(new_org_client.dependent.first_name, dependent_from['first_name'])

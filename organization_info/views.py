@@ -6,9 +6,10 @@ import os
 from django.utils import timezone
 from django.db.models import Q
 from django.db.models.query import QuerySet
+from django.utils.translation import gettext_lazy as _
 
 # rest-framework
-from rest_framework import status
+from rest_framework import status, exceptions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
@@ -28,7 +29,7 @@ from user_info.serializers import CreateKumbioUserSerializer
 
 from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer
 from .serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
-OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer)
+OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer)
 
 # others
 from authentication_manager.authenticate import KumbioAuthentication
@@ -519,17 +520,38 @@ class OrganizationClientView(APIView):
         request_body=OrganizationClientSerializer(),
     )
     def post(self, request):
-
-        client_data = request.data['client']
-        client_data['created_by'] = request.user.app
         
-        Print('client_data', client_data)
+        # getting the data from the request that comes "separated"
+        client_data:dict = request.data['client']
+        dependent_from:dict = request.data['dependent_from']
+        client_data['created_by'] = request.user.app
 
         client_serializer = OrganizationClientSerializer(data=client_data)
         
         if client_serializer.is_valid():
             client_serializer.save()
-    
+            dependent_from['client'] = client_serializer.data['id']
+
+            if dependent_from.get('same_as_client'):
+                new_data = {
+                    'first_name': client_data['first_name'],
+                    'last_name': client_data['last_name'],
+                    'email': client_data['email'],
+                    'phone': client_data['phone'],
+                    'phone2': client_data.get('phone2', None),
+                }
+                dependent_from.update(new_data)
+                
+            else:
+                dependent_from['same_as_client'] = False
+
+            dependent_from_serializer = OrganizationClientDependentFromSerializer(data=dependent_from)
+            
+            if dependent_from_serializer.is_valid():
+                dependent_from_serializer.save()
+            else:
+                return Response(dependent_from_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
             return Response(client_serializer.data, status.HTTP_201_CREATED)
         
         return Response(client_serializer.errors, status.HTTP_400_BAD_REQUEST)

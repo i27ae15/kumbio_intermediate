@@ -16,18 +16,96 @@ from django.db.models.query import QuerySet
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 # models
+from .default_values import DEFAULT_CLIENT_TYPES
 import user_info.models as user_models
+
 
 # utils
 from utils.integer_choices import RatingMadeBy
+from organization_info.utils.time import get_start_and_end_time
+from organization_info.utils.enums import FieldType, DayName, OrganizationClientCreatedBy
 
 from print_pp.logging import Print
-from organization_info.utils import get_start_and_end_time
 
 
 load_dotenv()
 
 KUMBIO_COMMUNICATIONS_ENDPOINT = os.getenv('KUMBIO_COMMUNICATIONS_ENDPOINT')
+SELF_CALENDAR_USER = os.getenv('SELF_CALENDAR_USER')
+
+class OrganizationClientType(models.Model):
+
+        """
+            When a new organization is created, it will be a list of default client types that will be created
+            along with the organization. This way, with each organization with its own client types, it will be
+            possible for the organization to create new client types, edit and delete them.
+        """
+    
+        organization:'Organization' = models.ForeignKey('Organization', on_delete=models.CASCADE, related_name='organization_client_type')
+        name:str = models.CharField(max_length=100)
+        description:str = models.TextField(blank=True, null=True, default='')
+
+        fields:list = models.JSONField(default=list)
+
+        """
+            fields is going to be a JSON object where the person is going to be able to save as many fields 
+            as they want; this way we can assure that we can save any kind of information that the client
+            wants to save
+
+            the way this information is saved, is with a list of tuples, where the first element is the name
+            and the second element is the type of the field
+
+            example:
+
+            fields = [('name', FieldType.TEXT), ('age', FieldType.NUMBER)]
+
+            where, for the moment, there are just two types of fields: text and number
+
+            we can also place a third element in the tuple, which can be a validator for the field
+            where some settings can be set, like the minimum and maximum length of the text, or the minimum
+            and maximum value of the number. Also to check more specific things, like if the number is
+            positive or negative, or if the text is a valid email, or if the number is a valid phone number.
+        """
+        # -----------------------------------------------------------
+        # Logs 
+        created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+        updated_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+        deleted_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+    
+        created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_created_by')
+        updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_updated_by')
+        deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_deleted_by')
+        
+        # -----------------------------------------------------------
+        # properties
+
+        @property
+        def fields_available(self) -> list:
+            return list(self.fields.keys())
+        
+        # -----------------------------------------------------------
+        # methods
+
+        def convert_fields_to_object(self) -> object:
+            return json.loads(self.fields, object_hook=lambda d: SimpleNamespace(**d))
+
+        
+        def save(self, *args, **kwargs):
+
+            if not self.pk and not self.created_by:
+                try: self.created_by = user_models.KumbioUser.objects.get(pk=kwargs.get('created_by'))
+                except user_models.KumbioUser.DoesNotExist: pass 
+                # this pass is here because if the user is not specified, it will mean
+                # that the user is the one that is creating the organization, and that
+                # user will be the one that is creating the client type
+                
+
+            super().save(*args, **kwargs)
+            
+            
+        def __str__(self) -> str:
+            return f'{self.pk} - {self.name} - {self.organization.name}'
+
 
 class Sector(models.Model):
     name:str = models.CharField(max_length=100)
@@ -103,13 +181,20 @@ class Organization(models.Model):
     def owner(self) -> user_models.KumbioUser:
         return user_models.KumbioUser.objects.get(email=self.owner_email)
     
+
     @property
     def services(self) -> QuerySet:
         return self.organizationservice.all()       
     
+
     @property
     def professionals(self) -> QuerySet['OrganizationProfessional']:
         return self.organizationprofessional.all()
+
+    
+    @property
+    def client_types(self) -> QuerySet['OrganizationClientType']:
+        return self.organization_client_type.all()
     
     
     # TODO: this must come from calendar api
@@ -147,6 +232,15 @@ class Organization(models.Model):
             self.invitation_link = secrets.token_urlsafe(21)
             self.link_dashboard = secrets.token_urlsafe(21)
             self.id = secrets.token_urlsafe(21)
+
+            # we need to create the default client_types for this organization
+            for client in DEFAULT_CLIENT_TYPES:
+                OrganizationClientType.objects.create(
+                    organization=self, 
+                    name=client['name'], 
+                    description=client['description'], 
+                    fields=client['fields'],
+                    created_by=None)
             
             if not 'test' in sys.argv:
                 res = requests.post(
@@ -157,8 +251,6 @@ class Organization(models.Model):
                         'created_by': 0, # id 0 is for owner of the organization
                         'use_default_templates': True
                     })
-                
-                Print('res', res.json())
             
                 for template_id in res.json()['template_ids']:
                     self.email_templates.append(template_id)
@@ -303,16 +395,6 @@ class OrganizationPlace(models.Model):
         return f'{self.name} - {self.organization.name}'
 
 
-class DayName(models.IntegerChoices):
-    MONDAY = 0, 'Monday'
-    TUESDAY = 1, 'Tuesday'
-    WEDNESDAY = 2, 'Wednesday'
-    THURSDAY = 3, 'Thursday'
-    FRIDAY = 4, 'Friday'
-    SATURDAY = 5, 'Saturday'
-    SUNDAY = 6, 'Sunday'
-
-
 class DayAvailableForPlace(models.Model):
 
     place:OrganizationPlace = models.ForeignKey(OrganizationPlace, on_delete=models.CASCADE)
@@ -409,64 +491,33 @@ class OrganizationProfessional(models.Model):
         return f'{self.id} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
 
 
-class OrganizationClientType(models.Model):
-    
-        organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='organization_client_types')
-        name:str = models.CharField(max_length=100)
-        description:str = models.TextField(blank=True, null=True, default='')
-
-        fields:dict = models.JSONField()
-
-        # Fields is going to be a JSON object where the person is going to be able to save as many fields as the want
-        # this way, we can assure that we can save any kind of information that the client wants to save    
-        # -----------------------------------------------------------
-        # Logs 
-        created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
-        updated_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
-        deleted_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
-    
-        created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='client_type_created_by')
-        updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_updated_by')
-        deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_deleted_by')
-        
-        # -----------------------------------------------------------
-        # properties
-
-        @property
-        def fields_available(self) -> list:
-            return list(self.fields.keys())
-        
-        # -----------------------------------------------------------
-        # methods
-
-        def convert_fields_to_object(self) -> object:
-            return json.loads(self.fields, object_hook=lambda d: SimpleNamespace(**d))
-
-        
-        def save(self, *args, **kwargs):
-
-            if not self.pk and not self.created_by:
-                self.created_by = user_models.KumbioUser.objects.get(pk=kwargs.get('created_by'))
-
-            super().save(*args, **kwargs)
-            
-            
-        def __str__(self) -> str:
-            return f'{self.pk} - {self.name} - {self.organization.name}'
-
-
-class OrganizationClientCreatedBy(models.IntegerChoices):
-    CALENDAR = 1
-    ORDERS = 2
-    KUMBIO = 3
-    COMMUNICATIONS = 4
-    
 
 class OrganizationClient(models.Model):
     # Foreignkeys
     organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     type:OrganizationClientType = models.ForeignKey(OrganizationClientType, on_delete=models.CASCADE, null=True, blank=True, default=None)
     # -----------------------------------------------------------
+
+    extra_fields:list = models.JSONField(default=list)
+
+    """
+        extra_fields is going to be a JSON coming from the type of client that was selected when creating
+        the client. Making it possible to save any kind of information that the organization wants to save
+
+        the way this information is saved, is with a list of tuples, where the first element is the name of the field
+        and the second element is the type of the field, and the third element if the value of the field
+
+        example:
+
+        fields = [('pets_first_name', FieldType.TEXT, 'Ricardo'), ('pets_last_name', FieldType.TEXT, 'El Pollo fantástico')]
+
+        where, for the moment, there are just two types of fields: text and number
+
+        we can also place a fourth element in the tuple, which can be a validator for the field
+        where some settings can be set, like the minimum and maximum length of the text, or the minimum
+        and maximum value of the number. Also to check more specific things, like if the number is
+        positive or negative, or if the text is a valid email, or if the number is a valid phone number.
+    """
     
     birth_date:datetime.date = models.DateField(null=True, blank=True, default=None)
 
@@ -501,8 +552,8 @@ class OrganizationClient(models.Model):
     
 
     @property
-    def dependent(self):
-        return self.organizationclientdependent_set.all()[0]
+    def dependent(self) -> 'OrganizationClientDependent':
+        return self.client_dependent.all()[0]
 
     
     def save(self, *args, **kwargs):
