@@ -530,7 +530,7 @@ class OrganizationClientView(APIView):
         
         if client_serializer.is_valid():
             client_serializer.save()
-            dependent_from['client'] = client_serializer.data['id']
+            dependent_from['client'] = client_serializer.data['id'] 
 
             if dependent_from.get('same_as_client'):
                 new_data = {
@@ -544,7 +544,7 @@ class OrganizationClientView(APIView):
                 
             else:
                 dependent_from['same_as_client'] = False
-
+            
             dependent_from_serializer = OrganizationClientDependentFromSerializer(data=dependent_from)
             
             if dependent_from_serializer.is_valid():

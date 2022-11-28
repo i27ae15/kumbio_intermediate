@@ -296,6 +296,8 @@ class TestOrganizationClient(APITestCase):
             'type': client_type.pk, # type must come from the organization sector type
             'first_name': 'child',
             'last_name': 'child',
+            'email': 'client@email.com',
+            'phone': 'client phone',
         }
 
         data_to_create_client = {
@@ -313,7 +315,16 @@ class TestOrganizationClient(APITestCase):
 
         res = self.client.post(url, data_to_create_client, format='json')
 
-        new_org_client:OrganizationClient = OrganizationClient.objects.get(pk=res.json()['id'])
+        first_org_client:OrganizationClient = OrganizationClient.objects.get(pk=res.json()['id'])
 
-        self.assertEqual(new_org_client.first_name, client_data['first_name'])
-        self.assertEqual(new_org_client.dependent.first_name, dependent_from['first_name'])
+        self.assertEqual(first_org_client.first_name, client_data['first_name'])
+        self.assertEqual(first_org_client.dependent.first_name, dependent_from['first_name'])
+        
+        data_to_create_client['dependent_from']['same_as_client'] = True
+        res = self.client.post(url, data_to_create_client, format='json')
+        
+        second_org_client:OrganizationClient = OrganizationClient.objects.get(pk=res.json()['id'])
+        
+        self.assertEqual(second_org_client.first_name, client_data['first_name'])
+        self.assertEqual(second_org_client.dependent.first_name, client_data['first_name'])
+        
