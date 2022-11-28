@@ -19,6 +19,7 @@ import user_info.models as user_models
 from utils.integer_choices import RatingMadeBy
 
 from print_pp.logging import Print
+from organization_info.utils import get_start_and_end_time
 
 
 load_dotenv()
@@ -215,6 +216,7 @@ class OrganizationService(models.Model):
                     
         super().save(*args, **kwargs)
     
+    
     def delete(self, *args, **kwargs):
         self.deleted_at = datetime.datetime.utcnow()
         self.deleted_by = kwargs.get('user')
@@ -234,18 +236,23 @@ class OrganizationPlace(models.Model):
     # fields
 
     address:str = models.CharField(max_length=255, null=True, default=None, blank=True)
+    admin_email:str = models.CharField(max_length=255, null=True, default=None, blank=True)
     accepts_children:bool = models.BooleanField(default=True)
     accepts_pets:bool = models.BooleanField(default=True)
     additional_info:str = models.CharField(max_length=255, null=True, default=None, blank=True)
+    after_hours_phone:str = models.CharField(max_length=255, null=True, default=None, blank=True)
 
     email:str = models.EmailField(max_length=255, null=True, default=None, blank=True)
+
+    google_maps_link:str = models.CharField(max_length=255, null=True, default=None, blank=True)
+
+    important_information:str = models.TextField(null=True, default=None, blank=True)
+
+    main_office_number:str = models.CharField(max_length=255, null=True, default=None, blank=True)
 
     name:str = models.CharField(max_length=255)
 
     phone:str = models.CharField(max_length=255, null=True, default=None, blank=True)
-
-    opens_at = models.TimeField(default=datetime.time(8, 0, 0), null=True, blank=True)
-    closes_at = models.TimeField(default=datetime.time(18, 0, 0), null=True, blank=True)
 
     photo:str = models.CharField(max_length=255, null=True, default=None, blank=True)
     
@@ -291,6 +298,40 @@ class OrganizationPlace(models.Model):
     
     def __str__(self):
         return f'{self.name} - {self.organization.name}'
+
+
+class DayName(models.IntegerChoices):
+    MONDAY = 0, 'Monday'
+    TUESDAY = 1, 'Tuesday'
+    WEDNESDAY = 2, 'Wednesday'
+    THURSDAY = 3, 'Thursday'
+    FRIDAY = 4, 'Friday'
+    SATURDAY = 5, 'Saturday'
+    SUNDAY = 6, 'Sunday'
+
+
+class DayAvailableForPlace(models.Model):
+
+    place:OrganizationPlace = models.ForeignKey(OrganizationPlace, on_delete=models.CASCADE)
+    
+    week_day:int = models.IntegerField(choices=DayName.choices)
+    exclude:list = models.JSONField(default=[[0, 7], [18, 23]], null=True, blank=True)
+
+    note:str = models.TextField(null=True, blank=True)
+
+    @property
+    def opens_at(self) -> str:
+        return get_start_and_end_time(self.exclude)[0]
+    
+
+    @property
+    def closes_at(self) -> str:
+        return get_start_and_end_time(self.exclude)[1]
+
+    
+    @property
+    def day_name(self) -> str:
+        return DayName(self.week_day).label
 
 
 class OrganizationProfessional(models.Model):

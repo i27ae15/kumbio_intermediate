@@ -20,14 +20,13 @@ from drf_yasg import openapi
 
 # models
 from user_info.models import KumbioUser, KumbioUserRole
-from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace, Sector
+from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService, DayAvailableForPlace, DayName
 
 # serializers
 from user_info.serializers import CreateKumbioUserSerializer
 
-
-from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer
-from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer
+from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer
+from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, OrganizationServiceSerializer, DayAvailableForPlaceSerializer
 
 # others
 from print_pp.logging import Print
@@ -256,22 +255,76 @@ class OrganizationPlaceAPI(APIView):
 
 
     @swagger_auto_schema(
-        request_body = OrganizationPlaceSerializer(),
         responses={200: OrganizationPlaceSerializer()},
     )
-    @check_if_user_is_admin_decorator
     def post(self, request):
         """
             Create a new Place
             Solo los administradores pueden crear lugares
+
+            para esto es necesario pasar dos objectos uno de place, para crear el lugar y otro para los días que ese lugar acepta, iniciando con Monday = 0
+
+
+            request body:
+
+                place (object): {
+                    address:str = 'string'
+                    admin_email:str = 'string'
+                    accepts_children:bool = true
+                    accepts_pets:bool = true
+                    additional_info:str = 'string'
+                    after_hours_phone:str = 'string'
+
+                    email:str = 'email@email.com'
+
+                    google_maps_link:str = 'string'
+
+                    important_information:str = 'string'
+
+                    main_office_number:str = 'string'
+
+                    name:str = 'string'
+
+                    phone:str = 'string'
+
+                    photo:str = 'string'
+                    
+                    local_timezone:str = 'string'
+                    
+                    # if this place has a custom price for a service
+                    custom_price:list[dict] = [{
+                        place_id: 1,
+                        price: 25,
+                    }]
+                },
+
+                days = {
+                    week_day:int = 0 # donde Monday es = 0 y Sunday = 6
+                    exclude:list = [[0, 7], [18, 23]], null=True, blank=True)
+                    note:str = "Una nota de prueba"
+                }
+
+
         """
-        request.data['organization'] = request.user.organization.id
-        request.data['created_by'] = request.user.id
+        request.data['place']['organization'] = request.user.organization.id
+        request.data['place']['created_by'] = request.user.id
         
-        place_serializer = OrganizationPlaceSerializer(data=request.data)
+        place_serializer = OrganizationPlaceSerializer(data=request.data['place'])
     
         if place_serializer.is_valid():
             place_serializer.save()
+
+            daysAvailable:list[dict] = request.data.get('days', [])
+            for day in daysAvailable:
+                day['place'] = place_serializer.data['id']
+            
+            if daysAvailable:
+                days_available_serializer = DayAvailableForPlaceSerializer(data=daysAvailable, many=True)
+                if days_available_serializer.is_valid():
+                    days_available_serializer.save()
+                else:
+                    return Response(days_available_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
             return Response(place_serializer.data, status.HTTP_201_CREATED)
         
@@ -397,3 +450,53 @@ class OrganizationSectorView(APIView):
 
         sector_serializer = OrganizationSectorSerializer(sectors, many=True)
         return Response(sector_serializer.data, status=status.HTTP_200_OK)
+
+
+class OrganizationServiceView(APIView):
+    
+        permission_classes = (IsAuthenticated,) 
+        authentication_classes = (TokenAuthentication,) 
+    
+        
+        @swagger_auto_schema(
+            query_serializer=OrganizationServiceQuerySerializer(),
+        )
+        def get(self, request):
+    
+            qp = OrganizationServiceQuerySerializer(data=request.query_params)
+            qp.is_valid(raise_exception=True)
+            query_params = qp.data
+            
+            if query_params['service_id']:
+                services = OrganizationService.objects.filter(id=query_params['service_id'])
+                if not services:
+                    return Response(
+                        {
+                            'error': 'el servicio no existe'
+                        }, status=status.HTTP_404_NOT_FOUND)
+            else:
+                services = OrganizationService.objects.all()
+    
+    
+            service_serializer = OrganizationServiceSerializer(services, many=True)
+            return Response(service_serializer.data, status=status.HTTP_200_OK)
+        
+        @swagger_auto_schema(
+            request_body=OrganizationServiceSerializer(),
+        )
+        def post(self, request):
+            """
+                Create a new Service
+                Solo los administradores pueden crear servicios
+            """
+            request.data['organization'] = request.user.organization.id
+            request.data['created_by'] = request.user.id
+            
+            service_serializer = OrganizationServiceSerializer(data=request.data)
+        
+            if service_serializer.is_valid():
+                service_serializer.save()
+    
+                return Response(service_serializer.data, status.HTTP_201_CREATED)
+            
+            return Response(service_serializer.errors, status.HTTP_400_BAD_REQUEST)

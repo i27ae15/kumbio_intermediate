@@ -17,3 +17,9 @@ class OrganizationSectorQuerySerializer(serializers.Serializer):
         
     sector_id = serializers.IntegerField(default=None, allow_null=True, help_text="Id del sector que se quiere obtener \
                                         si se deja en blanco se obtienen todos los sectores")
+
+
+class OrganizationServiceQuerySerializer(serializers.Serializer):
+        
+    service_id = serializers.IntegerField(default=None, allow_null=True, help_text="Id del servicio que se quiere obtener \
+                                        si se deja en blanco se obtienen todos los servicios")

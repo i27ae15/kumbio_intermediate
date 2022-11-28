@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace, OrganizationService, Sector
+from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace, OrganizationService, Sector, DayAvailableForPlace
 from user_info.serializers import KumbioUserSerializer
 
 
@@ -43,4 +43,11 @@ class OrganizationSectorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Sector
+        fields = '__all__'
+
+
+class DayAvailableForPlaceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = DayAvailableForPlace
         fields = '__all__'
