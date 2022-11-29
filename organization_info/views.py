@@ -540,7 +540,7 @@ class OrganizationClientView(APIView):
             clients = clients.filter(age__gte=query_params['min_age'], 
                            age__lte=query_params['max_age'], 
                            rating__gte=query_params['min_rating'], 
-                           rating__lte=query_params['max_rating'])
+                           rating__lte=query_params['max_rating']) 
             
             if query_params['birth_date']:
                 clients = clients.filter(birth_date=query_params['birth_date'])

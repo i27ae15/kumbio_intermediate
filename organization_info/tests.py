@@ -1,7 +1,8 @@
 # python 
 # django
 from django.urls import reverse
-from .models.main_models import Organization, OrganizationPlace, OrganizationService, Sector, OrganizationClient, OrganizationClientType
+from .models.main_models import (Organization, OrganizationPlace, OrganizationService, Sector, OrganizationClient, 
+                                 OrganizationClientType, OrganizationProfessional)
 
 from rest_framework.test import APITestCase
 
@@ -137,6 +138,16 @@ def create_client_type(organization:Organization, name='testing client type', de
 
 def create_kumbio_token(app=AppToken):
     return KumbioToken.objects.create(app=app)
+
+
+def create_professional(organization:Organization, user:KumbioUser=None, name='test professional'):
+    if not user: 
+        user =  create_user(organization, username='test_professional', email='anotheremail@gmail.com')
+    
+    return OrganizationProfessional.objects.create(
+        organization=organization,
+        kumbio_user=user,
+        created_by=user)
 
 
 class TestOrganizationCreation(APITestCase):
@@ -328,3 +339,19 @@ class TestOrganizationClient(APITestCase):
         self.assertEqual(second_org_client.first_name, client_data['first_name'])
         self.assertEqual(second_org_client.dependent.first_name, client_data['first_name'])
         
+
+class TestOrganizationProfesional(APITestCase):
+
+    def setUp(self) -> None:
+        self.organization = create_organization()
+        self.user = create_user(self.organization)
+        self.sector = create_organization_sector()
+        self.professional = create_professional(self.organization)
+        
+    
+    def test_create_professional(self):
+        url = reverse('organization_info:professional')
+
+        # creating the data for the client
+
+        pass

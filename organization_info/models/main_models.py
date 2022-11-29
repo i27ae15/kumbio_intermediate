@@ -404,6 +404,7 @@ class DayAvailableForPlace(models.Model):
 
     note:str = models.TextField(null=True, blank=True)
 
+
     @property
     def opens_at(self) -> str:
         return get_start_and_end_time(self.exclude)[0]
@@ -489,6 +490,47 @@ class OrganizationProfessional(models.Model):
         
     def __str__(self) -> str:
         return f'{self.id} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
+
+
+class DayAvailableForProfessional(models.Model):
+    
+    day:OrganizationProfessional = models.ForeignKey(OrganizationProfessional, on_delete=models.CASCADE)
+    
+    week_day:int = models.IntegerField(choices=DayName.choices)
+    services_time:list = models.JSONField(default=list)
+    
+    """
+        services_time = [{
+            id (int): id del servicio,
+            exclude: [[0, 7], [18, 23]]
+        }]
+    """
+
+    note:str = models.TextField(null=True, blank=True)
+
+
+    @property
+    def day_name(self) -> str:
+        return DayName(self.week_day).label
+
+    
+    @property
+    def services_available(self) -> list:
+        return [service_id for service_id in self.services_time['id']]
+    
+    
+    def get_start_and_end_time_for_service(self, service_id:int) -> tuple:
+        for service in self.services_time:
+            if service['id'] == service_id:
+                return get_start_and_end_time(service['exclude'])
+        return None, None
+
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.exclude:
+            self.exclude = [[0, 7], [18, 23]]
+                    
+        super().save(*args, **kwargs)
 
 
 class OrganizationClient(models.Model):
@@ -581,7 +623,6 @@ class OrganizationClientDependent(models.Model):
 
     same_as_client:bool = models.BooleanField(default=True)
     
-
 
 class OrganizationPromotion(models.Model):
     organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
