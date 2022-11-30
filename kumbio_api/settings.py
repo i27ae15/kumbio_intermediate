@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'register',
     'organization_info',
     'user_info',
+    'authentication_manager',
     
     # third party apps
     'rest_framework',
@@ -58,6 +59,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5174",
     "http://localhost:5174",
     "http://10.0.0.206:5173",
+    "http://192.168.1.8:5173",
     "https://app.kumbio.com",
     ]
 

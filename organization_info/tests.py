@@ -1,15 +1,20 @@
 # python 
 # django
 from django.urls import reverse
-from .models.main_models import Organization, OrganizationPlace, OrganizationService, Sector
+from .models.main_models import Organization, OrganizationPlace, OrganizationService, Sector, OrganizationClient, OrganizationClientType
 
 from rest_framework.test import APITestCase
 
 # models
 from user_info.models import KumbioUser, KumbioUserRole
+from .models.default_values import DEFAULT_CLIENT_TYPES
 
 # serializers 
 from .serializers import OrganizationPlaceSerializer, OrganizationServiceSerializer, OrganizationSectorSerializer
+from authentication_manager.models import KumbioToken, AppToken
+
+# utils
+from organization_info.utils.enums import FieldType
 
 from print_pp.logging import Print
 
@@ -17,6 +22,22 @@ from print_pp.logging import Print
 EMAIL='testuser@testuser.com'
 PASSWORD = 'testuser'
 USERNAME = 'testuser'
+
+
+def set_authorization(self, client):
+    url = reverse('register:obtain_auth_token')
+    # TODO: Check why we have to pass the email as username
+    resp = client.post(url, {'username':EMAIL, 'password':PASSWORD, 'for_kumbio': True}, format='json')
+
+    # check if token in resp.data
+    if 'token' not in resp.data:
+        Print(resp.json())
+        raise Exception('Token not in resp.data')
+
+    token = resp.data['token']
+
+    client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+
 
 def create_organization_sector(data:dict=None) -> Sector:
 
@@ -75,7 +96,7 @@ def create_place(data_to_create_place:dict, organization:Organization, user:Kumb
             address='testing address',
             name='testing name')
 
-    serializer = OrganizationPlaceSerializer(data=data_to_create_place)
+    serializer = OrganizationPlaceSerializer(data=data_to_create_place['place'])
     serializer.is_valid(raise_exception=True)
     serializer.save()
     initial_data = serializer.data
@@ -101,22 +122,33 @@ def create_service(data_to_create_service:dict, organization:Organization, creat
     return initial_data
     
 
+def create_client_type(organization:Organization, name='testing client type', description='testing client type description', fields:list[tuple[str, FieldType]]=None) -> OrganizationClientType:
+
+    if not fields:
+        fields = [('testing field', FieldType.TEXT.value), ('testing field 2', FieldType.NUMBER.value)]
+
+    return OrganizationClientType.objects.create(
+        organization=organization,
+        name=name,
+        description=description,
+        fields=fields,
+        created_by=create_user(organization, username='test_user_client', email='client_test@email.com'))
+
+
+def create_kumbio_token(app=AppToken):
+    return KumbioToken.objects.create(app=app)
+
+
 class TestOrganizationCreation(APITestCase):
     
     def test_organization_creation(self):
-        organization = create_organization(use_user=True)
-        Print((
-            'organization information',
-            organization.email_templates, 
-            organization.name,
-            organization.description, 
-            organization.phone,
-            organization.owner_email,
-            organization.owner_first_name,
-            organization.owner_last_name,
-            organization.owner_phone,
-        ))
+        org = create_organization(use_user=True)
+        self.assertEqual(org.name, 'test organization')
 
+        # we got to check if the default client types were created for this organization
+        
+        self.assertEqual(org.client_types.count(), DEFAULT_CLIENT_TYPES.__len__())
+    
 
 class TestPlace(APITestCase):
 
@@ -126,10 +158,20 @@ class TestPlace(APITestCase):
         self.set_authorization()
         
         self.data_to_create_place = {
-            "organization" : self.organization.id,
-            "address": "la calle de al lado",
-            "name": "Dresden",
-            "created_by": self.user.id
+            "place":{
+                "organization" : self.organization.id,
+                "address": "la calle de al lado",
+                "name": "Dresden",
+                "created_by": self.user.id
+            },
+            "days":[
+                {
+                    "week_day": 0,
+                    "exclude": [[0, 7], [18, 23]],
+                    "note": "Una nota de prueba"
+                }
+            ]
+            
         }
         self.place = create_place(self.data_to_create_place, self.organization, self.user)
         
@@ -142,20 +184,20 @@ class TestPlace(APITestCase):
 
         initial_data = create_place(self.data_to_create_place, self.organization, self.user, create_with_serializer=True)
         
-        del initial_data['datetime_created']
+        del initial_data['created_at']
         del initial_data['id']
 
         url = reverse('organization_info:place')
         response = self.client.post(url, self.data_to_create_place, format='json').json()
         
         try:
-            del response['datetime_created']
+            del response['created_at']
             del response['id']
         except KeyError:
-            self.assertEqual('youre not authorized', '')
+            self.assertEqual('you are not authorized', '')
             
 
-        Print('New place created', response)
+        # Print('New place created', response)
 
         self.assertEqual(response, initial_data)
 
@@ -213,9 +255,65 @@ class TestOrganizationSector(APITestCase):
         # TODO: Check why we have to pass the email as username
         resp = self.client.post(url, {'username':EMAIL, 'password':PASSWORD, 'for_kumbio': True}, format='json')
         
-        Print('Response from auth', resp.json())
+        # Print('Response from auth', resp.json())
     
         self.assertTrue('token' in resp.data)
         token = resp.data['token']
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+
+
+class TestOrganizationClient(APITestCase):
+
+    def setUp(self) -> None:
+        self.organization = create_organization()
+        self.user = create_user(self.organization)
+ 
+
+    def test_create_client_type(self):
+        client_type = create_client_type(self.organization)
+        self.assertTrue(client_type)
+        self.assertEqual(client_type.name, 'testing client type')
+        self.assertEqual(client_type.description, 'testing client type description')
+
+    
+    def test_create_client(self):
+        
+        client_type = create_client_type(self.organization)
+        url = reverse('organization_info:client')
+
+        # creating the data for the client
+
+        dependent_from = {
+            'first_name': 'parent first name',
+            'last_name': 'parent last name',
+            'email': 'parent@email.com',
+            'phone': 'parent phone',
+        }
+
+        client_data = {
+            'organization': self.organization.id,
+            'type': client_type.pk, # type must come from the organization sector type
+            'first_name': 'child',
+            'last_name': 'child',
+        }
+
+        data_to_create_client = {
+            'client': client_data,
+            'dependent_from': dependent_from,
+        }
+        
+        # creating the request without using the credentials
+        unauthorized_response = self.client.post(url, data_to_create_client, format='json')
+        self.assertEqual(unauthorized_response.status_code, 401)
+
+        # setting the authorization
+        kumbio_token = create_kumbio_token(app=AppToken.CALENDAR).token
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + kumbio_token)
+
+        res = self.client.post(url, data_to_create_client, format='json')
+
+        new_org_client:OrganizationClient = OrganizationClient.objects.get(pk=res.json()['id'])
+
+        self.assertEqual(new_org_client.first_name, client_data['first_name'])
+        self.assertEqual(new_org_client.dependent.first_name, dependent_from['first_name'])

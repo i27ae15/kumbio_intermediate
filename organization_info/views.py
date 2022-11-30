@@ -6,9 +6,10 @@ import os
 from django.utils import timezone
 from django.db.models import Q
 from django.db.models.query import QuerySet
+from django.utils.translation import gettext_lazy as _
 
 # rest-framework
-from rest_framework import status
+from rest_framework import status, exceptions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
@@ -20,15 +21,19 @@ from drf_yasg import openapi
 
 # models
 from user_info.models import KumbioUser, KumbioUserRole
-from .models.main_models import Organization, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService, DayAvailableForPlace, DayName
+from .models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, Sector, 
+OrganizationService, OrganizationClientCreatedBy, DayAvailableForPlace, DayName)
 
 # serializers
 from user_info.serializers import CreateKumbioUserSerializer
 
 from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer
-from .serializers import OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, OrganizationServiceSerializer, DayAvailableForPlaceSerializer
+from .serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
+OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer)
 
 # others
+from authentication_manager.authenticate import KumbioAuthentication
+
 from print_pp.logging import Print
 from dotenv import load_dotenv
 from user_info.info import ADMIN_ROLE_ID, PROFESSIONAL_ROLE_ID
@@ -41,7 +46,7 @@ CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
 
 # Functions
 
-def check_if_user_is_admin_decorator(func):
+def check_if_user_is_admin_decorator(func, *args, **kwargs):
     def wrapper(self, request, *args, **kwargs):
         if request.user.role.id == ADMIN_ROLE_ID:
             return func(self, request, *args, **kwargs)
@@ -298,13 +303,13 @@ class OrganizationPlaceAPI(APIView):
                     }]
                 },
 
-                days = {
-                    week_day:int = 0 # donde Monday es = 0 y Sunday = 6
-                    exclude:list = [[0, 7], [18, 23]], null=True, blank=True)
-                    note:str = "Una nota de prueba"
-                }
-
-
+                days = [
+                    {
+                        week_day:int = 0 # donde Monday es = 0 y Sunday = 6
+                        exclude:list = [[0, 7], [18, 23]], null=True, blank=True)
+                        note:str = "Una nota de prueba"
+                    }
+                ]
         """
         request.data['place']['organization'] = request.user.organization.id
         request.data['place']['created_by'] = request.user.id
@@ -314,17 +319,17 @@ class OrganizationPlaceAPI(APIView):
         if place_serializer.is_valid():
             place_serializer.save()
 
-            daysAvailable:list[dict] = request.data.get('days', [])
-            for day in daysAvailable:
-                day['place'] = place_serializer.data['id']
-            
+            daysAvailable:list[dict] = request.data['days']
+
             if daysAvailable:
+                for day in daysAvailable:
+                    day['place'] = place_serializer.data['id']
+
                 days_available_serializer = DayAvailableForPlaceSerializer(data=daysAvailable, many=True)
                 if days_available_serializer.is_valid():
                     days_available_serializer.save()
                 else:
                     return Response(days_available_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
             return Response(place_serializer.data, status.HTTP_201_CREATED)
         
@@ -500,3 +505,52 @@ class OrganizationServiceView(APIView):
                 return Response(service_serializer.data, status.HTTP_201_CREATED)
             
             return Response(service_serializer.errors, status.HTTP_400_BAD_REQUEST)
+
+
+class OrganizationClientView(APIView):
+
+    # this needs authorization from calendar
+    # we need to create an authorization token for the calendar api to be able to access this endpoint
+    permission_classes = (IsAuthenticated,) 
+    authentication_classes = (KumbioAuthentication,)
+
+    @swagger_auto_schema(
+        request_body=OrganizationClientSerializer(),
+    )
+    def post(self, request):
+        
+        # getting the data from the request that comes "separated"
+        client_data:dict = request.data['client']
+        dependent_from:dict = request.data['dependent_from']
+        client_data['created_by'] = request.user.app
+
+        client_serializer = OrganizationClientSerializer(data=client_data)
+        
+        if client_serializer.is_valid():
+            client_serializer.save()
+            dependent_from['client'] = client_serializer.data['id']
+
+            if dependent_from.get('same_as_client'):
+                new_data = {
+                    'first_name': client_data['first_name'],
+                    'last_name': client_data['last_name'],
+                    'email': client_data['email'],
+                    'phone': client_data['phone'],
+                    'phone2': client_data.get('phone2', None),
+                }
+                dependent_from.update(new_data)
+                
+            else:
+                dependent_from['same_as_client'] = False
+
+            dependent_from_serializer = OrganizationClientDependentFromSerializer(data=dependent_from)
+            
+            if dependent_from_serializer.is_valid():
+                dependent_from_serializer.save()
+            else:
+                return Response(dependent_from_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response(client_serializer.data, status.HTTP_201_CREATED)
+        
+        return Response(client_serializer.errors, status.HTTP_400_BAD_REQUEST)
+

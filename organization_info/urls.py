@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (OrganizationProfessionalAPI, OrganizationPlaceAPI, OrganizationView, 
-OrganizationSectorView, OrganizationServiceView)
+OrganizationSectorView, OrganizationServiceView, OrganizationClientView)
 
 app_name = 'organization_info'
 
@@ -10,5 +10,6 @@ urlpatterns = [
     path('places/', OrganizationPlaceAPI.as_view(), name='place'),
     path('sectors/', OrganizationSectorView.as_view(), name='sector'),
     path('services/', OrganizationServiceView.as_view(), name='service'),
+    path('clients/', OrganizationClientView.as_view(), name='client'),
 
 ]
