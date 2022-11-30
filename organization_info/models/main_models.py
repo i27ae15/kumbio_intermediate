@@ -539,7 +539,7 @@ class OrganizationClient(models.Model):
     type:OrganizationClientType = models.ForeignKey(OrganizationClientType, on_delete=models.CASCADE, null=True, blank=True, default=None)
     # -----------------------------------------------------------
 
-    extra_fields:list = models.JSONField(default=list)
+    extra_fields:list = models.JSONField(default=list, null=False)
 
     """
         extra_fields is going to be a JSON coming from the type of client that was selected when creating
@@ -572,9 +572,9 @@ class OrganizationClient(models.Model):
     identification:str = models.CharField(max_length=255, null=True, blank=True, default=None)
 
     birthday:datetime.date = models.DateField(null=True, blank=True, default=None)
-    age:int = models.IntegerField(null=True, blank=True, default=None)
+    age:int = models.IntegerField(default=0)
 
-    rating:int = models.IntegerField(null=True, blank=True, default=None, validators=[MinValueValidator(10), MaxValueValidator(100)])
+    rating:int = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(5)])
     referral_link:str = models.CharField(max_length=255)
 
     created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
@@ -602,6 +602,8 @@ class OrganizationClient(models.Model):
     def save(self, *args, **kwargs):
         if not self.pk:
             self.referral_link = secrets.token_urlsafe(16)
+        
+        print('age', self.age)
 
         super().save(*args, **kwargs)
 
