@@ -404,6 +404,7 @@ class DayAvailableForPlace(models.Model):
 
     note:str = models.TextField(null=True, blank=True)
 
+
     @property
     def opens_at(self) -> str:
         return get_start_and_end_time(self.exclude)[0]
@@ -491,6 +492,46 @@ class OrganizationProfessional(models.Model):
         return f'{self.id} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
 
 
+class DayAvailableForProfessional(models.Model):
+    
+    day:OrganizationProfessional = models.ForeignKey(OrganizationProfessional, on_delete=models.CASCADE)
+    
+    week_day:int = models.IntegerField(choices=DayName.choices)
+    services_time:list = models.JSONField(default=list)
+    
+    """
+        services_time = [{
+            id (int): id del servicio,
+            exclude: [[0, 7], [18, 23]]
+        }]
+    """
+
+    note:str = models.TextField(null=True, blank=True)
+
+
+    @property
+    def day_name(self) -> str:
+        return DayName(self.week_day).label
+
+    
+    @property
+    def services_available(self) -> list:
+        return [service_id for service_id in self.services_time['id']]
+    
+    
+    def get_start_and_end_time_for_service(self, service_id:int) -> tuple:
+        for service in self.services_time:
+            if service['id'] == service_id:
+                return get_start_and_end_time(service['exclude'])
+        return None, None
+
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.exclude:
+            self.exclude = [[0, 7], [18, 23]]
+                    
+        super().save(*args, **kwargs)
+
 
 class OrganizationClient(models.Model):
     # Foreignkeys
@@ -498,7 +539,7 @@ class OrganizationClient(models.Model):
     type:OrganizationClientType = models.ForeignKey(OrganizationClientType, on_delete=models.CASCADE, null=True, blank=True, default=None)
     # -----------------------------------------------------------
 
-    extra_fields:list = models.JSONField(default=list)
+    extra_fields:list = models.JSONField(default=list, null=False)
 
     """
         extra_fields is going to be a JSON coming from the type of client that was selected when creating
@@ -531,9 +572,9 @@ class OrganizationClient(models.Model):
     identification:str = models.CharField(max_length=255, null=True, blank=True, default=None)
 
     birthday:datetime.date = models.DateField(null=True, blank=True, default=None)
-    age:int = models.IntegerField(null=True, blank=True, default=None)
+    age:int = models.IntegerField(default=0)
 
-    rating:int = models.IntegerField(null=True, blank=True, default=None, validators=[MinValueValidator(10), MaxValueValidator(100)])
+    rating:int = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(5)])
     referral_link:str = models.CharField(max_length=255)
 
     created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
@@ -545,6 +586,8 @@ class OrganizationClient(models.Model):
     deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_client_deleted_by')
 
     # to get the appointment that this client had done, we have to call the calendar api
+    
+    # TODO: Create referral_by field
 
     @property
     def full_name(self) -> str:
@@ -559,6 +602,8 @@ class OrganizationClient(models.Model):
     def save(self, *args, **kwargs):
         if not self.pk:
             self.referral_link = secrets.token_urlsafe(16)
+        
+        print('age', self.age)
 
         super().save(*args, **kwargs)
 
@@ -580,8 +625,6 @@ class OrganizationClientDependent(models.Model):
 
     same_as_client:bool = models.BooleanField(default=True)
     
-    # -----------------------------------------------------------
-
 
 class OrganizationPromotion(models.Model):
     organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE)

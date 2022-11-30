@@ -1,7 +1,8 @@
 # python 
 # django
 from django.urls import reverse
-from .models.main_models import Organization, OrganizationPlace, OrganizationService, Sector, OrganizationClient, OrganizationClientType
+from .models.main_models import (Organization, OrganizationPlace, OrganizationService, Sector, OrganizationClient, 
+                                 OrganizationClientType, OrganizationProfessional)
 
 from rest_framework.test import APITestCase
 
@@ -10,7 +11,7 @@ from user_info.models import KumbioUser, KumbioUserRole
 from .models.default_values import DEFAULT_CLIENT_TYPES
 
 # serializers 
-from .serializers import OrganizationPlaceSerializer, OrganizationServiceSerializer, OrganizationSectorSerializer
+from .serializers import OrganizationPlaceSerializer, OrganizationServiceSerializer, OrganizationSectorSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer
 from authentication_manager.models import KumbioToken, AppToken
 
 # utils
@@ -135,9 +136,85 @@ def create_client_type(organization:Organization, name='testing client type', de
         created_by=create_user(organization, username='test_user_client', email='client_test@email.com'))
 
 
-def create_kumbio_token(app=AppToken):
-    return KumbioToken.objects.create(app=app)
+def create_kumbio_token(organization:Organization, app=AppToken):
+    return KumbioToken.objects.create(app=app, organization=organization)
 
+
+def create_professional(organization:Organization, user:KumbioUser=None, name='test professional'):
+    if not user: 
+        user =  create_user(organization, username='test_professional', email='anotheremail@gmail.com')
+    
+    return OrganizationProfessional.objects.create(
+        organization=organization,
+        kumbio_user=user,
+        created_by=user)
+
+
+def create_client(organization:Organization, client_type:OrganizationClientType, num_clients=1):
+    clients = []
+
+    for i in range(num_clients):
+        dependent_from = {
+            'first_name': 'parent first name' + str(i),
+            'last_name': 'parent last name' + str(i),
+            'email': 'parent@email.com' + str(i),
+            'phone': 'parent phone' + str(i),
+        }
+
+        client_data = {
+            'organization': organization.id,
+            'type': client_type.pk, # type must come from the organization sector type
+            'first_name': 'child' + str(i),
+            'last_name': 'child' + str(i),
+            'email': 'client@email.com' + str(i),
+            'phone': 'client phone' + str(i),
+        }
+
+
+        extra_fields:list[tuple] = client_type.fields
+        converted_extra_fields:list[list] = []
+
+        for index, field in enumerate(extra_fields):
+            field = list(field)
+
+            if field[1] == 'TEXT':
+                field.append('value' + str(index))
+            
+            elif field[1] == 'NUMBER':
+                num = int(f'{index}0{i}')
+                field.append(num)
+
+            converted_extra_fields.append(field)
+
+        client_data['extra_fields'] = converted_extra_fields
+
+        data_to_create_client = {
+            'client': client_data,
+            'dependent_from': dependent_from,
+        }
+
+        clients.append(data_to_create_client)
+
+
+    data_from_serializer = list()
+
+    for client in clients:
+        client_serializer= OrganizationClientSerializer(data=client['client'])
+        client_serializer.is_valid(raise_exception=True)
+        client_serializer.save()
+
+        client['dependent_from']['client'] = client_serializer.data['id']
+        dependent_from_serializer = OrganizationClientDependentFromSerializer(data=client['dependent_from'])
+        dependent_from_serializer.is_valid(raise_exception=True)
+        dependent_from_serializer.save()
+
+        client_instance:OrganizationClient = client_serializer.instance
+        client_serializer = OrganizationClientSerializer(client_instance)
+
+        data_from_serializer.append(client_serializer.data)
+
+    return data_from_serializer
+  
 
 class TestOrganizationCreation(APITestCase):
     
@@ -280,7 +357,8 @@ class TestOrganizationClient(APITestCase):
     def test_create_client(self):
         
         client_type = create_client_type(self.organization)
-        url = reverse('organization_info:client')
+        main_url = reverse('organization_info:client')
+        url_for_client_type = reverse('organization_info:client_types')
 
         # creating the data for the client
 
@@ -296,6 +374,8 @@ class TestOrganizationClient(APITestCase):
             'type': client_type.pk, # type must come from the organization sector type
             'first_name': 'child',
             'last_name': 'child',
+            'email': 'client@email.com',
+            'phone': 'client phone',
         }
 
         data_to_create_client = {
@@ -304,16 +384,78 @@ class TestOrganizationClient(APITestCase):
         }
         
         # creating the request without using the credentials
-        unauthorized_response = self.client.post(url, data_to_create_client, format='json')
+        unauthorized_response = self.client.post(main_url, data_to_create_client, format='json')
         self.assertEqual(unauthorized_response.status_code, 401)
 
         # setting the authorization
-        kumbio_token = create_kumbio_token(app=AppToken.CALENDAR).token
+        kumbio_token = create_kumbio_token(organization=self.organization, app=AppToken.CALENDAR).token
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + kumbio_token)
 
-        res = self.client.post(url, data_to_create_client, format='json')
+        client_types:list = self.client.get(url_for_client_type, format='json').json()
+         
+        extra_fields:list[list] = client_types[0]['fields']
 
-        new_org_client:OrganizationClient = OrganizationClient.objects.get(pk=res.json()['id'])
+        for index, field in enumerate(extra_fields):
+            if field[1] == 'TEXT':
+                field.append('value' + str(index))
+            
+            elif field[1] == 'NUMBER':
+                field.append(index)
 
-        self.assertEqual(new_org_client.first_name, client_data['first_name'])
-        self.assertEqual(new_org_client.dependent.first_name, dependent_from['first_name'])
+        client_data['extra_fields'] = extra_fields
+
+        res = self.client.post(main_url, data_to_create_client, format='json')
+
+        try:
+            first_org_client:OrganizationClient = OrganizationClient.objects.get(pk=res.json()['id'])
+        except KeyError as e:
+            self.fail(res.json())
+
+        self.assertEqual(first_org_client.first_name, client_data['first_name'])
+        self.assertEqual(first_org_client.dependent.first_name, dependent_from['first_name'])
+        
+        data_to_create_client['dependent_from']['same_as_client'] = True
+        res = self.client.post(main_url, data_to_create_client, format='json')
+        
+        second_org_client:OrganizationClient = OrganizationClient.objects.get(pk=res.json()['id'])
+        
+        self.assertEqual(second_org_client.first_name, client_data['first_name'])
+        self.assertEqual(second_org_client.dependent.first_name, client_data['first_name'])
+    
+
+    def test_get_clients(self):
+        client_type = create_client_type(self.organization)
+        main_url = reverse('organization_info:client')
+        # url_for_extra_fields = reverse('organization_info:extra_fields_for_client_type')
+        url_for_client_type = reverse('organization_info:client_types')
+        
+        kumbio_token = create_kumbio_token(organization=self.organization, app=AppToken.CALENDAR)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + kumbio_token.token)
+
+        client_types:list = self.client.get(url_for_client_type, format='json').json()
+        client_type:OrganizationClientType = OrganizationClientType.objects.get(pk=client_types[0]['id'])
+        # creating the data for the client
+
+        num_clients = 10
+        clients = create_client(self.organization, client_type, num_clients=num_clients)
+        self.assertEqual(len(clients), num_clients)
+
+        res = self.client.get(main_url, {'client_id': clients[0]['id']}, format='json')
+
+        self.assertEqual(len(res.json()), 1)
+
+
+class TestOrganizationProfesional(APITestCase):
+
+    def setUp(self) -> None:
+        self.organization = create_organization()
+        self.user = create_user(self.organization)
+        self.sector = create_organization_sector()
+        self.professional = create_professional(self.organization)
+        
+    
+    def test_create_professional(self):
+        url = reverse('organization_info:professional')
+
+        # creating the data for the client
+        pass

@@ -1,6 +1,7 @@
 import datetime
 import secrets
 
+from organization_info.models.main_models import Organization
 from django.db import models
 
 
@@ -18,6 +19,7 @@ class KumbioToken(models.Model):
     # fields --------------------------------------------
 
     app:str = models.IntegerField(choices=AppToken.choices)
+    organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True, default=None)
     token:str = models.CharField(max_length=120, unique=True, editable=False)
 
     is_tester:bool = models.BooleanField(default=False)

@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 
 # Swagger
 from drf_yasg.utils import swagger_auto_schema
@@ -22,14 +23,19 @@ from drf_yasg import openapi
 # models
 from user_info.models import KumbioUser, KumbioUserRole
 from .models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, Sector, 
-OrganizationService, OrganizationClientCreatedBy, DayAvailableForPlace, DayName)
+OrganizationService, OrganizationClient)
+from authentication_manager.models import KumbioToken
 
 # serializers
 from user_info.serializers import CreateKumbioUserSerializer
 
-from .query_serializers import PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer
+from .query_serializers import (PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer, 
+OrganizationServiceQuerySerializer, OrganizationClientQuerySerializer, OrganizationClientTypeQuerySerializer)
+
 from .serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
-OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer)
+OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer,
+OrganizationClientTypeSerializer)
+
 
 # others
 from authentication_manager.authenticate import KumbioAuthentication
@@ -462,7 +468,7 @@ class OrganizationServiceView(APIView):
         permission_classes = (IsAuthenticated,) 
         authentication_classes = (TokenAuthentication,) 
     
-        
+
         @swagger_auto_schema(
             query_serializer=OrganizationServiceQuerySerializer(),
         )
@@ -486,6 +492,7 @@ class OrganizationServiceView(APIView):
             service_serializer = OrganizationServiceSerializer(services, many=True)
             return Response(service_serializer.data, status=status.HTTP_200_OK)
         
+
         @swagger_auto_schema(
             request_body=OrganizationServiceSerializer(),
         )
@@ -506,6 +513,69 @@ class OrganizationServiceView(APIView):
             
             return Response(service_serializer.errors, status.HTTP_400_BAD_REQUEST)
 
+        @swagger_auto_schema(
+            request_body=OrganizationServiceSerializer(),
+        )
+        def put(self, request):
+
+            """
+                Update an existent Service
+                Solo los administradores pueden actualizar servicios
+
+                request body:
+
+                    {
+                        "service": OrganizationServiceSerializer
+                        "service_id": int
+                    }
+            """
+
+            try:
+                service:OrganizationService = OrganizationService.objects.get(id=request.data['service_id'])
+            except OrganizationService.DoesNotExist:
+                raise exceptions.NotFound(_('el servicio no existe'))
+            except KeyError:
+                raise exceptions.ParseError(_('service_id es requerido'))
+
+            
+            data_for_serializer = request.data['service']
+            service_serializer = OrganizationServiceSerializer(instance=service, data=data_for_serializer)
+        
+            if service_serializer.is_valid():
+                service_serializer.save()
+    
+                return Response(service_serializer.data, status.HTTP_201_CREATED)
+            
+            return Response(service_serializer.errors, status.HTTP_400_BAD_REQUEST)
+
+        
+        @swagger_auto_schema()
+        def delete(self, request):
+
+            """
+                Delete an existent Service
+                Solo los administradores pueden eliminar servicios
+
+                request body:
+
+                    {
+                        "service_id": int
+                    }
+            """
+
+            # make connections with calendar api to check if there is any appointment with this service associated
+            # if there is, return error, cause the user cannot delete a service if there is any appointment with it
+
+            try:
+                service:OrganizationService = OrganizationService.objects.get(id=request.data['service_id'])
+            except OrganizationService.DoesNotExist:
+                raise exceptions.NotFound(_('el servicio no existe'))
+            except KeyError:
+                raise exceptions.ParseError(_('service_id es requerido'))
+
+            service.delete()
+            return Response({'message': 'servicio eliminado'}, status=status.HTTP_200_OK)
+
 
 class OrganizationClientView(APIView):
 
@@ -513,44 +583,151 @@ class OrganizationClientView(APIView):
     # we need to create an authorization token for the calendar api to be able to access this endpoint
     permission_classes = (IsAuthenticated,) 
     authentication_classes = (KumbioAuthentication,)
-
+    
     @swagger_auto_schema(
-        request_body=OrganizationClientSerializer(),
+        query_serializer=OrganizationClientQuerySerializer(),
     )
+    def get(self, request):
+        """
+            Get all clients
+        """
+
+        token:KumbioToken = request.auth
+        
+        query_serializer = OrganizationClientQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        query_params = query_serializer.validated_data
+
+        if query_params['client_id']:
+            clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(id=query_params['client_id'], organization=request.user.organization.id)
+            if not clients:
+                raise exceptions.NotFound(_('el cliente no existe'))
+
+        else: 
+            clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(organization=token.organization.id)
+            Print('age', clients[0].age)
+            
+            clients = clients.filter(age__gte=query_params['min_age'],
+                           age__lte=query_params['max_age'],
+                           rating__gte=query_params['min_rating'],
+                           rating__lte=query_params['max_rating'])
+            
+            Print('clients', clients)
+            
+            if query_params['birth_date']:
+                clients = clients.filter(birth_date=query_params['birth_date'])
+
+        client_serializer = OrganizationClientSerializer(clients, many=True)
+        return Response(client_serializer.data, status=status.HTTP_200_OK)
+
+
+    @swagger_auto_schema()
     def post(self, request):
         
         # getting the data from the request that comes "separated"
         client_data:dict = request.data['client']
         dependent_from:dict = request.data['dependent_from']
+
         client_data['created_by'] = request.user.app
+        client_data['organization'] = request.user.organization.id
+
 
         client_serializer = OrganizationClientSerializer(data=client_data)
         
-        if client_serializer.is_valid():
-            client_serializer.save()
-            dependent_from['client'] = client_serializer.data['id']
+        if not client_serializer.is_valid():
+            return Response(client_serializer.errors, status.HTTP_400_BAD_REQUEST)
 
-            if dependent_from.get('same_as_client'):
-                new_data = {
-                    'first_name': client_data['first_name'],
-                    'last_name': client_data['last_name'],
-                    'email': client_data['email'],
-                    'phone': client_data['phone'],
-                    'phone2': client_data.get('phone2', None),
-                }
-                dependent_from.update(new_data)
-                
-            else:
-                dependent_from['same_as_client'] = False
+        client_serializer.save()
+        dependent_from['client'] = client_serializer.data['id']
 
-            dependent_from_serializer = OrganizationClientDependentFromSerializer(data=dependent_from)
+        if dependent_from.get('same_as_client'):
+            new_data = {
+                'first_name': client_data['first_name'],
+                'last_name': client_data['last_name'],
+                'email': client_data['email'],
+                'phone': client_data['phone'],
+                'phone2': client_data.get('phone2', None),
+            }
+            dependent_from.update(new_data)
             
-            if dependent_from_serializer.is_valid():
-                dependent_from_serializer.save()
-            else:
-                return Response(dependent_from_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-            return Response(client_serializer.data, status.HTTP_201_CREATED)
+        else:
+            dependent_from['same_as_client'] = False
         
-        return Response(client_serializer.errors, status.HTTP_400_BAD_REQUEST)
+        dependent_from_serializer = OrganizationClientDependentFromSerializer(data=dependent_from)
+        
+        if not dependent_from_serializer.is_valid():
+            return Response(dependent_from_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        dependent_from_serializer.save()
+        return Response(client_serializer.data, status.HTTP_201_CREATED)
+
+
+# function types
+@swagger_auto_schema(query_serializer=OrganizationClientTypeQuerySerializer(), method='GET')
+@api_view(['GET'])
+@authentication_classes([KumbioAuthentication])
+@permission_classes([IsAuthenticated])
+def get_organization_client_types(request):
+    """
+        Devuelve todos los tipos de cliente que una organización tiene asociados
+
+        Obtener los campos extra dependiendo del tipo de cliente que se seleccione
+        
+        :Response 200:
+
+            - fields: lista de campos extra, que se muestran como un array de arrays
+            fields = [('name', TEXT), ('age', NUMBER)]
+
+            donde el primer elemento es el nombre del campo y el segundo es el tipo de campo
+    """
+
+    user:KumbioToken = request.user
+
+    query_serializer = OrganizationClientTypeQuerySerializer(data=request.query_params)
+    query_serializer.is_valid(raise_exception=True)
+    query_params = query_serializer.data
+
+    if query_params['client_type_id']:
+        client_types = user.organization.client_types.filter(id=query_params['client_type_id'])
+
+        if not client_types:
+            raise exceptions.NotFound(_('el tipo de cliente no existe'))
+    else:
+        client_types = user.organization.client_types.all()
+
+    client_types_serializer = OrganizationClientTypeSerializer(client_types, many=True)
+    return Response(client_types_serializer.data, status=status.HTTP_200_OK)
+
+
+
+@swagger_auto_schema(query_serializer=OrganizationClientTypeQuerySerializer(), method='GET')
+@api_view(['GET'])
+@authentication_classes([KumbioAuthentication])
+@permission_classes([IsAuthenticated])
+def get_extra_fields_for_client_type(request):
+    """
+        Obtener los campos extra dependiendo del tipo de cliente que se seleccione
+        
+        :Response 200:
+
+            - fields: lista de campos extra, que se muestran como un array de arrays
+            fields = [('name', TEXT), ('age', NUMBER)]
+
+            donde el primer elemento es el nombre del campo y el segundo es el tipo de campo
+    """
+
+    user:KumbioToken = request.user
+    client_type_id = request.query_params.get('client_type_id', None)
+
+    if not client_type_id:
+        raise exceptions.ValidationError(_('client_type_id es requerido'))
+    
+
+    client_type = user.organization.client_types.filter(id=client_type_id)
+    if not client_type:
+        raise exceptions.NotFound(_('client type no se ha encontrado'))
+    
+
+    extra_fields = client_type[0].fields
+    
+    return Response(extra_fields, status=status.HTTP_200_OK)
