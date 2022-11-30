@@ -515,6 +515,69 @@ class OrganizationServiceView(APIView):
             
             return Response(service_serializer.errors, status.HTTP_400_BAD_REQUEST)
 
+        @swagger_auto_schema(
+            request_body=OrganizationServiceSerializer(),
+        )
+        def put(self, request):
+
+            """
+                Update an existent Service
+                Solo los administradores pueden actualizar servicios
+
+                request body:
+
+                    {
+                        "service": OrganizationServiceSerializer
+                        "service_id": int
+                    }
+            """
+
+            try:
+                service:OrganizationService = OrganizationService.objects.get(id=request.data['service_id'])
+            except OrganizationService.DoesNotExist:
+                raise exceptions.NotFound(_('el servicio no existe'))
+            except KeyError:
+                raise exceptions.ParseError(_('service_id es requerido'))
+
+            
+            data_for_serializer = request.data['service']
+            service_serializer = OrganizationServiceSerializer(instance=service, data=data_for_serializer)
+        
+            if service_serializer.is_valid():
+                service_serializer.save()
+    
+                return Response(service_serializer.data, status.HTTP_201_CREATED)
+            
+            return Response(service_serializer.errors, status.HTTP_400_BAD_REQUEST)
+
+        
+        @swagger_auto_schema()
+        def delete(self, request):
+
+            """
+                Delete an existent Service
+                Solo los administradores pueden eliminar servicios
+
+                request body:
+
+                    {
+                        "service_id": int
+                    }
+            """
+
+            # make connections with calendar api to check if there is any appointment with this service associated
+            # if there is, return error, cause the user cannot delete a service if there is any appointment with it
+
+            try:
+                service:OrganizationService = OrganizationService.objects.get(id=request.data['service_id'])
+            except OrganizationService.DoesNotExist:
+                raise exceptions.NotFound(_('el servicio no existe'))
+            except KeyError:
+                raise exceptions.ParseError(_('service_id es requerido'))
+
+            service.delete()
+            return Response({'message': 'servicio eliminado'}, status=status.HTTP_200_OK)
+
 
 class OrganizationClientView(APIView):
 
