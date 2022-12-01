@@ -23,7 +23,7 @@ from drf_yasg import openapi
 # models
 from user_info.models import KumbioUser, KumbioUserRole
 from .models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, Sector, 
-OrganizationService, OrganizationClient)
+OrganizationService, OrganizationClient, OrganizationClientType)
 from authentication_manager.models import KumbioToken
 
 # serializers
@@ -837,3 +837,80 @@ def get_extra_fields_for_client_type(request):
     extra_fields = client_type[0].fields
     
     return Response(extra_fields, status=status.HTTP_200_OK)
+
+
+
+@swagger_auto_schema(query_serializer=OrganizationClientTypeQuerySerializer(), method='GET')
+@api_view(['GET'])
+def create_clients(request):
+
+    """
+    
+        Este endpoint es para crear clientes, se crean 10 clientes entrando en este endpoint
+    
+    """
+    clients = []
+
+    client_type:OrganizationClientType = OrganizationClientType.objects.get(id=18)
+
+    for i in range(10):
+        dependent_from = {
+            'first_name': 'parent first name' + str(i),
+            'last_name': 'parent last name' + str(i),
+            'email': 'parent@email.com' + str(i),
+            'phone': 'parent phone' + str(i),
+        }
+
+        client_data = {
+            'organization': 'Yqe0DxtbwcK3KYrakqXY83brcZOr',
+            'type': client_type.pk, # type must come from the organization sector type
+            'first_name': 'child' + str(i),
+            'last_name': 'child' + str(i),
+            'email': 'client@email.com' + str(i),
+            'phone': 'client phone' + str(i),
+        }
+
+
+        extra_fields:list[tuple] = client_type.fields
+        converted_extra_fields:list[list] = []
+
+        for index, field in enumerate(extra_fields):
+            field = list(field)
+
+            if field[1] == 'TEXT':
+                field.append('value' + str(index))
+            
+            elif field[1] == 'NUMBER':
+                num = int(f'{index}0{i}')
+                field.append(num)
+
+            converted_extra_fields.append(field)
+
+        client_data['extra_fields'] = converted_extra_fields
+
+        data_to_create_client = {
+            'client': client_data,
+            'dependent_from': dependent_from,
+        }
+
+        clients.append(data_to_create_client)
+
+
+    data_from_serializer = list()
+
+    for client in clients:
+        client_serializer= OrganizationClientSerializer(data=client['client'])
+        client_serializer.is_valid(raise_exception=True)
+        client_serializer.save()
+
+        client['dependent_from']['client'] = client_serializer.data['id']
+        dependent_from_serializer = OrganizationClientDependentFromSerializer(data=client['dependent_from'])
+        dependent_from_serializer.is_valid(raise_exception=True)
+        dependent_from_serializer.save()
+
+        client_instance:OrganizationClient = client_serializer.instance
+        client_serializer = OrganizationClientSerializer(client_instance)
+
+        data_from_serializer.append(client_serializer.data)
+
+    return Response(data_from_serializer, status=status.HTTP_201_CREATED)

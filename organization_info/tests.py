@@ -172,6 +172,7 @@ def create_client(organization:Organization, client_type:OrganizationClientType,
 
 
         extra_fields:list[tuple] = client_type.fields
+
         converted_extra_fields:list[list] = []
 
         for index, field in enumerate(extra_fields):

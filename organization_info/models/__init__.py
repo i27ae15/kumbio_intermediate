@@ -1,6 +1,7 @@
 from .main_models import (Organization, OrganizationClient, OrganizationProfessional, OrganizationService, OrganizationCampaigns,
                         OrganizationPlace, OrganizationPromotion, OrganizationProduct, FrequentlyAskedQuestion, 
-                        ProfessionalSpecialty, Rating, Sector)
+                        ProfessionalSpecialty, Rating, Sector, OrganizationClientDependent, OrganizationClientCreatedBy, DayAvailableForPlace,
+                        DayAvailableForProfessional, OrganizationClientType)
 from .payment_models import (Invoice, PaymentMethodAcceptedByOrg)
 from .app_setting_models import (CalendarSettings)
 

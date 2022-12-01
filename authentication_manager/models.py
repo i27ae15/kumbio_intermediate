@@ -48,5 +48,8 @@ class KumbioToken(models.Model):
                 self.token = f'Calendar-{secrets.token_hex(21)}'
             elif self.app == AppToken.ORDERS:
                 self.token = f'Orders-{secrets.token_hex(21)}'
+            elif self.app == AppToken.KUMBIO:
+                self.token = f'Kumbio-{secrets.token_hex(21)}'
+                
         return super().save(*args, **kwargs)
 
