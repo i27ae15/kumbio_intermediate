@@ -623,8 +623,12 @@ class OrganizationClientView(APIView):
         """
             Get all clients
         """
+        user:KumbioUser = None
 
-        token:KumbioToken = request.auth
+        if isinstance(request.user, KumbioToken):
+            raise exceptions.PermissionDenied(_('No tienes permiso para realizar esta acción'))
+
+        user = request.user
         
         query_serializer = OrganizationClientQuerySerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)
@@ -636,7 +640,7 @@ class OrganizationClientView(APIView):
                 raise exceptions.NotFound(_('el cliente no existe'))
 
         else: 
-            clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(organization=token.organization.id)
+            clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(organization=user.organization.id)
             Print('age', clients[0].age)
             
             clients = clients.filter(age__gte=query_params['min_age'],
@@ -657,12 +661,24 @@ class OrganizationClientView(APIView):
     def post(self, request):
         
         # getting the data from the request that comes "separated"
+        user:KumbioUser | KumbioToken = None
+
+        if request.user == 'KUMBIO_TOKEN':
+            user = request.auth
+        else:
+            user = request.user
+
+
         client_data:dict = request.data['client']
         dependent_from:dict = request.data['dependent_from']
 
-        client_data['created_by'] = request.user.app
-        client_data['organization'] = request.user.organization.id
+        if isinstance(user, KumbioToken):
+            client_data['created_by'] = user.app
+        else:
+            client_data['created_by'] = 3 # use enums here
 
+
+        client_data['organization'] = user.organization.id
 
         client_serializer = OrganizationClientSerializer(data=client_data)
         
@@ -713,7 +729,15 @@ def get_organization_client_types(request):
             donde el primer elemento es el nombre del campo y el segundo es el tipo de campo
     """
 
-    user:KumbioToken = request.user
+    user:KumbioUser | KumbioToken = None
+
+    Print('getting here')
+
+    if isinstance(request.user, KumbioToken):
+        user = request.auth
+    else:
+        user = request.user
+
 
     query_serializer = OrganizationClientTypeQuerySerializer(data=request.query_params)
     query_serializer.is_valid(raise_exception=True)
@@ -748,7 +772,13 @@ def get_extra_fields_for_client_type(request):
             donde el primer elemento es el nombre del campo y el segundo es el tipo de campo
     """
 
-    user:KumbioToken = request.user
+    user:KumbioUser | KumbioToken = None
+
+    if isinstance(request.user, KumbioToken):
+        user = request.auth
+    else:
+        user = request.user
+
     client_type_id = request.query_params.get('client_type_id', None)
 
     if not client_type_id:

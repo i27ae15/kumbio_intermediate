@@ -20,7 +20,15 @@ load_dotenv()
 class KumbioAuthentication(BaseAuthentication):
     
     keyword = 'Token'
+    main_model = None
+
+    def get_model(self):
+        if self.main_model is not None:
+            return self.main_model
+        from rest_framework.authtoken.models import Token
+        return Token
     
+
     def authenticate(self, request):
         auth = get_authorization_header(request).split()
 
@@ -45,13 +53,22 @@ class KumbioAuthentication(BaseAuthentication):
     
     def authenticate_credentials(self, token):
 
+        default_token = self.get_model()
+        kumbio_token:KumbioToken = None
+        def_token = None
         # get the token from the database
         try:
-            token:KumbioToken = KumbioToken.objects.get(token=token)
+            kumbio_token:KumbioToken = KumbioToken.objects.get(token=token)
         except KumbioToken.DoesNotExist:
-            raise exceptions.AuthenticationFailed(_('Invalid token.'))
+            try:
+                def_token = default_token.objects.select_related('user').get(key=token)
+            except default_token.DoesNotExist:
+                raise exceptions.AuthenticationFailed(_('Invalid token.'))
 
-        return (token, token)
+        if kumbio_token:
+            return (kumbio_token, kumbio_token)
+
+        return (def_token.user, def_token)
 
            
     def authenticate_header(self, request):
