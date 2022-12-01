@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (OrganizationProfessionalAPI, OrganizationPlaceAPI, OrganizationView, 
-OrganizationSectorView, OrganizationServiceView, OrganizationClientView, get_organization_client_types, get_extra_fields_for_client_type)
+OrganizationSectorView, OrganizationServiceView, OrganizationClientView, get_organization_client_types, get_extra_fields_for_client_type,
+create_clients)
 
 app_name = 'organization_info'
 
@@ -14,6 +15,7 @@ urlpatterns = [
 
     # functions
     path('client_types/', get_organization_client_types, name='client_types'),
+    path('test-create-clients/', create_clients, name='test_create_clients'),
     # path('extra_fields_for_client_type/', get_extra_fields_for_client_type, name='extra_fields_for_client_type'),
 
 ]
