@@ -33,6 +33,7 @@ load_dotenv()
 KUMBIO_COMMUNICATIONS_ENDPOINT = os.getenv('KUMBIO_COMMUNICATIONS_ENDPOINT')
 SELF_CALENDAR_USER = os.getenv('SELF_CALENDAR_USER')
 
+
 class OrganizationClientType(models.Model):
 
         """
@@ -131,10 +132,10 @@ class Organization(models.Model):
     
     cancellation_policy:str = models.TextField(null=True, blank=True)
     country:str = models.CharField(max_length=120, default='')
-    currency:str = models.CharField(max_length=120, default='')
+    currency:str = models.CharField(max_length=120, default=None, null=True, blank=True)
     
     data_policy:str = models.TextField(null=True, blank=True)
-    description:str = models.CharField(max_length=120, default='')
+    description:str = models.CharField(max_length=120, default=None, null=True, blank=True)
     
     email:str = models.EmailField(unique=True)
     
@@ -142,7 +143,7 @@ class Organization(models.Model):
     
     link_dashboard:str = models.CharField(max_length=120, null=True, blank=True)
     logo = models.ImageField(upload_to='organization_logos', null=True, blank=True)
-    language:str = models.CharField(max_length=120, default='')
+    language:str = models.CharField(max_length=120, default=None, null=True, blank=True)
     
     name:str = models.CharField(max_length=120, unique=True)
     notification_email:str = models.EmailField(default=os.environ['DEFAULT_EMAIL'])
@@ -597,9 +598,10 @@ class OrganizationClient(models.Model):
     updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
     deleted_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
-    created_by:int = models.IntegerField(choices=OrganizationClientCreatedBy.choices, default=OrganizationClientCreatedBy.CALENDAR)
-    updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_client_updated_by')
-    deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_client_deleted_by')
+    created_by_app:int = models.IntegerField(choices=OrganizationClientCreatedBy.choices, default=OrganizationClientCreatedBy.CALENDAR)
+    created_by_user:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, blank=True, related_name='organization_client_created_by')
+    updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, blank=True, related_name='organization_client_updated_by')
+    deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, blank=True, related_name='organization_client_deleted_by')
 
     # to get the appointment that this client had done, we have to call the calendar api
     
