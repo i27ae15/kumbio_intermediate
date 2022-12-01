@@ -657,6 +657,52 @@ class OrganizationClientView(APIView):
 
     @swagger_auto_schema()
     def post(self, request):
+
+        """
+        
+        la información debe venir separada en dos objectos JSON, uno para el cliente y otro para el 
+        dependiente, si no hay dependiente, el segundo objeto debe solo tener un propiedad llamada
+        same_as_client con valor True
+
+        los campos para llenar el "extra_fields" los obtienes de organization/client_types/
+
+
+        request body:
+
+            {
+                client: {
+                    "type" (int) (required): client_type_id,
+                    "first_name" (str) (required): "nombre",
+                    "last_name" (str) (required): "apellido",
+                    "extra_fields" (array) (required): [
+                        ('pets_first_name', FieldType.TEXT, 'Juan Carlos'), 
+                        ('pets_last_name', FieldType.TEXT, 'Atrida')
+                    ],
+                    "birthday" (str): "YYYY-MM-DD", 
+                    "comments" (str): "comentarios",
+                    "identification" (str): "identificación",
+                    "age" (int): 25,
+                    "rating" (int): 4,
+                }
+                {
+                    Todos los campos son requeridos menos el phone2
+
+                    dependent_from: {
+                        "first_name" (str): string,
+                        "last_name" (str): string,
+                        "email" (str): string,
+                        "phone" (str): string,
+                        "phone2" (str): string,
+                    }
+                }
+
+                En caso de que el cliente no tenga dependiente, el segundo objeto debe ser:
+                dependent_from: {
+                    "same_as_client": True
+                }
+            }
+
+        """
         
         # getting the data from the request that comes "separated"
         user:KumbioUser | KumbioToken = None
@@ -728,8 +774,6 @@ def get_organization_client_types(request):
     """
 
     user:KumbioUser | KumbioToken = None
-
-    Print('getting here')
 
     if isinstance(request.user, KumbioToken):
         user = request.auth
