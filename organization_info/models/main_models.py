@@ -577,8 +577,6 @@ class OrganizationClient(models.Model):
         positive or negative, or if the text is a valid email, or if the number is a valid phone number.
     """
     
-    birth_date:datetime.date = models.DateField(null=True, blank=True, default=None)
-
     comments:str = models.TextField(null=True, blank=True, default=None)
 
     emergency_contact:str = models.CharField(max_length=255, null=True, blank=True, default=None)
