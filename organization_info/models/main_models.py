@@ -376,20 +376,31 @@ class OrganizationPlace(models.Model):
     # -----------------------------------------------------------
     # Properties
 
+    @property
+    def available_days(self) -> QuerySet['DayAvailableForPlace']:
+        return self.dayavailableforplace_set.all()
+
     # -----------------------------------------------------------
     # Methods
+
+    def get_day_available(self, week_day:DayName) -> 'DayAvailableForPlace | None':
+        day = self.available_days.filter(week_day=week_day)
+        return day if day else None
+
 
     def save(self, *args, **kwargs):
         first_time = False
         if not self.pk:
             first_time = True
-            
+        else:
+            self.updated_at = timezone.now()
+
         super().save(*args, **kwargs)
         
         if first_time:
             if not self.payment_methods_accepted:
                 self.payment_methods.add(*self.organization.payment_methods_accepted.all())
-    
+        
     
     def __str__(self):
         return f'{self.name} - {self.organization.name}'
@@ -403,6 +414,9 @@ class DayAvailableForPlace(models.Model):
     exclude:list = models.JSONField(default=list, null=True, blank=True)
 
     note:str = models.TextField(null=True, blank=True)
+
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
 
     @property
@@ -423,6 +437,8 @@ class DayAvailableForPlace(models.Model):
     def save(self, *args, **kwargs):
         if not self.pk and not self.exclude:
             self.exclude = [[0, 7], [18, 23]]
+        else:
+            self.updated_at = timezone.now()
                     
         super().save(*args, **kwargs)
 
