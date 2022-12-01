@@ -32,6 +32,8 @@ from user_info.serializers import CreateKumbioUserSerializer
 from .query_serializers import (PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer, 
 OrganizationServiceQuerySerializer, OrganizationClientQuerySerializer, OrganizationClientTypeQuerySerializer)
 
+from .put_serializers import PlacePutSerializer
+
 from .serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
 OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer,
 OrganizationClientTypeSerializer)
@@ -325,7 +327,7 @@ class OrganizationPlaceAPI(APIView):
         if place_serializer.is_valid():
             place_serializer.save()
 
-            daysAvailable:list[dict] = request.data['days']
+            daysAvailable:list[dict] = request.data.get('days')
 
             if daysAvailable:
                 for day in daysAvailable:
@@ -343,37 +345,65 @@ class OrganizationPlaceAPI(APIView):
     
 
     @swagger_auto_schema(
-        request_body = OrganizationPlaceSerializer(),
+        request_body = PlacePutSerializer(),
         responses={200: OrganizationPlaceSerializer()},
     )
     @check_if_user_is_admin_decorator
     def put(self, request):
         """
+
+            Si se quiere añadir otro dia al lugar, se hace desde aquí, añadiendo el dia a la lista de días disponibles
+
+            place_data = OrganizationPlaceSerializer
+            days_data = DayAvailableForPlaceSerializer
+            days = [
+                {
+                    week_day:int = 0 # donde Monday es = 0 y Sunday = 6
+                    exclude:list = [[0, 7], [18, 23]], null=True, blank=True)
+                    note:str = "Una nota de prueba"
+                }
+            ]
+
         Update a Place
         """
-        try:
+        # use here the same schema as the post method
+        # TODO: when a schedule for a place is modified, this must modified also the schedule of the professionals that work in that place
 
-            place = self.check_if_place_exists(request.user, request.data['place_id'])
+        put_serializer = PlacePutSerializer(data=request.data)
+        put_serializer.is_valid(raise_exception=True)
+        put_data = put_serializer.data
 
-            if not place:
-                return Response(
-                    {
-                        'error': 'el lugar no existe'
-                    }, status=status.HTTP_404_NOT_FOUND)
+        place = self.check_if_place_exists(request.user, put_data['place_id'])
+        place_serializer = OrganizationPlaceSerializer(place, data=put_data['place_data'], partial=True)
 
-        except KeyError:
-            return Response(
-                {
-                    'error': 'place_id es requerido'
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-        place_serializer = OrganizationPlaceSerializer(place, data=request.data)
+        data_to_return = dict(place=dict(), days=list())
         
         if place_serializer.is_valid():
             place_serializer.save()
-            return Response(place_serializer.data, status=status.HTTP_200_OK)
+            data_to_return['place'] = place_serializer.data
         
-        return Response(place_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        place_instance:OrganizationPlace = place_serializer.instance
+        
+        if put_data['days_data']:
+            for day in put_data['days_data']:
+
+                available_day = place_instance.get_day_available(day['week_day'])
+                day_serializer = None
+
+                if available_day:
+                    day_serializer = DayAvailableForPlaceSerializer(available_day, data=day, partial=True)
+                    day_serializer.is_valid(raise_exception=True)
+                    day_serializer.save()
+                else:
+                    # this will mean that this day has not been created yet, so we have to create it
+                    day_serializer = DayAvailableForPlaceSerializer(data=day)
+                    day_serializer.is_valid(raise_exception=True)
+                    day_serializer.save()
+            
+            data_to_return['days'].append(day_serializer.data)
+
+        
+        return Response(data_to_return, status=status.HTTP_200_OK)
 
         
     @swagger_auto_schema(
