@@ -160,6 +160,7 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         self.role = role
         self.save()
     
+
     def save(self, *args, **kwargs):
         if not self.pk and not kwargs.get('set_verified_email') and not 'test' in sys.argv:
             self.send_verification_code(save=False)

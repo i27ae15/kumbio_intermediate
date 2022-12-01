@@ -98,8 +98,7 @@ class OrganizationClientType(models.Model):
                 except user_models.KumbioUser.DoesNotExist: pass 
                 # this pass is here because if the user is not specified, it will mean
                 # that the user is the one that is creating the organization, and that
-                # user will be the one that is creating the client type
-                
+                # user will be the one that is creating the client type      
 
             super().save(*args, **kwargs)
             
@@ -185,7 +184,7 @@ class Organization(models.Model):
 
     @property
     def services(self) -> QuerySet:
-        return self.organizationservice.all()       
+        return self.organizationservice.all()
     
 
     @property
@@ -233,6 +232,7 @@ class Organization(models.Model):
             self.invitation_link = secrets.token_urlsafe(21)
             self.link_dashboard = secrets.token_urlsafe(21)
             self.id = secrets.token_urlsafe(21)
+            super().save(*args, **kwargs)
 
             # we need to create the default client_types for this organization
             for client in DEFAULT_CLIENT_TYPES:
@@ -255,8 +255,8 @@ class Organization(models.Model):
             
                 for template_id in res.json()['template_ids']:
                     self.email_templates.append(template_id)
-                        
-        super().save(*args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
                 
         
     def __str__(self) -> str:

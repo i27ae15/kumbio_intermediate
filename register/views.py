@@ -208,7 +208,7 @@ class CreateUserAPI(APIView):
             try: request.data['role']
             except KeyError: return Response({'error':'El role no ha sido especificado'}, status=status.HTTP_400_BAD_REQUEST)
         except TypeError:
-        # this will create the organization, assuming that the person that is being creating it is the owner of the organization
+            # this will create the organization, assuming that the person that is being creating it is the owner of the organization
             organization:Organization = Organization.objects.create(
                 # org info
                 name=organization_data['name'],
@@ -220,10 +220,10 @@ class CreateUserAPI(APIView):
                 owner_first_name=request.data['first_name'],
                 owner_last_name=request.data['last_name'],
                 owner_phone=request.data['phone'],
-                )
-            organization_id = organization.id        
+            )
+            organization_id = organization.pk        
             request.data['role'] = 1
-        
+            
         # Create the user role that comes by default when creating a new owner
 
         request.data['organization'] = organization_id
