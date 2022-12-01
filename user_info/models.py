@@ -50,6 +50,28 @@ class KumbioUserRole(models.Model):
 # User
 # --------------------------------------------------------------------------------
 
+class NotificationsSettings(models.Model):
+
+    user:'KumbioUser' = models.ForeignKey('KumbioUser', on_delete=models.CASCADE)
+
+    # notifications preferences
+    appointment_confirmation:bool = models.BooleanField(default=True)
+    appointment_reschedule:bool = models.BooleanField(default=True)
+    appointment_cancellation:bool = models.BooleanField(default=True)
+
+    day_briefing:bool = models.BooleanField(default=True)
+    time_to_receive_briefing:datetime.time = models.TimeField(default=datetime.time(8, 0, 0))
+
+    # deliver method
+
+    email:bool = models.BooleanField(default=True)
+    sms:bool = models.BooleanField(default=False)
+    whatsapp:bool = models.BooleanField(default=False)
+
+    # this should only be use for admin users
+    low_inventory:bool = models.BooleanField(default=False)
+
+
 class KumbioUserManager(BaseUserManager):
     def create_user(self, email, username, organization, password=None, **extra_fields):
         
@@ -122,6 +144,16 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["first_name", "last_name", "username"]
 
+    # properties
+    # -------------------------------------------------------------------
+
+    @property
+    def notifications_settings(self) -> NotificationsSettings:
+        return self.notificationssettings_set.all()[0] 
+
+    # functions
+    # -------------------------------------------------------------------
+
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
 
@@ -164,6 +196,9 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     def save(self, *args, **kwargs):
         if not self.pk and not kwargs.get('set_verified_email') and not 'test' in sys.argv:
             self.send_verification_code(save=False)
+            NotificationSettings.objects.create(user=self)
+
+            # by default create the settings for the notifications
         
         elif kwargs.get('set_verified_email'):
             self.is_email_verified = True
@@ -172,7 +207,7 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
             del kwargs['set_verified_email']
         except KeyError:
             pass
-            # we set pass here because we need to assure that set_verified_email is not in kwargs, so, if keyerror is raised, we just pass
+            # we set pass here because we need to assure that set_verified_email is not in kwargs, so, if key_error is raised, we just pass
             
         super().save(*args, **kwargs)
 

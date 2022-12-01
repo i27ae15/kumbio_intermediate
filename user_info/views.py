@@ -5,6 +5,10 @@ from rest_framework import status
 
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework.views import APIView
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+
 
 # Swagger
 from drf_yasg.utils import swagger_auto_schema
@@ -12,10 +16,10 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 
 
 # models 
-from user_info.models import KumbioUser
+from user_info.models import KumbioUser, NotificationsSettings
 
 # serializers 
-from .serializers import KumbioUserSerializer, KumbioUserAvailablePlacesSerializer, KumbioUserAvailableServicesSerializer
+from .serializers import KumbioUserSerializer, KumbioUserAvailablePlacesSerializer, KumbioUserAvailableServicesSerializer, NotificationsSettingsSerializer
 
 
 # others
@@ -76,3 +80,32 @@ def get_kumbio_user(request):
     available_places = KumbioUserSerializer(user)
 
     return Response(available_places.data, status=status.HTTP_200_OK)
+
+
+class NotificationsSettingsView(APIView):
+
+    permission_classes = (IsAuthenticated,) 
+    authentication_classes = (TokenAuthentication,) 
+
+    
+    def get(self, request):
+        
+
+        settings:NotificationsSettings = request.user.notifications_settings
+        serializer = NotificationsSettingsSerializer(settings)
+
+        return Response(serializer.data)
+
+
+    @swagger_auto_schema(
+        request_body=NotificationsSettingsSerializer(),
+    )
+    def put(self, request):
+        
+        settings:NotificationsSettings = request.user.notifications_settings
+        serializer = NotificationsSettingsSerializer(settings, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
