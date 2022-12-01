@@ -90,7 +90,6 @@ class NotificationsSettingsView(APIView):
     
     def get(self, request):
         
-
         settings:NotificationsSettings = request.user.notifications_settings
         serializer = NotificationsSettingsSerializer(settings)
 
