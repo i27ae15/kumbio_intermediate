@@ -206,7 +206,7 @@ class OrganizationProfessionalAPI(APIView):
                 'role': PROFESSIONAL_ROLE_ID, 
             })
         
-        if res.status_code != 201:
+        if res.status_code != 201 or 'token' not in res.json():
             return Response({"error": res.json()}, status=status.HTTP_400_BAD_REQUEST)
         
         if not kumbio_user_serializer.is_valid():
