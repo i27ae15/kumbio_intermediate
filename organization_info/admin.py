@@ -1,11 +1,10 @@
 from django.contrib import admin
-from .models import (Organization, Invoice, FrequentlyAskedQuestion, OrganizationCampaigns, OrganizationClient, OrganizationPlace, 
+from .models import (Organization, FrequentlyAskedQuestion, OrganizationCampaigns, OrganizationClient, OrganizationPlace, 
                     OrganizationProduct, OrganizationProfessional, OrganizationPromotion, OrganizationService, ProfessionalSpecialty, 
                     PaymentMethodAcceptedByOrg, Sector, OrganizationClientType)
 
 
 admin.site.register(Organization)
-admin.site.register(Invoice)
 admin.site.register(FrequentlyAskedQuestion)
 admin.site.register(OrganizationCampaigns)
 admin.site.register(OrganizationClient)

@@ -24,8 +24,9 @@ EMAIL='testuser@testuser.com'
 PASSWORD = 'testuser'
 USERNAME = 'testuser'
 
+# TODO: move some if not all these function to a more general scope
 
-def set_authorization(self, client):
+def set_authorization(client):
     url = reverse('register:obtain_auth_token')
     # TODO: Check why we have to pass the email as username
     resp = client.post(url, {'username':EMAIL, 'password':PASSWORD, 'for_kumbio': True}, format='json')
@@ -87,7 +88,7 @@ def create_organization(use_user=False) -> Organization:
     return org
 
 
-def create_place(data_to_create_place:dict, organization:Organization, user:KumbioUser, create_with_serializer=False) -> OrganizationPlace:
+def create_place(data_to_create_place:dict, organization:Organization, user:KumbioUser, create_with_serializer=False) -> 'OrganizationPlace | dict':
     # create a post
 
     if not create_with_serializer:
@@ -150,7 +151,7 @@ def create_professional(organization:Organization, user:KumbioUser=None, name='t
         created_by=user)
 
 
-def create_client(organization:Organization, client_type:OrganizationClientType, num_clients=1):
+def create_client(organization:Organization, client_type:OrganizationClientType, num_clients=1) -> list[OrganizationClient]:
     clients = []
 
     for i in range(num_clients):
@@ -197,7 +198,7 @@ def create_client(organization:Organization, client_type:OrganizationClientType,
         clients.append(data_to_create_client)
 
 
-    data_from_serializer = list()
+    data_from_serializer:list[OrganizationClient] = list()
 
     for client in clients:
         client_serializer= OrganizationClientSerializer(data=client['client'])
@@ -212,7 +213,7 @@ def create_client(organization:Organization, client_type:OrganizationClientType,
         client_instance:OrganizationClient = client_serializer.instance
         client_serializer = OrganizationClientSerializer(client_instance)
 
-        data_from_serializer.append(client_serializer.data)
+        data_from_serializer.append(client_serializer.instance)
 
     return data_from_serializer
   
