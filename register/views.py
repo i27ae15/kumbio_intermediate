@@ -202,12 +202,15 @@ class CreateUserAPI(APIView):
         
         organization_data = request.data['organization']
         organization_id:int = None
+
+        is_owner:bool = False
         
         try: 
             organization_id = int(organization_data)
             try: request.data['role']
             except KeyError: return Response({'error':'El role no ha sido especificado'}, status=status.HTTP_400_BAD_REQUEST)
         except TypeError:
+            is_owner = True
             # this will create the organization, assuming that the person that is being creating it is the owner of the organization
             organization:Organization = Organization.objects.create(
                 # org info
@@ -247,6 +250,10 @@ class CreateUserAPI(APIView):
             user.set_role(KumbioUserRole.objects.get(id=int(request.data['role'])))
             user.calendar_token = res.json()['token']
             user.save()
+
+            if is_owner:
+                # create the default booking settings for calendar
+                res = requests.post(f'{CALENDAR_ENDPOINT}settings/api/v2/booking/', json={}, headers={'Authorization': f'Token {user.calendar_token}'})
             
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 

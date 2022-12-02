@@ -162,7 +162,6 @@ class OrganizationProfessionalAPI(APIView):
             organization_professionals = OrganizationProfessional.objects.filter(organization__id=request.user.organization.id)
 
         else:
-            
             # check if the user is the professional they are asking for
             if request.user.id != query_params['kumbio_user_id']:
                 if check_if_user_is_admin(request) != True:

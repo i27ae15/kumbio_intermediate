@@ -274,10 +274,14 @@ class OrganizationService(models.Model):
     service:str = models.CharField(max_length=100)
 
     description:str = models.TextField(blank=True, null=True)
+    conditions_and_discounts:str = models.TextField(blank=True, null=True)
 
     time_interval:float = models.FloatField(default=1)
     
     price:float = models.FloatField(default=0)
+
+    buffer:int = models.IntegerField(default=0)
+    only_booking:int = models.BooleanField(default=True)
 
     # logs fields
     created_at:datetime.datetime = models.DateTimeField(default=datetime.datetime.utcnow)
