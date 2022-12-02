@@ -31,8 +31,17 @@ class OrganizationProfessionalSerializer(serializers.ModelSerializer):
         depth = 1
 
 
+
+class DayAvailableForPlaceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = DayAvailableForPlace
+        fields = '__all__'
+
+
 class OrganizationPlaceSerializer(serializers.ModelSerializer):
 
+    daysavailableforplace_set = DayAvailableForPlaceSerializer(many=True, read_only=True)
     class Meta:
         model = OrganizationPlace
         fields = '__all__'
@@ -49,13 +58,6 @@ class OrganizationSectorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Sector
-        fields = '__all__'
-
-
-class DayAvailableForPlaceSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = DayAvailableForPlace
         fields = '__all__'
 
 
