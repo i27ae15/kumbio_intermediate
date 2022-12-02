@@ -17,6 +17,7 @@ from django.contrib.auth.models import (
 from utils.numbers import random_with_N_digits
 
 
+
 # notifications
 from kumbio_communications import send_notification
 
@@ -196,7 +197,7 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     def save(self, *args, **kwargs):
         if not self.pk and not kwargs.get('set_verified_email') and not 'test' in sys.argv:
             self.send_verification_code(save=False)
-            NotificationSettings.objects.create(user=self)
+            NotificationsSettings.objects.create(user=self)
 
             # by default create the settings for the notifications
         
