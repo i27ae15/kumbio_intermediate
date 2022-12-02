@@ -23,7 +23,6 @@ schema_view = get_schema_view(
    permission_classes=[permissions.AllowAny],
 )
 
-
 urlpatterns = [
    path('admin/', admin.site.urls),  
    # re_path(r'^authenticate/', CustomObtainAuthToken.as_view()),
