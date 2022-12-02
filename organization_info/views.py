@@ -206,7 +206,10 @@ class OrganizationProfessionalAPI(APIView):
             })
         
         if res.status_code != 201 or 'token' not in res.json():
-            return Response({"error": res.json()}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                return Response({"error": res.json()}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"error": f"Something went wrong with the calendar_api: {e}"}, status=status.HTTP_400_BAD_REQUEST)
         
         if not kumbio_user_serializer.is_valid():
             return Response(kumbio_user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
