@@ -6,7 +6,6 @@ from rest_framework import serializers
 from .models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, 
 OrganizationService, Sector, DayAvailableForPlace, OrganizationClient, OrganizationClientDependent,
 OrganizationClientType)
-from user_info.serializers import KumbioUserSerializer
 from .utils.enums import FieldType
 
 
@@ -48,6 +47,8 @@ class OrganizationPlaceSerializer(serializers.ModelSerializer):
 
 
 class OrganizationServiceSerializer(serializers.ModelSerializer):
+
+    organizationprofessional_set = OrganizationProfessionalSerializer(many=True, read_only=True)
 
     class Meta:
         model = OrganizationService

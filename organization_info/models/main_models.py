@@ -497,7 +497,7 @@ class OrganizationProfessional(models.Model):
     # properties
     
     @property
-    def services(self) -> QuerySet:
+    def services_available(self) -> QuerySet:
         return self.organizationservice.all()
     
     @property

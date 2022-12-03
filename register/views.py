@@ -3,9 +3,6 @@ import requests
 import os
 
 # django 
-import secrets
-from django.contrib.auth import get_user_model # If used custom user model
-from django.db.models.query import QuerySet
 
 # rest-framework
 from rest_framework import status
@@ -27,7 +24,6 @@ from user_info.serializers import CreateKumbioUserSerializer
 
 
 # others
-from utils.default_templates import DEFAULT_TEMPLATES
 from print_pp.logging import Print
 
 from dotenv import load_dotenv
@@ -235,20 +231,10 @@ class CreateUserAPI(APIView):
 
         if serializer.is_valid():
             serializer.save()
-            
-            # creating the user in the calendar app so we can obtain the token for the user in calendar
-            res = requests.post(f'{CALENDAR_ENDPOINT}register/api/v2/create-user/', json={
-                'organization_id': organization_id,
-                'email':request.data['email'],
-                'first_name': organization_data['name'],
-                'last_name': organization_data['name'], 
-                'role': request.data['role'],
-            })
-            
+
             user:KumbioUser = serializer.instance
             user.set_password(request.data['password'])
             user.set_role(KumbioUserRole.objects.get(id=int(request.data['role'])))
-            user.calendar_token = res.json()['token']
             user.save()
 
             if is_owner:

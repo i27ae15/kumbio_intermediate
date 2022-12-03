@@ -442,7 +442,7 @@ class TestOrganizationClient(APITestCase):
         clients = create_client(self.organization, client_type, num_clients=num_clients)
         self.assertEqual(len(clients), num_clients)
 
-        res = self.client.get(main_url, {'client_id': clients[0]['id']}, format='json')
+        res = self.client.get(main_url, {'client_id': clients[0].pk}, format='json')
 
         self.assertEqual(len(res.json()), 1)
 
@@ -461,3 +461,22 @@ class TestOrganizationProfesional(APITestCase):
 
         # creating the data for the client
         pass
+
+
+class TestOrganizationService(APITestCase):
+    
+        def setUp(self) -> None:
+            self.organization = create_organization()
+            self.user = create_user(self.organization)
+            self.sector = create_organization_sector()
+            self.professional = create_professional(self.organization)
+            self.service = create_service({}, self.organization)
+            set_authorization(self.client)
+            
+        
+        def test_create_service(self):
+            url = reverse('organization_info:service')
+            self.professional.services.add(self.service)
+
+            res = self.client.get(url, format='json')
+            self.assertEqual(res.status_code, 200)

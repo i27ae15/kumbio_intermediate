@@ -510,17 +510,15 @@ class OrganizationServiceView(APIView):
         )
         def get(self, request):
     
-            qp = OrganizationServiceQuerySerializer(data=request.query_params)
-            qp.is_valid(raise_exception=True)
-            query_params = qp.data
+            query_serializer = OrganizationServiceQuerySerializer(data=request.query_params)
+            query_serializer.is_valid(raise_exception=True)
+            query_params = query_serializer.data
             
             if query_params['service_id']:
                 services = OrganizationService.objects.filter(id=query_params['service_id'])
                 if not services:
-                    return Response(
-                        {
-                            'error': 'el servicio no existe'
-                        }, status=status.HTTP_404_NOT_FOUND)
+                    raise exceptions.NotFound(_('el servicio no existe'))
+            
             else:
                 services = OrganizationService.objects.all()
     
