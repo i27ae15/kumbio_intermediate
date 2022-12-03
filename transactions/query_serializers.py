@@ -1,3 +1,5 @@
+import datetime
+
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
@@ -26,20 +28,14 @@ class AppointmentInvoiceQuerySerializer(serializers.Serializer):
     payment_method = serializers.IntegerField(default=None, allow_null=True, help_text="Método de pago de la factura que se quiere obtener")
 
 
-    def validate(self, attrs):
+    def validate(self, attrs:dict):
+
+        # should we delete the keywords that are marked as None so that
+        # they don't get passed to the queryset filter?
 
         if not attrs['appointment_id'] and not attrs['invoice_id']:
-            # this will mean that the user is trying to get all the invoices of its organization
-            organization_id:int = self.context['organization_id']
-            
-            try: organization:Organization = Organization.objects.get(id=organization_id)
-            except Organization.DoesNotExist: raise serializers.ValidationError(_("La organización no existe"))
-            attrs['organization'] = organization
-            
-            try: payment_method:PaymentMethodAcceptedByOrg = organization.payment_methods_accepted.get(id=attrs['payment_method'])
-            except PaymentMethodAcceptedByOrg.DoesNotExist: raise serializers.ValidationError(_("El método de pago no existe o no es aceptado por la organización"))
-            attrs['payment_method'] = payment_method
-            
+            self.convert_and_delete_serializer_attributes(attrs)
+
         elif attrs['appointment_id']:
             # this will mean that the user is trying to get the invoice of a specific appointment
             # so we need to make a call to the calendar_api to check if the appointment exists
@@ -52,3 +48,38 @@ class AppointmentInvoiceQuerySerializer(serializers.Serializer):
             attrs['invoice'] = invoice
 
         return super().validate(attrs)
+
+
+    def convert_and_delete_serializer_attributes(self, attrs:dict) -> None:
+        del attrs['appointment_id']
+        del attrs['invoice_id']
+
+        # this will mean that the user is trying to get all the invoices of its organization
+        organization_id:int = self.context['organization_id']
+        
+        try: organization:Organization = Organization.objects.get(id=organization_id)
+        except Organization.DoesNotExist: raise serializers.ValidationError(_("La organización no existe"))
+        attrs['organization'] = organization.pk
+        
+        if attrs.get('payment_method'):
+            try: payment_method:PaymentMethodAcceptedByOrg = organization.payment_methods_accepted.get(id=attrs['payment_method'])
+            except PaymentMethodAcceptedByOrg.DoesNotExist: raise serializers.ValidationError(_("El método de pago no existe o no es aceptado por la organización"))
+            attrs['payment_method'] = payment_method.pk
+        else:
+            del attrs['payment_method']
+        
+        if not attrs.get('status'): del attrs['status']
+        if not attrs.get('from_date'): del attrs['from_date']
+        if not attrs.get('to_date'): del attrs['to_date']
+        if not attrs.get('services'): del attrs['services']
+        if not attrs.get('products'): del attrs['products']
+
+        attrs['amount__gte'] = attrs['min_amount']
+        attrs['amount__lte'] = attrs['max_amount']
+
+        del attrs['min_amount']
+        del attrs['max_amount']
+
+        # convert the date to datetime
+        if attrs.get('from_date'): attrs['created_at__gte'] = datetime.datetime.combine(attrs['from_date'], datetime.datetime.min.time()); del attrs['from_date']
+        if attrs.get('to_date'): attrs['created_at__lte'] = datetime.datetime.combine(attrs['to_date'], datetime.datetime.max.time()); del attrs['to_date']

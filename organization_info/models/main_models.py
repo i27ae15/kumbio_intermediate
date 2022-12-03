@@ -625,8 +625,6 @@ class OrganizationClient(models.Model):
     def save(self, *args, **kwargs):
         if not self.pk:
             self.referral_link = secrets.token_urlsafe(16)
-        
-        print('age', self.age)
 
         super().save(*args, **kwargs)
 

@@ -201,7 +201,7 @@ def create_client(organization:Organization, client_type:OrganizationClientType,
     data_from_serializer:list[OrganizationClient] = list()
 
     for client in clients:
-        client_serializer= OrganizationClientSerializer(data=client['client'])
+        client_serializer = OrganizationClientSerializer(data=client['client'])
         client_serializer.is_valid(raise_exception=True)
         client_serializer.save()
 
