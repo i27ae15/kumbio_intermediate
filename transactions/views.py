@@ -19,7 +19,7 @@ from print_pp.logging import Print
 class AppointmentInvoiceViewSet(APIView):
     
     permission_classes = (IsAuthenticated,) 
-    authentication_classes = (TokenAuthentication,) # Use this token?
+    authentication_classes = (TokenAuthentication,)
 
 
     def get(self, request):
@@ -28,13 +28,15 @@ class AppointmentInvoiceViewSet(APIView):
         query_serializer.is_valid(raise_exception=True)
         query_params = query_serializer.validated_data
 
-        Print('query_params', query_params)
-
         if query_params.get('organization'):
             invoices = AppointmentInvoice.objects.filter(**query_params)
-        else:
-            Response(status=status.HTTP_400_BAD_REQUEST)
-
+        elif query_params.get('appointment_id'):
+            invoices = AppointmentInvoice.objects.filter(organization=request.user.organization, appointment_id=query_params['appointment_id'])
+        elif query_params.get('invoice_id'):
+            invoices = AppointmentInvoice.objects.filter(organization=request.user.organization, id=query_params['invoice_id'])
+        elif query_params.get('client_id'):
+            invoices = AppointmentInvoice.objects.filter(organization=request.user.organization, client_id=query_params['client_id'])
+     
         return Response(AppointmentInvoiceSerializer(invoices, many=True).data, status=status.HTTP_200_OK)
 
     

@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
 
-from organization_info.models.main_models import Organization, PaymentMethodAcceptedByOrg
+from organization_info.models.main_models import Organization, PaymentMethodAcceptedByOrg, OrganizationClient
 
 from .models import AppointmentInvoice
 
@@ -13,6 +13,7 @@ class AppointmentInvoiceQuerySerializer(serializers.Serializer):
 
     appointment_id = serializers.IntegerField(default=None, allow_null=True, help_text="Id de la cita que se quiere obtener")
     invoice_id = serializers.IntegerField(default=None, allow_null=True, help_text="Id de la factura que se quiere obtener")
+    client_id = serializers.IntegerField(default=None, allow_null=True, help_text="Id del cliente que se quiere obtener")
 
     min_amount = serializers.IntegerField(default=0, help_text="Monto mínimo de la factura que se quiere obtener")
     max_amount = serializers.IntegerField(default=float('inf'), help_text="Monto máximo de la factura que se quiere obtener")
@@ -30,10 +31,7 @@ class AppointmentInvoiceQuerySerializer(serializers.Serializer):
 
     def validate(self, attrs:dict):
 
-        # should we delete the keywords that are marked as None so that
-        # they don't get passed to the queryset filter?
-
-        if not attrs['appointment_id'] and not attrs['invoice_id']:
+        if not attrs['appointment_id'] and not attrs['invoice_id'] and not attrs['client_id']:
             self.convert_and_delete_serializer_attributes(attrs)
 
         elif attrs['appointment_id']:
@@ -46,13 +44,25 @@ class AppointmentInvoiceQuerySerializer(serializers.Serializer):
             try: invoice:AppointmentInvoice = AppointmentInvoice.objects.get(id=attrs['invoice_id'])
             except AppointmentInvoice.DoesNotExist: raise serializers.ValidationError(_("La factura no existe"))
             attrs['invoice'] = invoice
+        
+        elif attrs['client_id']:
+            # this will mean that the user is trying to get all the invoices of a specific client
+            try: client:OrganizationClient = OrganizationClient.objects.get(id=attrs['client_id'])
+            except OrganizationClient.DoesNotExist: raise serializers.ValidationError(_("El cliente no existe"))
+            attrs['client'] = client    
 
         return super().validate(attrs)
 
 
     def convert_and_delete_serializer_attributes(self, attrs:dict) -> None:
+
+        # delete the keywords that are marked as None so that
+        # they don't get passed to the queryset filter
+
+
         del attrs['appointment_id']
         del attrs['invoice_id']
+        del attrs['client_id']
 
         # this will mean that the user is trying to get all the invoices of its organization
         organization_id:int = self.context['organization_id']

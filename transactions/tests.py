@@ -218,11 +218,20 @@ class TestAppointmentInvoice(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 10)
 
-        url = reverse('transactions:appointment_invoice')
+        response = self.client.get(url, {'invoice_id': invoices[0].pk}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0]['id'], invoices[0].pk)
 
-        # response = self.client.get(url, {'invoice_id': invoices[0].pk}, format='json')
-        # self.assertEqual(response.status_code, 200)
-        # self.assertEqual(response.json()['id'], invoices[0].pk)
+        response = self.client.get(url, {'appointment_id': invoices[0].appointment_id}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0]['appointment_id'], invoices[0].appointment_id)
+
+        response = self.client.get(url, {'client_id': invoices[0].client.pk}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0]['client'], invoices[0].client.pk)
+
+
+        Print('json', response.json())
 
 
 
