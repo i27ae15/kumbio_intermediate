@@ -24,6 +24,7 @@ import user_info.models as user_models
 from utils.integer_choices import RatingMadeBy
 from organization_info.utils.time import get_start_and_end_time
 from organization_info.utils.enums import FieldType, DayName, OrganizationClientCreatedBy
+from .payment_models import PaymentMethodAcceptedByOrg
 
 from print_pp.logging import Print
 
@@ -119,8 +120,10 @@ class Organization(models.Model):
     
     # Foreign Keys -----------------------------------------------------------
     # plan:KumbioPlan = models.ForeignKey(KumbioPlan, on_delete=models.CASCADE, default=1)
-    sector:Sector = models.ForeignKey(Sector, on_delete=models.CASCADE, null=True, default=None, blank=True)
     id:str = models.CharField(max_length=100, primary_key=True)
+    
+    sector:Sector = models.ForeignKey(Sector, on_delete=models.CASCADE, null=True, default=None, blank=True)
+    payment_methods_accepted = models.ManyToManyField(PaymentMethodAcceptedByOrg, blank=True, related_name='payment_methods_accepted_by_org')
     
     email_templates:list = models.JSONField(default=list)
     

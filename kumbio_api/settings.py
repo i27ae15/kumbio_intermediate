@@ -63,6 +63,8 @@ INSTALLED_APPS = [
     'organization_info',
     'user_info',
     'authentication_manager',
+    'transactions',
+    'inventory',
     
     # third party apps
     'rest_framework',
