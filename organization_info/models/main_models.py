@@ -144,7 +144,7 @@ class Organization(models.Model):
     invitation_link:str = models.CharField(max_length=256, unique=True, null=True, default=None)
     
     link_dashboard:str = models.CharField(max_length=120, null=True, blank=True)
-    logo = models.ImageField(upload_to='organization_logos', null=True, blank=True)
+    logo = models.ImageField(upload_to='organization_logos', null=True, blank=True, default=None)
     language:str = models.CharField(max_length=120, default=None, null=True, blank=True)
     
     name:str = models.CharField(max_length=120, unique=True)
