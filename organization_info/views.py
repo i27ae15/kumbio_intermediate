@@ -628,7 +628,7 @@ class OrganizationClientView(APIView):
         """
         user:KumbioUser = None
 
-        if isinstance(request.user, KumbioToken):
+        if not isinstance(request.user, KumbioToken):
             raise exceptions.PermissionDenied(_('No tienes permiso para realizar esta acción'))
 
         user = request.user
@@ -644,14 +644,11 @@ class OrganizationClientView(APIView):
 
         else: 
             clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(organization=user.organization.id)
-            Print('age', clients[0].age)
             
             clients = clients.filter(age__gte=query_params['min_age'],
                            age__lte=query_params['max_age'],
                            rating__gte=query_params['min_rating'],
                            rating__lte=query_params['max_rating'])
-            
-            Print('clients', clients)
             
             if query_params['birth_date']:
                 clients = clients.filter(birth_date=query_params['birth_date'])
