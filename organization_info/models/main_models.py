@@ -565,6 +565,8 @@ class OrganizationClient(models.Model):
 
     extra_fields:list = models.JSONField(default=list, null=False)
 
+    # TODO: add professional fields to the client
+
     """
         extra_fields is going to be a JSON coming from the type of client that was selected when creating
         the client. Making it possible to save any kind of information that the organization wants to save
@@ -574,7 +576,7 @@ class OrganizationClient(models.Model):
 
         example:
 
-        fields = [('pets_first_name', FieldType.TEXT, 'Ricardo'), ('pets_last_name', FieldType.TEXT, 'El Pollo fantástico')]
+        extra_fields = [('pets_first_name', FieldType.TEXT, 'first_name'), ('pets_last_name', FieldType.TEXT, 'last_name')]
 
         where, for the moment, there are just two types of fields: text and number
 
@@ -781,4 +783,3 @@ class FrequentlyAskedQuestion(models.Model):
 
     def __str__(self):
         return f'{self.id} - {self.question[:20]} - {self.organization.name}'
-

@@ -345,6 +345,8 @@ class OrganizationPlaceAPI(APIView):
                 else:
                     return Response(days_available_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+            new_object = OrganizationPlace.objects.get(id=place_serializer.data['id'])
+            place_serializer = OrganizationPlaceSerializer(new_object)
             return Response(place_serializer.data, status.HTTP_201_CREATED)
         
         return Response(place_serializer.errors, status.HTTP_400_BAD_REQUEST)
@@ -628,7 +630,7 @@ class OrganizationClientView(APIView):
         """
         user:KumbioUser = None
 
-        if isinstance(request.user, KumbioToken):
+        if not isinstance(request.user, KumbioToken):
             raise exceptions.PermissionDenied(_('No tienes permiso para realizar esta acción'))
 
         user = request.user

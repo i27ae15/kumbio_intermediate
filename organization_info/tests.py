@@ -275,10 +275,18 @@ class TestPlace(APITestCase):
         except KeyError:
             self.assertEqual('you are not authorized', '')
             
-
-        # Print('New place created', response)
+        
+        Print('New place created', response)
 
         self.assertEqual(response, initial_data)
+
+
+    def test_get_place(self):
+        self.assertTrue(self.client.login(email=EMAIL, password=PASSWORD))
+        create_place(self.data_to_create_place, self.organization, self.user, create_with_serializer=True)
+
+        url = reverse('organization_info:place')
+        response = self.client.get(url, format='json').json()
 
 
     # helper functions ---------------------------------------------------------
@@ -293,6 +301,8 @@ class TestPlace(APITestCase):
         token = resp.data['token']
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+
+    
 
 
 class TestOrganizationSector(APITestCase):

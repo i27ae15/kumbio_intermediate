@@ -40,7 +40,7 @@ class DayAvailableForPlaceSerializer(serializers.ModelSerializer):
 
 class OrganizationPlaceSerializer(serializers.ModelSerializer):
 
-    daysavailableforplace_set = DayAvailableForPlaceSerializer(many=True, read_only=True)
+    dayavailableforplace_set = DayAvailableForPlaceSerializer(many=True, read_only=True)
     class Meta:
         model = OrganizationPlace
         fields = '__all__'
