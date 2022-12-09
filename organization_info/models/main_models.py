@@ -392,8 +392,10 @@ class OrganizationPlace(models.Model):
     # Methods
 
     def get_day_available(self, week_day:DayName) -> 'DayAvailableForPlace | None':
-        day = self.available_days.filter(week_day=week_day)
-        return day if day else None
+        try:
+            return self.available_days.get(week_day=week_day)
+        except DayAvailableForPlace.DoesNotExist:
+            return None
 
 
     def save(self, *args, **kwargs):
