@@ -6,7 +6,6 @@ from rest_framework import serializers
 from .models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, 
 OrganizationService, Sector, DayAvailableForPlace, OrganizationClient, OrganizationClientDependent,
 OrganizationClientType)
-from user_info.serializers import KumbioUserSerializer
 from .utils.enums import FieldType
 
 
@@ -41,13 +40,15 @@ class DayAvailableForPlaceSerializer(serializers.ModelSerializer):
 
 class OrganizationPlaceSerializer(serializers.ModelSerializer):
 
-    daysavailableforplace_set = DayAvailableForPlaceSerializer(many=True, read_only=True)
+    dayavailableforplace_set = DayAvailableForPlaceSerializer(many=True, read_only=True)
     class Meta:
         model = OrganizationPlace
         fields = '__all__'
 
 
 class OrganizationServiceSerializer(serializers.ModelSerializer):
+
+    organizationprofessional_set = OrganizationProfessionalSerializer(many=True, read_only=True)
 
     class Meta:
         model = OrganizationService
@@ -84,27 +85,27 @@ class OrganizationClientSerializer(serializers.ModelSerializer):
 
         extra_fields = data.get('extra_fields', None)
         if not extra_fields:
-            raise serializers.ValidationError('Extra fields are required')
+            raise serializers.ValidationError(_('Extra fields are required'))
 
         for field in extra_fields:
             if len(field) != 3:
-                raise serializers.ValidationError('extra_fields Debe tener 3 elementos: nombre, tipo, valor. Ejemplo: ["pets_first_name", TEXT, "Ricardo"]')
+                raise serializers.ValidationError(_('extra_fields Debe tener 3 elementos: nombre, tipo, valor. Ejemplo: ["pets_first_name", TEXT, "Ricardo"]'))
             
             if field[1] not in [FieldType.TEXT.value, FieldType.NUMBER.value]:
-                raise serializers.ValidationError('Tipo de campo no válido. Debe ser TEXT o NUMBER')
+                raise serializers.ValidationError(_('Tipo de campo no válido. Debe ser TEXT o NUMBER'))
 
             if field[1] == FieldType.NUMBER.value:
                 try:
                     int(field[2])
                 except ValueError:
-                    raise serializers.ValidationError('Valor de campo no válido. Debe ser un número')
+                    raise serializers.ValidationError(_('Valor de campo no válido. Debe ser un número'))
             
             if field[1] == FieldType.TEXT.value:
                 if not isinstance(field[2], str):
-                    raise serializers.ValidationError('Valor de campo no válido. Debe ser texto')
+                    raise serializers.ValidationError(_('Valor de campo no válido. Debe ser texto'))
             
             if not isinstance(field[0], str):
-                raise serializers.ValidationError('Nombre de campo no válido. Debe ser texto')
+                raise serializers.ValidationError(_('Nombre de campo no válido. Debe ser texto'))
 
             field = tuple(field)
 

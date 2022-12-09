@@ -1,6 +1,8 @@
 # python
+import requests
 import datetime
 import sys
+import os
 
 # django
 from django.db import models
@@ -28,6 +30,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TOKEN_FOR_CALENDAR = "Token Calendar-8795fc177ff14ecb9199c83a4625dfd93bca76c0c0"
+CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
 
 
 class KumbioUserPermission(models.Model):
@@ -209,7 +212,22 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         except KeyError:
             pass
             # we set pass here because we need to assure that set_verified_email is not in kwargs, so, if key_error is raised, we just pass
-            
+        
+        if not self.pk:
+            # creating the user in the calendar app so we can obtain the token for the user in calendar
+            if not 'test' in sys.argv:
+                res = requests.post(f'{CALENDAR_ENDPOINT}register/api/v2/create-user/', json={
+                    'organization_id': self.organization.id,
+                    'email': self.email,
+                    'first_name': self.first_name,
+                    'last_name': self.last_name, 
+                    'role': self.role.pk,
+                })
+                
+                self.calendar_token = res.json()['token']
+            else:
+                self.calendar_token = 'token-test-for-calendar'
+
         super().save(*args, **kwargs)
 
 

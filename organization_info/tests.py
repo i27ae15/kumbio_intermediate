@@ -201,7 +201,7 @@ def create_client(organization:Organization, client_type:OrganizationClientType,
     data_from_serializer:list[OrganizationClient] = list()
 
     for client in clients:
-        client_serializer= OrganizationClientSerializer(data=client['client'])
+        client_serializer = OrganizationClientSerializer(data=client['client'])
         client_serializer.is_valid(raise_exception=True)
         client_serializer.save()
 
@@ -275,10 +275,18 @@ class TestPlace(APITestCase):
         except KeyError:
             self.assertEqual('you are not authorized', '')
             
-
-        # Print('New place created', response)
+        
+        Print('New place created', response)
 
         self.assertEqual(response, initial_data)
+
+
+    def test_get_place(self):
+        self.assertTrue(self.client.login(email=EMAIL, password=PASSWORD))
+        create_place(self.data_to_create_place, self.organization, self.user, create_with_serializer=True)
+
+        url = reverse('organization_info:place')
+        response = self.client.get(url, format='json').json()
 
 
     # helper functions ---------------------------------------------------------
@@ -293,6 +301,8 @@ class TestPlace(APITestCase):
         token = resp.data['token']
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+
+    
 
 
 class TestOrganizationSector(APITestCase):
@@ -442,7 +452,7 @@ class TestOrganizationClient(APITestCase):
         clients = create_client(self.organization, client_type, num_clients=num_clients)
         self.assertEqual(len(clients), num_clients)
 
-        res = self.client.get(main_url, {'client_id': clients[0]['id']}, format='json')
+        res = self.client.get(main_url, {'client_id': clients[0].pk}, format='json')
 
         self.assertEqual(len(res.json()), 1)
 
@@ -461,3 +471,22 @@ class TestOrganizationProfesional(APITestCase):
 
         # creating the data for the client
         pass
+
+
+class TestOrganizationService(APITestCase):
+    
+        def setUp(self) -> None:
+            self.organization = create_organization()
+            self.user = create_user(self.organization)
+            self.sector = create_organization_sector()
+            self.professional = create_professional(self.organization)
+            self.service = create_service({}, self.organization)
+            set_authorization(self.client)
+            
+        
+        def test_create_service(self):
+            url = reverse('organization_info:service')
+            self.professional.services.add(self.service)
+
+            res = self.client.get(url, format='json')
+            self.assertEqual(res.status_code, 200)

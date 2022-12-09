@@ -144,7 +144,7 @@ class Organization(models.Model):
     invitation_link:str = models.CharField(max_length=256, unique=True, null=True, default=None)
     
     link_dashboard:str = models.CharField(max_length=120, null=True, blank=True)
-    logo = models.ImageField(upload_to='organization_logos', null=True, blank=True)
+    logo = models.ImageField(upload_to='organization_logos', null=True, blank=True, default=None)
     language:str = models.CharField(max_length=120, default=None, null=True, blank=True)
     
     name:str = models.CharField(max_length=120, unique=True)
@@ -497,7 +497,7 @@ class OrganizationProfessional(models.Model):
     # properties
     
     @property
-    def services(self) -> QuerySet:
+    def services_available(self) -> QuerySet:
         return self.organizationservice.all()
     
     @property
@@ -565,6 +565,8 @@ class OrganizationClient(models.Model):
 
     extra_fields:list = models.JSONField(default=list, null=False)
 
+    # TODO: add professional fields to the client
+
     """
         extra_fields is going to be a JSON coming from the type of client that was selected when creating
         the client. Making it possible to save any kind of information that the organization wants to save
@@ -574,7 +576,7 @@ class OrganizationClient(models.Model):
 
         example:
 
-        fields = [('pets_first_name', FieldType.TEXT, 'Ricardo'), ('pets_last_name', FieldType.TEXT, 'El Pollo fantástico')]
+        extra_fields = [('pets_first_name', FieldType.TEXT, 'first_name'), ('pets_last_name', FieldType.TEXT, 'last_name')]
 
         where, for the moment, there are just two types of fields: text and number
 
@@ -625,8 +627,6 @@ class OrganizationClient(models.Model):
     def save(self, *args, **kwargs):
         if not self.pk:
             self.referral_link = secrets.token_urlsafe(16)
-        
-        print('age', self.age)
 
         super().save(*args, **kwargs)
 
@@ -783,4 +783,3 @@ class FrequentlyAskedQuestion(models.Model):
 
     def __str__(self):
         return f'{self.id} - {self.question[:20]} - {self.organization.name}'
-

@@ -84,7 +84,7 @@ class AppointmentInvoice(models.Model):
 
     def save(self, *args, **kwargs):
 
-        total = float(self.amount + (self.amount * self.tax) - (self.amount * self.discount))
+        total = round(float(self.amount + (self.amount * self.tax) - (self.amount * self.discount)), 2)
 
         if total != float(self.total):
             raise exceptions.ValidationError(_(f'The total is not correct, please check the amount, tax and discount. With the given data the total should be: {total}'))

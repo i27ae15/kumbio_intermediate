@@ -344,6 +344,8 @@ class OrganizationPlaceAPI(APIView):
                 else:
                     return Response(days_available_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+            new_object = OrganizationPlace.objects.get(id=place_serializer.data['id'])
+            place_serializer = OrganizationPlaceSerializer(new_object)
             return Response(place_serializer.data, status.HTTP_201_CREATED)
         
         return Response(place_serializer.errors, status.HTTP_400_BAD_REQUEST)
@@ -509,17 +511,15 @@ class OrganizationServiceView(APIView):
         )
         def get(self, request):
     
-            qp = OrganizationServiceQuerySerializer(data=request.query_params)
-            qp.is_valid(raise_exception=True)
-            query_params = qp.data
+            query_serializer = OrganizationServiceQuerySerializer(data=request.query_params)
+            query_serializer.is_valid(raise_exception=True)
+            query_params = query_serializer.data
             
             if query_params['service_id']:
                 services = OrganizationService.objects.filter(id=query_params['service_id'])
                 if not services:
-                    return Response(
-                        {
-                            'error': 'el servicio no existe'
-                        }, status=status.HTTP_404_NOT_FOUND)
+                    raise exceptions.NotFound(_('el servicio no existe'))
+            
             else:
                 services = OrganizationService.objects.all()
     
@@ -649,7 +649,7 @@ class OrganizationClientView(APIView):
                            age__lte=query_params['max_age'],
                            rating__gte=query_params['min_rating'],
                            rating__lte=query_params['max_rating'])
-            
+
             if query_params['birth_date']:
                 clients = clients.filter(birth_date=query_params['birth_date'])
 
