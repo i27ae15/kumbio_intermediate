@@ -235,6 +235,27 @@ class OrganizationProfessionalAPI(APIView):
         professional_serializer.save()
             
         return Response(professional_serializer.data, status=status.HTTP_201_CREATED)
+    
+
+    def put(self, request):
+        """
+            professional_id (int): id of the professional to update
+            professional_data (dict): data to update the professional with
+            Update a professional
+        """
+
+        try:
+            professional = OrganizationProfessional.objects.get(id=request.data['professional_id'])
+        except OrganizationProfessional.DoesNotExist:
+            return Response({"error": "Professional not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+        professional_serializer = OrganizationProfessionalSerializer(professional, data=request.data['professional_data'], partial=True)
+        
+        professional_serializer.is_valid(raise_exception=True)
+        professional_serializer.save()
+        
+        return Response(professional_serializer.data, status=status.HTTP_200_OK)
         
         
 class OrganizationPlaceAPI(APIView):
