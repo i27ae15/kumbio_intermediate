@@ -23,7 +23,7 @@ import user_info.models as user_models
 # utils
 from utils.integer_choices import RatingMadeBy
 from organization_info.utils.time import get_start_and_end_time
-from organization_info.utils.enums import FieldType, DayName, OrganizationClientCreatedBy
+from organization_info.utils.enums import DayName, OrganizationClientCreatedBy
 from .payment_models import PaymentMethodAcceptedByOrg
 
 from print_pp.logging import Print
@@ -467,6 +467,11 @@ class OrganizationProfessional(models.Model):
     # fields
     academic_formation:str = models.TextField(blank=True, null=True)
     about_me:str = models.TextField(blank=True, null=True)
+
+    identification_number:str = models.TextField(blank=True, null=True, default=None)
+    certification_number:str = models.TextField(blank=True, null=True, default=None)
+
+    charge:str = models.TextField(blank=True, null=True, default=None)
     
     certificates = models.FileField(upload_to=f'{organization.name}/professionals/certificates/', null=True, blank=True)
 
@@ -510,6 +515,21 @@ class OrganizationProfessional(models.Model):
     @property
     def full_name(self) -> str:
         return f'{self.kumbio_user.first_name} {self.kumbio_user.last_name}'
+
+    
+    @property
+    def available_days(self) -> QuerySet['DayAvailableForProfessional']:
+        return self.dayavailableforprofessional_set.all()
+
+    # -----------------------------------------------------------
+    # Methods
+
+    def get_day_available(self, week_day:DayName) -> 'DayAvailableForProfessional | None':
+        try:
+            return self.available_days.get(week_day=week_day)
+        except DayAvailableForProfessional.DoesNotExist:
+            return None
+
     
     # -----------------------------------------------------------
     # methods
@@ -520,17 +540,11 @@ class OrganizationProfessional(models.Model):
 
 class DayAvailableForProfessional(models.Model):
     
-    day:OrganizationProfessional = models.ForeignKey(OrganizationProfessional, on_delete=models.CASCADE)
+    professional:OrganizationProfessional = models.ForeignKey(OrganizationProfessional, on_delete=models.CASCADE)
     
     week_day:int = models.IntegerField(choices=DayName.choices)
-    services_time:list = models.JSONField(default=list)
+    exclude:list = models.JSONField(default=list, null=True, blank=True)
     
-    """
-        services_time = [{
-            id (int): id del servicio,
-            exclude: [[0, 7], [18, 23]]
-        }]
-    """
 
     note:str = models.TextField(null=True, blank=True)
 
@@ -540,16 +554,8 @@ class DayAvailableForProfessional(models.Model):
         return DayName(self.week_day).label
 
     
-    @property
-    def services_available(self) -> list:
-        return [service_id for service_id in self.services_time['id']]
-    
-    
     def get_start_and_end_time_for_service(self, service_id:int) -> tuple:
-        for service in self.services_time:
-            if service['id'] == service_id:
-                return get_start_and_end_time(service['exclude'])
-        return None, None
+        return get_start_and_end_time(self.exclude)
 
 
     def save(self, *args, **kwargs):

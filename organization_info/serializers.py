@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from .models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, 
 OrganizationService, Sector, DayAvailableForPlace, OrganizationClient, OrganizationClientDependent,
-OrganizationClientType)
+OrganizationClientType, DayAvailableForProfessional)
 from .utils.enums import FieldType
 
 
@@ -16,6 +16,13 @@ class OrganizationSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class DayAvailableForProfessional(serializers.ModelSerializer):
+
+    class Meta:
+        model = DayAvailableForProfessional
+        fields = '__all__'
+
+
 # change this to nested serializers to exclude fields
 # look for the bug that does not let us use nested serializers
 class OrganizationProfessionalSerializer(serializers.ModelSerializer):
@@ -23,6 +30,8 @@ class OrganizationProfessionalSerializer(serializers.ModelSerializer):
     created_by_id = serializers.IntegerField(write_only=True)
     kumbio_user_id = serializers.IntegerField(write_only=True)
     organization_id = serializers.CharField(write_only=True)
+
+    dayavailableforprofessional_set = DayAvailableForProfessional(many=True, read_only=True)
     
     class Meta:
         model = OrganizationProfessional
