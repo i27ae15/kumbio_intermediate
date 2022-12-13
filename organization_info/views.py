@@ -239,9 +239,16 @@ class OrganizationProfessionalAPI(APIView):
 
     def put(self, request):
         """
+
             professional_id (int): id of the professional to update
             professional_data (dict): data to update the professional with
             Update a professional
+            days (list): list of days to update the professional with = [
+                {
+                    week_day: (int) day of the week
+                    exclude:list = [[0, 7], [18, 23]]
+                }
+            ]
         """
 
         try:
@@ -254,7 +261,26 @@ class OrganizationProfessionalAPI(APIView):
         
         professional_serializer.is_valid(raise_exception=True)
         professional_serializer.save()
+
+        professional_object:OrganizationProfessional = professional_serializer.instance
+
+        if days:= request.get('days'):
+            for day in days:
+
+                available_day = professional_object.get_day_available(day['week_day'])
+                day_serializer = None
+
+                if available_day:
+                    day_serializer = DayAvailableForPlaceSerializer(available_day, data=day, partial=True)
+                    day_serializer.is_valid(raise_exception=True)
+                    day_serializer.save()
+                else:
+                    # this will mean that this day has not been created yet, so we have to create it
+                    day_serializer = DayAvailableForPlaceSerializer(data=day)
+                    day_serializer.is_valid(raise_exception=True)
+                    day_serializer.save()
         
+
         return Response(professional_serializer.data, status=status.HTTP_200_OK)
         
         
