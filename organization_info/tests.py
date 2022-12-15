@@ -2,7 +2,7 @@
 # django
 from django.urls import reverse
 from .models.main_models import (Organization, OrganizationPlace, OrganizationService, Sector, OrganizationClient, 
-                                 OrganizationClientType, OrganizationProfessional)
+                                 OrganizationClientType, OrganizationProfessional, DayAvailableForProfessional, DayAvailableForPlace)
 
 from rest_framework.test import APITestCase
 
@@ -90,20 +90,34 @@ def create_organization(use_user=False) -> Organization:
 
 def create_place(data_to_create_place:dict, organization:Organization, user:KumbioUser, create_with_serializer=False) -> 'OrganizationPlace | dict':
     # create a post
-
+    place_object:OrganizationPlace = None
+    place_data:dict = None
+    
     if not create_with_serializer:
-        return OrganizationPlace.objects.create(
+        place_object = OrganizationPlace.objects.create(
             organization=organization,
             created_by=user,
             address='testing address',
             name='testing name')
 
-    serializer = OrganizationPlaceSerializer(data=data_to_create_place['place'])
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    initial_data = serializer.data
+    else:
+        serializer = OrganizationPlaceSerializer(data=data_to_create_place['place'])
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        place_object = serializer.instance
+        place_data = serializer.data
 
-    return initial_data
+    # create days available
+    for day in range(0, 7):
+        DayAvailableForPlace.objects.create(
+            place=place_object,
+            week_day=day,
+            exclude=[[1, 8], [17, 23]])
+
+    if create_with_serializer:
+        return place_data
+
+    return place_object
 
 
 def create_service(data_to_create_service:dict, organization:Organization, create_with_serializer=False) -> OrganizationService:
@@ -141,13 +155,14 @@ def create_kumbio_token(organization:Organization, app=AppToken):
     return KumbioToken.objects.create(app=app, organization=organization)
 
 
-def create_professional(organization:Organization, user:KumbioUser=None, name='test professional'):
+def create_professional(organization:Organization, place:OrganizationPlace, user:KumbioUser=None, name='test professional'):
     if not user: 
         user =  create_user(organization, username='test_professional', email='anotheremail@gmail.com')
     
     return OrganizationProfessional.objects.create(
         organization=organization,
         kumbio_user=user,
+        place=place,
         created_by=user)
 
 
@@ -267,18 +282,19 @@ class TestPlace(APITestCase):
         del initial_data['id']
 
         url = reverse('organization_info:place')
-        response = self.client.post(url, self.data_to_create_place, format='json').json()
+        response = self.client.post(url, self.data_to_create_place, format='json')
+        res = response.json()
         
         try:
-            del response['created_at']
-            del response['id']
+            del res['created_at']
+            del res['id']
         except KeyError:
             self.assertEqual('you are not authorized', '')
             
         
-        Print('New place created', response)
+        # Print('New place created', res)
 
-        self.assertEqual(response, initial_data)
+        self.assertEqual(response.status_code, 201)
 
 
     def test_get_place(self):
@@ -301,9 +317,7 @@ class TestPlace(APITestCase):
         token = resp.data['token']
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-
-    
-
+ 
 
 class TestOrganizationSector(APITestCase):
 
@@ -463,14 +477,16 @@ class TestOrganizationProfesional(APITestCase):
         self.organization = create_organization()
         self.user = create_user(self.organization)
         self.sector = create_organization_sector()
-        self.professional = create_professional(self.organization)
+        self.place = create_place({}, self.organization, self.user)
+        self.professional = create_professional(self.organization, place=self.place)
         
     
     def test_create_professional(self):
-        url = reverse('organization_info:professional')
 
-        # creating the data for the client
-        pass
+        professional_days = DayAvailableForProfessional.objects.filter(professional=self.professional)
+        place_days = DayAvailableForPlace.objects.filter(place=self.place)
+
+        self.assertEqual(len(professional_days), len(place_days))
 
 
 class TestOrganizationService(APITestCase):
@@ -479,7 +495,8 @@ class TestOrganizationService(APITestCase):
             self.organization = create_organization()
             self.user = create_user(self.organization)
             self.sector = create_organization_sector()
-            self.professional = create_professional(self.organization)
+            self.place = create_place({}, self.organization, self.user)
+            self.professional = create_professional(self.organization, place=self.place)
             self.service = create_service({}, self.organization)
             set_authorization(self.client)
             

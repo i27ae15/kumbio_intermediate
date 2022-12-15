@@ -453,6 +453,33 @@ class DayAvailableForPlace(models.Model):
         super().save(*args, **kwargs)
 
 
+class DayAvailableForProfessional(models.Model):
+    
+    professional:'OrganizationProfessional' = models.ForeignKey('OrganizationProfessional', on_delete=models.CASCADE)
+    
+    week_day:int = models.IntegerField(choices=DayName.choices)
+    exclude:list = models.JSONField(default=list, null=True, blank=True)
+    
+
+    note:str = models.TextField(null=True, blank=True)
+
+
+    @property
+    def day_name(self) -> str:
+        return DayName(self.week_day).label
+
+    
+    def get_start_and_end_time_for_service(self, service_id:int) -> tuple:
+        return get_start_and_end_time(self.exclude)
+
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.exclude:
+            self.exclude = [[0, 7], [18, 23]]
+                    
+        super().save(*args, **kwargs)
+
+
 class OrganizationProfessional(models.Model):
 
     # foreignkeys
@@ -462,6 +489,8 @@ class OrganizationProfessional(models.Model):
     
     specialties = models.ManyToManyField('ProfessionalSpecialty', blank=True)
     services = models.ManyToManyField(OrganizationService)
+
+    place:OrganizationPlace = models.ForeignKey(OrganizationPlace, on_delete=models.CASCADE, null=True, blank=True, default=None)
     
     # -----------------------------------------------------------
     # fields
@@ -531,38 +560,38 @@ class OrganizationProfessional(models.Model):
             return None
 
     
-    # -----------------------------------------------------------
-    # methods
-        
-    def __str__(self) -> str:
-        return f'{self.id} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
-
-
-class DayAvailableForProfessional(models.Model):
-    
-    professional:OrganizationProfessional = models.ForeignKey(OrganizationProfessional, on_delete=models.CASCADE)
-    
-    week_day:int = models.IntegerField(choices=DayName.choices)
-    exclude:list = models.JSONField(default=list, null=True, blank=True)
-    
-
-    note:str = models.TextField(null=True, blank=True)
-
-
-    @property
-    def day_name(self) -> str:
-        return DayName(self.week_day).label
-
-    
-    def get_start_and_end_time_for_service(self, service_id:int) -> tuple:
-        return get_start_and_end_time(self.exclude)
-
-
     def save(self, *args, **kwargs):
-        if not self.pk and not self.exclude:
-            self.exclude = [[0, 7], [18, 23]]
+        first_time = False
+        if not self.pk:
+            first_time = True
+            self.created_at = timezone.now()
+        else:
+            self.updated_at = timezone.now()
                     
         super().save(*args, **kwargs)
+
+        if first_time:
+            self.__set_default_days_available()
+            self.save()
+    
+
+    # -----------------------------------------------------------
+    # private methods
+
+
+    def __set_default_days_available(self):
+        days_available = self.place.available_days
+        for day in days_available:
+            DayAvailableForProfessional.objects.create(
+                professional=self,
+                week_day=day.week_day,
+                exclude=day.exclude,
+                note=day.note
+            )
+
+    
+    def __str__(self) -> str:
+        return f'{self.id} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
 
 
 class OrganizationClient(models.Model):
