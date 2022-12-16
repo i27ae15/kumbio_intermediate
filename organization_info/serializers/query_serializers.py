@@ -1,9 +1,12 @@
 from rest_framework import serializers
 
-class PlaceQuerySerializer(serializers.Serializer):
+from organization_info.utils.validators import get_places
+
+class OrganizationQuerySerializer(serializers.Serializer):
         
-    place_id = serializers.IntegerField(default=None, allow_null=True, help_text="el id del lugar que ser quiere, por defecto es None, \
-                                        lo cual traerá todos los lugares que la organización tenga ligados")
+    organization_id = serializers.CharField( 
+        allow_null=False,
+        help_text="el id de la organización que se quiere")
 
 
 class OrganizationProfessionalQuerySerializer(serializers.Serializer):
@@ -43,3 +46,27 @@ class OrganizationClientTypeQuerySerializer(serializers.Serializer):
         
     client_type_id = serializers.IntegerField(default=None, allow_null=True, help_text="Id del tipo de cliente que se quiere obtener, por defecto es None, \
                                             lo cual traerá todos los tipos de cliente que la organización tenga ligados")
+
+
+class OrganizationPlaceQuerySerializer(serializers.Serializer):
+        
+    place_id = serializers.IntegerField(
+        default=None, 
+        allow_null=True, 
+        help_text="Id del lugar que se quiere obtener, por defecto es None, \
+        lo cual traerá todos los lugares que la organización tenga ligados"
+    )
+
+
+    def validate(self, attrs:dict):
+        self.__convert_to_objects(attrs)
+        return super().validate(attrs)
+
+    
+    def __convert_to_objects(self, attrs:dict):
+
+        attrs['places'] = get_places(
+            organization = self.context['organization'], 
+            place_id = attrs['place_id'], 
+            return_as_query_set=True)
+        

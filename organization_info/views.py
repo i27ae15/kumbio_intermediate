@@ -29,12 +29,16 @@ from authentication_manager.models import KumbioToken
 # serializers
 from user_info.serializers import CreateKumbioUserSerializer
 
-from .query_serializers import (PlaceQuerySerializer, OrganizationProfessionalQuerySerializer, OrganizationSectorQuerySerializer, 
-OrganizationServiceQuerySerializer, OrganizationClientQuerySerializer, OrganizationClientTypeQuerySerializer)
+# query serializers
+from .serializers.query_serializers import (OrganizationPlaceQuerySerializer, OrganizationProfessionalQuerySerializer,
+OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer, OrganizationClientQuerySerializer,
+OrganizationClientTypeQuerySerializer, OrganizationQuerySerializer)
 
-from .put_serializers import PlacePutSerializer
+# body serializers
+from .serializers.body_serializers import (PlacePutSerializer, OrganizationClientPutSerializer, 
+OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySerializer)
 
-from .serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
+from .serializers.model_serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
 OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer,
 OrganizationClientTypeSerializer)
 
@@ -77,7 +81,8 @@ class OrganizationView(APIView):
     authentication_classes = (TokenAuthentication,)
 
     @swagger_auto_schema(
-        operation_description="Get organization",
+        operation_description="Obtener el objecto de la organización del usuario",
+        query_serializer=OrganizationQuerySerializer,
         responses={
             200: openapi.Response(
                 description="Organization",
@@ -87,16 +92,11 @@ class OrganizationView(APIView):
     )
     def get(self, request):
 
-        organization_id = request.GET.get('organization_id')
+        query_serializer = OrganizationQuerySerializer(data=request.GET)
+        query_serializer.is_valid(raise_exception=True)
+        query_params = query_serializer.validated_data
 
-        if not organization_id:
-            return Response({"message": "organization_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            organization_id = int(organization_id)
-        except ValueError:
-            return Response({"message": "organization_id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
-
+        organization_id = query_params.get('organization_id')
 
         organization = Organization.objects.get(pk=organization_id)
         serializer = OrganizationSerializer(organization)
@@ -137,13 +137,29 @@ class OrganizationView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class OrganizationProfessionalAPI(APIView):
+class OrganizationProfessionalView(APIView):
     permission_classes = (IsAuthenticated,) 
     authentication_classes = (TokenAuthentication,)
 
+
     @swagger_auto_schema(
-        query_serializer=OrganizationProfessionalQuerySerializer()
-    )
+    operation_description="Obtener todos los profesionales de la organización",
+    query_serializer=OrganizationProfessionalQuerySerializer,
+    responses={
+        200: openapi.Response(
+            description="Profesionales de la organización",
+            schema=OrganizationProfessionalSerializer(many=True)
+        ),
+        401: openapi.Response(
+            description="No autorizado",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "message": openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            )
+        )
+    })
     def get(self, request):
         """
             Get all the professionals of the organization
@@ -165,7 +181,7 @@ class OrganizationProfessionalAPI(APIView):
             # check if the user is the professional they are asking for
             if request.user.id != query_params['kumbio_user_id']:
                 if check_if_user_is_admin(request) != True:
-                    return Response({"message": "You are not authorized to perform this action"}, status=status.HTTP_401_UNAUTHORIZED)
+                    raise exceptions.PermissionDenied(_("You are not authorized to perform this action"))
                     
             organization_professionals = OrganizationProfessional.objects.filter(kumbio_user__id=int(query_params['kumbio_user_id']))
 
@@ -173,98 +189,105 @@ class OrganizationProfessionalAPI(APIView):
         
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    
+
+    @swagger_auto_schema(
+    operation_description="Crear un nuevo profesional de la organización",
+    request_body=OrganizationProfessionalPostBodySerializer,
+    responses={
+        201: openapi.Response(
+            description="Profesional de la organización creado",
+            schema=OrganizationProfessionalSerializer
+        ),
+        400: openapi.Response(
+            description="Error de validación",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            )
+        )
+    })
     def post(self, request):
-        
         """
+        Crea un nuevo profesional en la organización.
 
-            OrganizationProfessional class inherits from KumbioUser, so to be able to create a new professional we got 
-            to have a KumbioUser to inherits from, that's so we need to create it before the creation of the professional
-        
-            body parameters:
-
-                email (str): email of the professional
-                first_name (str): first name of the professional
-                last_name (str): last name of the professional
-                phone (str): phone of the professional
-                username (str): username of the professional
-                organization (str): organization id of the professional
-        
+        Body Parameters:
+        - email (str): Correo electrónico del profesional.
+        - first_name (str): Nombre del profesional.
+        - last_name (str): Apellido del profesional.
+        - phone (str): Teléfono del profesional.
+        - username (str): Nombre de usuario del profesional.
+        - organization (int): ID de la organización del profesional.
+        - password (str): Contraseña del profesional.
         """
         
-        # First we create the KumbioUser
-        kumbio_user_serializer = CreateKumbioUserSerializer(data=request.data, context={'set_verified_email': True})
+        # OrganizationProfessional hereda de KumbioUser, por lo que para crear un nuevo profesional primero hay que crear 
+        # un usuario Kumbio
 
+        body_serializer = OrganizationProfessionalPostBodySerializer(data=request.data)
+        body_serializer.is_valid(raise_exception=True)
+        body_data:dict = body_serializer.validated_data
+        
+        # Se crea el usuario Kumbio
+        kumbio_user_serializer = CreateKumbioUserSerializer(body_data, context={'set_verified_email': True})
+        kumbio_user_serializer.is_valid(raise_exception=True)
 
-        # we should handle this petition that if not successfully delete the created user, due to the fact that this cannot continue
-        res = requests.post(f'{CALENDAR_ENDPOINT}register/api/v2/create-user/', json={
-                'organization_id': request.data['organization_id'],
-                'email':request.data['email'],
-                'first_name': request.data['first_name'],
-                'last_name': request.data['last_name'],
-                'role': PROFESSIONAL_ROLE_ID, 
-            })
+        # Se obtiene el token del usuario creado en el calendario
+        token = self.__create_calendar_user(body_data)
         
-        if res.status_code != 201 or 'token' not in res.json():
-            try:
-                return Response({"error": res.json()}, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                return Response({"error": f"Something went wrong with the calendar_api: {e}"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if not kumbio_user_serializer.is_valid():
-            return Response(kumbio_user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+        # Se guarda el usuario Kumbio
         kumbio_user_serializer.save()
         kumbio_user:KumbioUser = kumbio_user_serializer.instance
         
-        # somehow this information is not getting saved within the serializer, so we have to do it manually
-        kumbio_user.role = KumbioUserRole.objects.get(id=PROFESSIONAL_ROLE_ID) # getting the role as organization_professional
-        kumbio_user.organization = Organization.objects.get(id=request.data['organization_id'])
-        kumbio_user.calendar_token = res.json()['token']
-        kumbio_user.set_password(request.data['password'])
-        kumbio_user.save()
-        
-        request.data['created_by_id'] = request.user.id
-        request.data['kumbio_user_id'] = kumbio_user.id
-        
-        professional_serializer = OrganizationProfessionalSerializer(data=request.data)
-        
-        if not professional_serializer.is_valid():
-            return Response(professional_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+        # Se guarda la información extra del usuario y se serializa el profesional
+        professional_data = self.__save_user_extra_information(kumbio_user, body_data, calendar_token=token, created_by=request.user.id)
+        professional_serializer = OrganizationProfessionalSerializer(data=professional_data)
+        professional_serializer.is_valid(raise_exception=True)
         professional_serializer.save()
-            
+                
         return Response(professional_serializer.data, status=status.HTTP_201_CREATED)
-    
 
+
+    @swagger_auto_schema(
+    operation_description="Actualizar un profesional",
+    request_body=OrganizationProfessionalPutBodySerializer,
+    responses={
+        200: openapi.Response(
+            description="Profesional actualizado",
+            schema=OrganizationProfessionalSerializer
+        ),
+        400: openapi.Response(
+            description="Error de validación",
+        )
+    })
     def put(self, request):
         """
-
-            professional_id (int): id of the professional to update
-            professional_data (dict): data to update the professional with
-            Update a professional
-            days (list): list of days to update the professional with = [
-                {
-                    week_day: (int) day of the week
-                    exclude:list = [[0, 7], [18, 23]]
-                }
-            ]
+        Parameters:
+        - professional_id (int): id of the professional to update
+        - professional_data (dict): data to update the professional with
+        - days (list): list of days to update the professional with = [
+            {
+                week_day: (int) day of the week
+                exclude:list = [[0, 7], [18, 23]]
+            }
+        ]
         """
 
-        try:
-            professional = OrganizationProfessional.objects.get(id=request.data['professional_id'])
-        except OrganizationProfessional.DoesNotExist:
-            return Response({"error": "Professional not found"}, status=status.HTTP_404_NOT_FOUND)
         
+        body_serializer = OrganizationProfessionalPutBodySerializer(data=request.data)
+        body_serializer.is_valid(raise_exception=True)
+        body_data:dict = body_serializer.validated_data
+        
+        professional:OrganizationProfessional = body_data['professional']
 
         professional_serializer = OrganizationProfessionalSerializer(professional, data=request.data['professional_data'], partial=True)
-        
         professional_serializer.is_valid(raise_exception=True)
         professional_serializer.save()
 
         professional_object:OrganizationProfessional = professional_serializer.instance
 
-        if days:= request.get('days'):
+        if days:= body_data.get('days'):
             for day in days:
 
                 available_day = professional_object.get_day_available(day['week_day'])
@@ -282,39 +305,101 @@ class OrganizationProfessionalAPI(APIView):
         
 
         return Response(professional_serializer.data, status=status.HTTP_200_OK)
+    
+
+    # Private functions
+    def __create_calendar_user(self, request_data:dict) -> str:
         
+        """
+            Crea un nuevo usuario en el calendario.
+
+            Parameters:
+            - organization_id (int): ID de la organización.
+            - email (str): Correo electrónico del usuario.
+            - first_name (str): Nombre del usuario.
+            - last_name (str): Apellido del usuario.
+
+            Returns:
+            - str: Token del usuario creado en el calendario.
+        """
+
+        # TODO: manejar la eliminación del usuario creado en caso de que no se haya creado correctamente
         
-class OrganizationPlaceAPI(APIView):
+        res = requests.post(f'{CALENDAR_ENDPOINT}register/api/v2/create-user/', 
+        json={
+            'organization_id': request_data['organization_id'],
+            'email':request_data['email'],
+            'first_name': request_data['first_name'],
+            'last_name': request_data['last_name'],
+            'role': PROFESSIONAL_ROLE_ID, 
+        })
+        
+        # Si la respuesta no tiene un código de estado HTTP 201 o no incluye el token, se lanza una excepción
+        if res.status_code != status.HTTP_201_CREATED or 'token' not in res.json():
+            try:
+                raise exceptions.APIException(_(res.json()))
+            except Exception as e:
+                raise exceptions.APIException(_("Something went wrong with the calendar_api: {e}"))
+        
+        # Si la respuesta tiene un código de estado HTTP
+        return res.json()['token']
+
+
+    def __save_user_extra_information(self, kumbio_user:KumbioUser, request_data:dict, calendar_token:dict, created_by:int) -> dict:
+        """
+        Guarda la información extra del usuario.
+
+        Parameters:
+        - kumbio_user (KumbioUser): Instancia del usuario.
+        - request_data (dict): Datos de la petición.
+        - calendar_token (str): Token del usuario creado en el calendario.
+        - created_by (int): ID del usuario que creó al profesional.
+
+        Returns:
+        - dict: Datos del profesional.
+        """
+
+        # Asigna el rol de "organization_professional" al usuario y guarda la organización y el token del calendario
+        kumbio_user.role = KumbioUserRole.objects.get(id=PROFESSIONAL_ROLE_ID)
+        kumbio_user.organization = Organization.objects.get(id=request_data['organization_id'])
+        kumbio_user.calendar_token = calendar_token
+        kumbio_user.set_password(request_data['password'])
+        kumbio_user.save()
+
+        # Crea una copia de los datos de la petición y agrega el ID del usuario que creó al profesional y el ID del usuario Kumbio
+        professional_data = request_data.copy()
+        professional_data['created_by_id'] = created_by
+        professional_data['kumbio_user_id'] = kumbio_user.pk
+
+        return professional_data
+
+
+class OrganizationPlaceView(APIView):
     permission_classes = (IsAuthenticated,) 
     authentication_classes = (TokenAuthentication,) 
 
 
     @swagger_auto_schema(
-        query_serializer=PlaceQuerySerializer(),
-    )
+    operation_description="Obtener lugares de la organización del usuario",
+    query_serializer=OrganizationPlaceQuerySerializer,
+    responses={
+        200: openapi.Response(
+            description="Lugares de la organización",
+            schema=OrganizationPlaceSerializer
+        )
+    })
     def get(self, request):
         """
             Get places 
         """
 
-        query_serializer = PlaceQuerySerializer(data=request.query_params)
+        query_serializer = OrganizationPlaceQuerySerializer(data=request.query_params, context = {'organization': request.user.organization})
         query_serializer.is_valid(raise_exception=True)
         query_params = query_serializer.data
 
-        if query_params['place_id']:
-            places = self.check_if_place_exists(request.user, int(query_params['place_id']))
-
-            if places:
-                place_serializer = OrganizationPlaceSerializer(places)
-            else:
-                return Response(
-                    {
-                        'error': 'el lugar no existe'
-                    }, status=status.HTTP_404_NOT_FOUND)
-
-        else:
-            places = OrganizationPlace.objects.filter(organization=request.user.organization.id)
-            place_serializer = OrganizationPlaceSerializer(places, many=True)
+        places = query_params['places']
+            
+        place_serializer = OrganizationPlaceSerializer(places, many=True)
         
         return Response(place_serializer.data, status=status.HTTP_200_OK)
 
@@ -507,15 +592,6 @@ class OrganizationPlaceAPI(APIView):
 
         return Response({'message': 'lugar eliminado'}, status=status.HTTP_200_OK)
     
-
-    def check_if_place_exists(self, user, place_id):
-
-        try:
-            place:OrganizationPlace = OrganizationPlace.objects.get(organization=user.organization.id, id=place_id)
-            return place
-
-        except OrganizationPlace.DoesNotExist:
-            return False
 
 
 class OrganizationSectorView(APIView):
@@ -712,47 +788,54 @@ class OrganizationClientView(APIView):
 
         """
         
-        la información debe venir separada en dos objectos JSON, uno para el cliente y otro para el 
-        dependiente, si no hay dependiente, el segundo objeto debe solo tener un propiedad llamada
-        same_as_client con valor True
+        La información para crear un nuevo cliente debe enviarse en dos objetos JSON en la solicitud. 
 
-        los campos para llenar el "extra_fields" los obtienes de organization/client_types/
+        El primero debe contener los datos del cliente, mientras que el segundo debe contener los datos
+        del dependiente del cliente. Si el cliente no tiene un dependiente, el segundo objeto debe tener 
+        una propiedad llamada "same_as_client" con el valor "True".
+
+        Los campos necesarios para completar el objeto "extra_fields" se pueden obtener de la ruta 
+        "organization/client_types/".
+
+        Ejemplo de cuerpo de la solicitud:
 
 
-        request body:
-
-            {
-                client: {
-                    "type" (int) (required): client_type_id,
-                    "first_name" (str) (required): "nombre",
-                    "last_name" (str) (required): "apellido",
-                    "extra_fields" (array) (required): [
-                        ('pets_first_name', FieldType.TEXT, 'Juan Carlos'), 
-                        ('pets_last_name', FieldType.TEXT, 'Atrida')
-                    ],
-                    "birthday" (str): "YYYY-MM-DD", 
-                    "comments" (str): "comentarios",
-                    "identification" (str): "identificación",
-                    "age" (int): 25,
-                    "rating" (int): 4,
-                }
-                {
-                    Todos los campos son requeridos menos el phone2
-
-                    dependent_from: {
-                        "first_name" (str): string,
-                        "last_name" (str): string,
-                        "email" (str): string,
-                        "phone" (str): string,
-                        "phone2" (str): string,
-                    }
-                }
-
-                En caso de que el cliente no tenga dependiente, el segundo objeto debe ser:
-                dependent_from: {
-                    "same_as_client": True
-                }
+        {
+            "client": {
+                "type": client_type_id (int, requerido),
+                "first_name": "nombre" (str, requerido),
+                "last_name": "apellido" (str, requerido),
+                "extra_fields": [
+                    ("pets_first_name", FieldType.TEXT, "Juan Carlos"), 
+                    ("pets_last_name", FieldType.TEXT, "Atrida")
+                ],
+                "birthday": "YYYY-MM-DD" (str), 
+                "comments": "comentarios" (str),
+                "identification": "identificación" (str),
+                "age": 25 (int),
+                "rating": 4 (int),
             }
+        }
+        {
+            "client": client_data,
+            "dependent_from": {
+                "first_name": string (str, requerido),
+                "last_name": string (str, requerido),
+                "email": string (str, requerido),
+                "phone": string (str, requerido),
+                "phone2": string (str)
+            }
+        }
+
+        En caso de que el cliente no tenga un dependiente, el segundo objeto debe ser:
+
+        {
+            "client": client_data,
+            "dependent_from": {
+                "same_as_client": True
+            }
+        }
+
 
         """
         
@@ -804,6 +887,29 @@ class OrganizationClientView(APIView):
 
         dependent_from_serializer.save()
         return Response(client_serializer.data, status.HTTP_201_CREATED)
+
+
+    @swagger_auto_schema(request_body=OrganizationClientPutSerializer())
+    def put(self, request):
+
+        """
+            body parameters:
+            client_id (int) (required): id del cliente
+            client_data (dict) (required): {}
+
+        """
+
+        # write a similar as above, for the client put
+        try:
+            client = OrganizationClient.objects.get(id=request.data['client_id'])
+        except OrganizationClient.DoesNotExist:
+            return Response({"error": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        client_serializer = OrganizationClientSerializer(client, data=request.data['client_data'], partial=True)
+        client_serializer.is_valid(raise_exception=True)
+        client_serializer.save()
+
+        return Response(client_serializer.data, status=status.HTTP_200_OK)
 
 
 # function types

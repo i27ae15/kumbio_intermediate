@@ -11,7 +11,7 @@ from user_info.models import KumbioUser, KumbioUserRole
 from .models.default_values import DEFAULT_CLIENT_TYPES
 
 # serializers 
-from .serializers import OrganizationPlaceSerializer, OrganizationServiceSerializer, OrganizationSectorSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer
+from .serializers.model_serializers import OrganizationPlaceSerializer, OrganizationServiceSerializer, OrganizationSectorSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer
 from authentication_manager.models import KumbioToken, AppToken
 
 # utils
