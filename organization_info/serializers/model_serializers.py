@@ -30,6 +30,7 @@ class OrganizationProfessionalSerializer(serializers.ModelSerializer):
     created_by_id = serializers.IntegerField(write_only=True)
     kumbio_user_id = serializers.IntegerField(write_only=True)
     organization_id = serializers.CharField(write_only=True)
+    place_id = serializers.IntegerField(write_only=True)
 
     dayavailableforprofessional_set = DayAvailableForProfessional(many=True, read_only=True)
     

@@ -2,9 +2,8 @@
 import requests
 import os
 
+
 # django
-from django.utils import timezone
-from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
 
@@ -36,8 +35,10 @@ OrganizationClientTypeQuerySerializer, OrganizationQuerySerializer)
 
 # body serializers
 from .serializers.body_serializers import (PlacePutSerializer, OrganizationClientPutSerializer, 
-OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySerializer)
+OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySerializer, OrganizationPlacePostSerializer)
 
+
+# model serializers
 from .serializers.model_serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
 OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer,
 OrganizationClientTypeSerializer)
@@ -395,7 +396,7 @@ class OrganizationPlaceView(APIView):
 
         query_serializer = OrganizationPlaceQuerySerializer(data=request.query_params, context = {'organization': request.user.organization})
         query_serializer.is_valid(raise_exception=True)
-        query_params = query_serializer.data
+        query_params = query_serializer.validated_data
 
         places = query_params['places']
             
@@ -405,94 +406,85 @@ class OrganizationPlaceView(APIView):
 
 
     @swagger_auto_schema(
-        responses={200: OrganizationPlaceSerializer()},
-    )
+    request_body=OrganizationPlacePostSerializer,
+    responses={
+        201: openapi.Response(
+            description="Datos del lugar creado",
+            schema=OrganizationPlaceSerializer
+        ),
+        400: openapi.Response(
+            description="Error de validación",
+        )
+    })
     @check_if_user_is_admin_decorator
     def post(self, request):
         """
             Create a new Place
             Solo los administradores pueden crear lugares
 
-            para esto es necesario pasar dos objectos uno de place, para crear el lugar y otro para los días que ese lugar acepta, iniciando con Monday = 0
+            para esto es necesario pasar dos objectos uno de place, 
+            para crear el lugar y otro para los días que ese lugar acepta, 
+            iniciando con Monday = 0
 
 
             request body:
 
-                place (object): {
-                    address:str = 'string'
-                    admin_email:str = 'string'
-                    accepts_children:bool = true
-                    accepts_pets:bool = true
-                    additional_info:str = 'string'
-                    after_hours_phone:str = 'string'
-
-                    email:str = 'email@email.com'
-
-                    google_maps_link:str = 'string'
-
-                    important_information:str = 'string'
-
-                    main_office_number:str = 'string'
-
-                    name:str = 'string'
-
-                    phone:str = 'string'
-
-                    photo:str = 'string'
-                    
-                    local_timezone:str = 'string'
-                    
-                    # if this place has a custom price for a service
+                # if this place has a custom price for a service
+                la propiedad custom_price se tiene esta estructura
                     custom_price:list[dict] = [{
                         place_id: 1,
                         price: 25,
                     }]
-                },
-
-                days = [
-                    {
-                        week_day:int = 0 # donde Monday es = 0 y Sunday = 6
-                        exclude:list = [[0, 7], [18, 23]], null=True, blank=True)
-                        note:str = "Una nota de prueba"
-                    }
-                ]
         """
-        request.data['place']['organization'] = request.user.organization.id
-        request.data['place']['created_by'] = request.user.id
-        
-        place_serializer = OrganizationPlaceSerializer(data=request.data['place'])
+
+        body_serializer = OrganizationPlacePostSerializer(
+            data=request.data, 
+            context={'organization': request.user.organization.id, 'created_by': request.user.id}
+        )
+        body_serializer.is_valid(raise_exception=True)
+        body_data:dict = body_serializer.validated_data
+
+        place_serializer = OrganizationPlaceSerializer(data=body_data['place'])
     
         if place_serializer.is_valid():
             place_serializer.save()
 
-            daysAvailable:list[dict] = request.data.get('days')
+            daysAvailable:list[dict] = body_data['days']
 
             if daysAvailable:
                 for day in daysAvailable:
                     day['place'] = place_serializer.data['id']
 
                 days_available_serializer = DayAvailableForPlaceSerializer(data=daysAvailable, many=True)
-                if days_available_serializer.is_valid():
-                    days_available_serializer.save()
-                else:
-                    return Response(days_available_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            new_object = OrganizationPlace.objects.get(id=place_serializer.data['id'])
-            place_serializer = OrganizationPlaceSerializer(new_object)
+                days_available_serializer.is_valid(raise_exception=True)
+                days_available_serializer.save()
+            
+
+            place_serializer = OrganizationPlaceSerializer(place_serializer.instance)
+
             return Response(place_serializer.data, status.HTTP_201_CREATED)
         
         return Response(place_serializer.errors, status.HTTP_400_BAD_REQUEST)
     
 
     @swagger_auto_schema(
-        request_body = PlacePutSerializer(),
-        responses={200: OrganizationPlaceSerializer()},
-    )
+    request_body=PlacePutSerializer,
+    responses={
+        200: openapi.Response(
+            description="Datos del lugar actualizados",
+            schema=OrganizationPlaceSerializer
+        ),
+        400: openapi.Response(
+            description="Error de validación",
+        )
+    })
     @check_if_user_is_admin_decorator
     def put(self, request):
         """
 
-            Si se quiere añadir otro dia al lugar, se hace desde aquí, añadiendo el dia a la lista de días disponibles
+            Si se quiere añadir otro dia al lugar, se hace desde aquí, añadiendo el dia a la lista de 
+            días disponibles
 
             place_data = OrganizationPlaceSerializer
             days_data = DayAvailableForPlaceSerializer
@@ -504,44 +496,25 @@ class OrganizationPlaceView(APIView):
                 }
             ]
 
-        Update a Place
+            Update a Place
         """
         # use here the same schema as the post method
-        # TODO: when a schedule for a place is modified, this must modified also the schedule of the professionals that work in that place
-
-        put_serializer = PlacePutSerializer(data=request.data)
-        put_serializer.is_valid(raise_exception=True)
-        put_data = put_serializer.data
-
-        place = self.check_if_place_exists(request.user, put_data['place_id'])
-        place_serializer = OrganizationPlaceSerializer(place, data=put_data['place_data'], partial=True)
-
-        data_to_return = dict(place=dict(), days=list())
+        # TODO: when a schedule for a place is modified, this must modified also the schedule of 
+        # the professionals that work in that place
         
-        if place_serializer.is_valid():
-            place_serializer.save()
-            data_to_return['place'] = place_serializer.data
+        body_serializer = PlacePutSerializer(data=request.data, context={'organization': request.user.organization})
+        body_serializer.is_valid(raise_exception=True)
+        body_data = body_serializer.validated_data
+
+        place_serializer = OrganizationPlaceSerializer(body_data['place'], data=body_data['place_data'], partial=True)
+        place_serializer.is_valid(raise_exception=True)
+        place_serializer.save()
+        place_object:OrganizationPlace = place_serializer.instance
+
+        data_to_return = dict(place=place_serializer.data, days=list())
         
-        place_instance:OrganizationPlace = place_serializer.instance
-        
-        if put_data['days_data']:
-            for day in put_data['days_data']:
-
-                available_day = place_instance.get_day_available(day['week_day'])
-                day_serializer = None
-
-                if available_day:
-                    day_serializer = DayAvailableForPlaceSerializer(available_day, data=day, partial=True)
-                    day_serializer.is_valid(raise_exception=True)
-                    day_serializer.save()
-                else:
-                    # this will mean that this day has not been created yet, so we have to create it
-                    day_serializer = DayAvailableForPlaceSerializer(data=day)
-                    day_serializer.is_valid(raise_exception=True)
-                    day_serializer.save()
-            
-            data_to_return['days'].append(day_serializer.data)
-
+        if days := body_data['days_data']:
+            data_to_return['days'] = self.__update_and_create_days(days, place_object)
         
         return Response(data_to_return, status=status.HTTP_200_OK)
 
@@ -593,6 +566,26 @@ class OrganizationPlaceView(APIView):
         return Response({'message': 'lugar eliminado'}, status=status.HTTP_200_OK)
     
 
+    def __update_and_create_days(self, days:list, place:OrganizationPlace) -> list[dict]:
+        data_to_return = list()
+        for day in days:
+
+            available_day = place.get_day_available(day['week_day'])
+            day_serializer = None
+
+            if available_day:
+                day_serializer = DayAvailableForPlaceSerializer(available_day, data=day, partial=True)
+            else:
+                # this will mean that this day has not been created yet, so we have to create it
+                day_serializer = DayAvailableForPlaceSerializer(data=day)
+            
+            day_serializer.is_valid(raise_exception=True)
+            day_serializer.save()
+            
+            data_to_return.append(day_serializer.data)
+        
+        return data_to_return
+
 
 class OrganizationSectorView(APIView):
 
@@ -605,17 +598,14 @@ class OrganizationSectorView(APIView):
     )
     def get(self, request):
 
-        qp = OrganizationSectorQuerySerializer(data=request.query_params)
-        qp.is_valid(raise_exception=True)
-        query_params = qp.data
+        query_serializer = OrganizationSectorQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        query_params = query_serializer.validated_data
         
         if query_params['sector_id']:
             sectors = Sector.objects.filter(id=query_params['sector_id'])
             if not sectors:
-                return Response(
-                    {
-                        'error': 'el sector no existe'
-                    }, status=status.HTTP_404_NOT_FOUND)
+                raise exceptions.NotFound(_('el sector no existe'))
         else:
             sectors = Sector.objects.all()
 
@@ -637,7 +627,7 @@ class OrganizationServiceView(APIView):
     
             query_serializer = OrganizationServiceQuerySerializer(data=request.query_params)
             query_serializer.is_valid(raise_exception=True)
-            query_params = query_serializer.data
+            query_params = query_serializer.validated_data
             
             if query_params['service_id']:
                 services = OrganizationService.objects.filter(id=query_params['service_id'])
@@ -666,12 +656,11 @@ class OrganizationServiceView(APIView):
             
             service_serializer = OrganizationServiceSerializer(data=request.data)
         
-            if service_serializer.is_valid():
-                service_serializer.save()
+            service_serializer.is_valid(raise_exception=True)
+            service_serializer.save()
     
-                return Response(service_serializer.data, status.HTTP_201_CREATED)
+            return Response(service_serializer.data, status.HTTP_201_CREATED)
             
-            return Response(service_serializer.errors, status.HTTP_400_BAD_REQUEST)
 
         @swagger_auto_schema(
             request_body=OrganizationServiceSerializer(),
@@ -941,7 +930,7 @@ def get_organization_client_types(request):
 
     query_serializer = OrganizationClientTypeQuerySerializer(data=request.query_params)
     query_serializer.is_valid(raise_exception=True)
-    query_params = query_serializer.data
+    query_params = query_serializer.validated_data
 
     if query_params['client_type_id']:
         client_types = user.organization.client_types.filter(id=query_params['client_type_id'])
@@ -1010,20 +999,21 @@ def create_clients(request):
     client_type:OrganizationClientType = OrganizationClientType.objects.get(id=18)
 
     for i in range(10):
+        string_i = str(i)
         dependent_from = {
-            'first_name': 'parent first name' + str(i),
-            'last_name': 'parent last name' + str(i),
-            'email': 'parent@email.com' + str(i),
-            'phone': 'parent phone' + str(i),
+            'first_name': 'parent first name' + string_i,
+            'last_name': 'parent last name' + string_i,
+            'email': 'parent@email.com' + string_i,
+            'phone': 'parent phone' + string_i,
         }
 
         client_data = {
             'organization': 'Yqe0DxtbwcK3KYrakqXY83brcZOr',
             'type': client_type.pk, # type must come from the organization sector type
-            'first_name': 'child' + str(i),
-            'last_name': 'child' + str(i),
-            'email': 'client@email.com' + str(i),
-            'phone': 'client phone' + str(i),
+            'first_name': 'child' + string_i,
+            'last_name': 'child' + string_i,
+            'email': 'client@email.com' + string_i,
+            'phone': 'client phone' + string_i,
         }
 
 

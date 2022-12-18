@@ -263,6 +263,11 @@ class TestPlace(APITestCase):
                     "week_day": 0,
                     "exclude": [[0, 7], [18, 23]],
                     "note": "Una nota de prueba"
+                },
+                {
+                    "week_day": 1,
+                    "exclude": [[0, 7], [18, 23]],
+                    "note": "Una nota de prueba"
                 }
             ]
             
@@ -284,15 +289,15 @@ class TestPlace(APITestCase):
         url = reverse('organization_info:place')
         response = self.client.post(url, self.data_to_create_place, format='json')
         res = response.json()
-        
+
         try:
             del res['created_at']
             del res['id']
         except KeyError:
+            Print('error with response', res)
             self.assertEqual('you are not authorized', '')
             
         
-        # Print('New place created', res)
 
         self.assertEqual(response.status_code, 201)
 
@@ -304,6 +309,32 @@ class TestPlace(APITestCase):
         url = reverse('organization_info:place')
         response = self.client.get(url, format='json').json()
 
+
+    def test_update_place(self):
+        self.assertTrue(self.client.login(email=EMAIL, password=PASSWORD))
+        for i in range(0, 10):
+            self.data_to_create_place['place']['address'] = 'la calle de al lado' + str(i)
+            create_place(self.data_to_create_place, self.organization, self.user, create_with_serializer=True)
+        
+        self.data_to_create_place['place']['address'] = 'la calle de al lado 115'
+        place = create_place(self.data_to_create_place, self.organization, self.user, create_with_serializer=True)
+
+        url = reverse('organization_info:place')
+        response = self.client.get(url, format='json').json()
+        place_id = response[0]['id']
+
+        Print('places', response)
+
+        # self.assertEqual(place['id'], place_id)
+   
+        data_to_update = {
+            'place_id': 8,
+            'place_data': {'address': 'la nueva calle de al lado'}
+        }
+
+        response = self.client.put(url, data_to_update, format='json').json()
+        response = self.client.get(url, format='json').json()
+        Print('places after update', response)
 
     # helper functions ---------------------------------------------------------
 

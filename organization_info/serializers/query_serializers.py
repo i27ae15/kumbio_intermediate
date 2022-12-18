@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from organization_info.utils.validators import get_places
 
+from print_pp.logging import Print
+
 class OrganizationQuerySerializer(serializers.Serializer):
         
     organization_id = serializers.CharField( 
@@ -69,4 +71,3 @@ class OrganizationPlaceQuerySerializer(serializers.Serializer):
             organization = self.context['organization'], 
             place_id = attrs['place_id'], 
             return_as_query_set=True)
-        
