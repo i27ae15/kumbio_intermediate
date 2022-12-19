@@ -116,11 +116,10 @@ class OrganizationView(APIView):
     )
     def put(self, request):
         organization = Organization.objects.get(pk=request.user.organization.id)
-        serializer = OrganizationSerializer(organization, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = OrganizationSerializer(organization, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
     @swagger_auto_schema(
