@@ -264,7 +264,7 @@ class OrganizationProfessionalAPI(APIView):
 
         professional_object:OrganizationProfessional = professional_serializer.instance
 
-        if days:= request.get('days'):
+        if days:= request.data.get('days'):
             for day in days:
 
                 available_day = professional_object.get_day_available(day['week_day'])
