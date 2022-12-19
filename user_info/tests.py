@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from rest_framework.test import APITestCase
 from organization_info.tests import create_organization, create_place, create_user, create_kumbio_role, create_service
-from organization_info.serializers import OrganizationServiceSerializer
+from organization_info.serializers.model_serializers import OrganizationServiceSerializer
 
 # serializers
 

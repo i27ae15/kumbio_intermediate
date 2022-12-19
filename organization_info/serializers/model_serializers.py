@@ -3,10 +3,10 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 
-from .models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, 
+from ..models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, 
 OrganizationService, Sector, DayAvailableForPlace, OrganizationClient, OrganizationClientDependent,
 OrganizationClientType, DayAvailableForProfessional)
-from .utils.enums import FieldType
+from ..utils.enums import FieldType
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
@@ -30,6 +30,7 @@ class OrganizationProfessionalSerializer(serializers.ModelSerializer):
     created_by_id = serializers.IntegerField(write_only=True)
     kumbio_user_id = serializers.IntegerField(write_only=True)
     organization_id = serializers.CharField(write_only=True)
+    place_id = serializers.IntegerField(write_only=True)
 
     dayavailableforprofessional_set = DayAvailableForProfessional(many=True, read_only=True)
     
@@ -124,4 +125,5 @@ class OrganizationClientSerializer(serializers.ModelSerializer):
         model = OrganizationClient
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at', 'deleted_at', 'deleted_by', 'updated_by', 'referral_link')
+
 

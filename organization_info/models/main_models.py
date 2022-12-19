@@ -637,6 +637,22 @@ class OrganizationClient(models.Model):
 
     rating:int = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(5)])
     referral_link:str = models.CharField(max_length=255)
+    
+    # TODO: Create referral_by field
+
+    # notifications information
+    # general notifications
+    send_notifications_by_email:bool = models.BooleanField(default=True)
+    send_notifications_by_sms:bool = models.BooleanField(default=True)
+    send_notifications_by_whatsapp:bool = models.BooleanField(default=True)
+
+    # marketing information
+    send_marketing_by_email:bool = models.BooleanField(default=True)
+    send_marketing_by_sms:bool = models.BooleanField(default=True)
+    send_marketing_by_whatsapp:bool = models.BooleanField(default=True)
+
+    # -----------------------------------------------------------
+    # logs information
 
     created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
     updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
@@ -649,7 +665,6 @@ class OrganizationClient(models.Model):
 
     # to get the appointment that this client had done, we have to call the calendar api
     
-    # TODO: Create referral_by field
 
     @property
     def full_name(self) -> str:
