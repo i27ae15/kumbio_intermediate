@@ -285,12 +285,8 @@ class OrganizationProfessionalView(APIView):
         professional_serializer.save()
 
         professional_object:OrganizationProfessional = professional_serializer.instance
-
-<<<<<<< HEAD
-        if days:= request.data.get('days'):
-=======
+        
         if days:= body_data.get('days'):
->>>>>>> c1f60d6b963ebb59d9cba5fefc1dcac2cd55f4db
             for day in days:
 
                 available_day = professional_object.get_day_available(day['week_day'])
@@ -408,10 +404,6 @@ class OrganizationPlaceView(APIView):
 
 
     @swagger_auto_schema(
-<<<<<<< HEAD
-        responses={200: OrganizationPlaceSerializer()},
-    )
-=======
     request_body=OrganizationPlacePostSerializer,
     responses={
         201: openapi.Response(
@@ -423,7 +415,6 @@ class OrganizationPlaceView(APIView):
         )
     })
     @check_if_user_is_admin_decorator
->>>>>>> c1f60d6b963ebb59d9cba5fefc1dcac2cd55f4db
     def post(self, request):
         """
             Create a new Place
