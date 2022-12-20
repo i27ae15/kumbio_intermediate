@@ -321,11 +321,10 @@ class TestPlace(APITestCase):
 
         url = reverse('organization_info:place')
         response = self.client.get(url, format='json').json()
-        place_id = response[0]['id']
+        place_id = response[-1]['id']
 
-        Print('places', response)
 
-        # self.assertEqual(place['id'], place_id)
+        self.assertEqual(place['id'], place_id)
    
         data_to_update = {
             'place_id': 8,
@@ -334,7 +333,6 @@ class TestPlace(APITestCase):
 
         response = self.client.put(url, data_to_update, format='json').json()
         response = self.client.get(url, format='json').json()
-        Print('places after update', response)
 
     # helper functions ---------------------------------------------------------
 
@@ -510,6 +508,7 @@ class TestOrganizationProfesional(APITestCase):
         self.sector = create_organization_sector()
         self.place = create_place({}, self.organization, self.user)
         self.professional = create_professional(self.organization, place=self.place)
+        self.service = create_service({}, self.organization)
         
     
     def test_create_professional(self):
@@ -517,7 +516,38 @@ class TestOrganizationProfesional(APITestCase):
         professional_days = DayAvailableForProfessional.objects.filter(professional=self.professional)
         place_days = DayAvailableForPlace.objects.filter(place=self.place)
 
+        data_to_create_professional = {
+            'email': 'andresruse18@gmail.com',
+            'first_name': 'Andres',
+            'last_name': 'Ruse',
+            'phone': '123456789',
+            'username':'andresruse',
+            'organization': self.organization.pk,
+            'password': '123456789'
+        }
+
         self.assertEqual(len(professional_days), len(place_days))
+
+
+    def test_update_professional(self):
+
+        set_authorization(self.client)
+
+        url = reverse('organization_info:professional')
+
+        data_to_update_professional = {
+            'professional_id': self.professional.pk,
+            'professional_data': {
+                'services_ids': [self.service.pk],
+                'created_by_id': self.user.pk,
+                'kumbio_user_id': self.professional.kumbio_user.pk,
+                'organization_id': self.organization.pk,
+                'place_id': self.place.pk,
+            }
+        }
+
+        res = self.client.put(url, data_to_update_professional, format='json')
+        Print(res.json())
 
 
 class TestOrganizationService(APITestCase):

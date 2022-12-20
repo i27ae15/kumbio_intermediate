@@ -274,18 +274,28 @@ class OrganizationProfessionalView(APIView):
         ]
         """
 
-        
         body_serializer = OrganizationProfessionalPutBodySerializer(data=request.data)
         body_serializer.is_valid(raise_exception=True)
         body_data:dict = body_serializer.validated_data
         
         professional:OrganizationProfessional = body_data['professional']
 
-        professional_serializer = OrganizationProfessionalSerializer(professional, data=request.data['professional_data'], partial=True)
+
+        professional_serializer = OrganizationProfessionalSerializer(professional, data=body_data['professional_data'], partial=True)
         professional_serializer.is_valid(raise_exception=True)
         professional_serializer.save()
 
         professional_object:OrganizationProfessional = professional_serializer.instance
+        
+        services = body_data['professional_data'].get('services_ids', [])
+        
+        for service_id in services:
+            professional_object.services.add(service_id)
+
+        specialties = body_data['professional_data'].get('specialties_ids', [])
+
+        for specialty_id in specialties:
+            professional_object.specialties.add(specialty_id)
 
         if days:= body_data.get('days'):
             for day in days:

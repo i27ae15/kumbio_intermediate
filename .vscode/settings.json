@@ -5,4 +5,9 @@
         "opacity": 0.95, // 0.85 ~ 0.95 recommended
         "size": "cover" // also css, `cover` to self-adaption (recommended)，or `contain`、`200px 200px`
     },
+    "python.testing.pytestArgs": [
+        "organization_info"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
 }

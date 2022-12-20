@@ -2,12 +2,12 @@ from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
 
-
 from ..models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, 
 OrganizationService, Sector, DayAvailableForPlace, OrganizationClient, OrganizationClientDependent,
 OrganizationClientType, DayAvailableForProfessional)
 from ..utils.enums import FieldType
 
+from print_pp.logging import Print
 
 class OrganizationSerializer(serializers.ModelSerializer):
     
@@ -24,21 +24,22 @@ class DayAvailableForProfessional(serializers.ModelSerializer):
 
 
 # change this to nested serializers to exclude fields
-# look for the bug that does not let us use nested serializers
+# look for the bug that does not let us use nested serializers  
 class OrganizationProfessionalSerializer(serializers.ModelSerializer):
     
-    created_by_id = serializers.IntegerField(write_only=True)
-    kumbio_user_id = serializers.IntegerField(write_only=True)
-    organization_id = serializers.CharField(write_only=True)
-    place_id = serializers.IntegerField(write_only=True)
+    created_by_id = serializers.IntegerField(write_only=True, required=False)
+    kumbio_user_id = serializers.IntegerField(write_only=True, required=False)
+    organization_id = serializers.CharField(write_only=True, required=False)
+    place_id = serializers.IntegerField(write_only=True, required=False)
+    services_ids = serializers.ListField(write_only=True, required=False)
+    specialties_ids = serializers.ListField(write_only=True, required=False)
 
     dayavailableforprofessional_set = DayAvailableForProfessional(many=True, read_only=True)
-    
+
     class Meta:
         model = OrganizationProfessional
         fields = '__all__'
         depth = 1
-
 
 
 class DayAvailableForPlaceSerializer(serializers.ModelSerializer):
