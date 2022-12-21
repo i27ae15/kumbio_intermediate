@@ -543,11 +543,24 @@ class TestOrganizationProfesional(APITestCase):
                 'kumbio_user_id': self.professional.kumbio_user.pk,
                 'organization_id': self.organization.pk,
                 'place_id': self.place.pk,
-            }
+            },
+            'days': [{
+                'week_day': 0,
+                'exclude': [[0, 10], [18, 23]],
+                'note': 'this is a note'
+            }]
         }
 
         res = self.client.put(url, data_to_update_professional, format='json')
-        Print(res.json())
+        Print(res.json()['dayavailableforprofessional_set'])
+
+        data_to_update_professional['days'][0] = {
+            'week_day': 0,
+            'exclude': [[0, 12], [18, 23]],
+            'note': 'this is a note'
+        }
+        res = self.client.put(url, data_to_update_professional, format='json')
+        Print(res.json()['dayavailableforprofessional_set'])
 
 
 class TestOrganizationService(APITestCase):
