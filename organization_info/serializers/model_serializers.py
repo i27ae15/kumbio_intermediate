@@ -16,7 +16,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class DayAvailableForProfessional(serializers.ModelSerializer):
+class DayAvailableForProfessionalSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DayAvailableForProfessional
@@ -34,7 +34,7 @@ class OrganizationProfessionalSerializer(serializers.ModelSerializer):
     services_ids = serializers.ListField(write_only=True, required=False)
     specialties_ids = serializers.ListField(write_only=True, required=False)
 
-    dayavailableforprofessional_set = DayAvailableForProfessional(many=True, read_only=True)
+    dayavailableforprofessional_set = DayAvailableForProfessionalSerializer(many=True, read_only=True)
 
     class Meta:
         model = OrganizationProfessional
