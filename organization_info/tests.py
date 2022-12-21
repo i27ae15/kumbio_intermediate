@@ -1,4 +1,6 @@
 # python 
+import json
+import os
 # django
 from django.urls import reverse
 from .models.main_models import (Organization, OrganizationPlace, OrganizationService, Sector, OrganizationClient, 
@@ -535,6 +537,18 @@ class TestOrganizationProfesional(APITestCase):
 
         url = reverse('organization_info:professional')
 
+        # Abre el archivo JSON
+        root = os.path.join("organization_info", "test.json")
+        with open(root, "r") as f:
+            # Lee el contenido del archivo como una cadena de texto
+            data_json = f.read()
+
+        # Convierte la cadena de texto en un objeto de Python (diccionario)
+        data = json.loads(data_json)
+
+        # Ahora puedes trabajar con el objeto de Python como lo desees
+        Print(data)
+
         data_to_update_professional = {
             'professional_id': self.professional.pk,
             'professional_data': {
@@ -543,23 +557,29 @@ class TestOrganizationProfesional(APITestCase):
                 'kumbio_user_id': self.professional.kumbio_user.pk,
                 'organization_id': self.organization.pk,
                 'place_id': self.place.pk,
+                'place': {}
             },
             'days': [{
                 'week_day': 0,
                 'exclude': [[0, 10], [18, 23]],
-                'note': 'this is a note'
+                'note': 'Before update'
             }]
         }
 
-        res = self.client.put(url, data_to_update_professional, format='json')
+        res = self.client.put(url, data, format='json')
+        Print(res.json())
+        
         Print(res.json()['dayavailableforprofessional_set'])
 
-        data_to_update_professional['days'][0] = {
+        data['days'][0] = {
             'week_day': 0,
             'exclude': [[0, 12], [18, 23]],
-            'note': 'this is a note'
+            'note': 'After update'
         }
-        res = self.client.put(url, data_to_update_professional, format='json')
+
+        data['professional_data']['services_ids'] = []
+        res = self.client.put(url, data, format='json')
+        
         Print(res.json()['dayavailableforprofessional_set'])
 
 
