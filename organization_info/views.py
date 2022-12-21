@@ -41,7 +41,7 @@ OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySeria
 # model serializers
 from .serializers.model_serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
 OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer,
-OrganizationClientTypeSerializer)
+OrganizationClientTypeSerializer, DayAvailableForProfessionalSerializer)
 
 
 # others
@@ -280,7 +280,6 @@ class OrganizationProfessionalView(APIView):
         
         professional:OrganizationProfessional = body_data['professional']
 
-
         professional_serializer = OrganizationProfessionalSerializer(professional, data=body_data['professional_data'], partial=True)
         professional_serializer.is_valid(raise_exception=True)
         professional_serializer.save()
@@ -306,12 +305,13 @@ class OrganizationProfessionalView(APIView):
                 day_serializer = None
 
                 if available_day:
-                    day_serializer = DayAvailableForPlaceSerializer(available_day, data=day, partial=True)
+                    day_serializer = DayAvailableForProfessionalSerializer(available_day, data=day, partial=True)
                     day_serializer.is_valid(raise_exception=True)
                     day_serializer.save()
                 else:
                     # this will mean that this day has not been created yet, so we have to create it
-                    day_serializer = DayAvailableForPlaceSerializer(data=day)
+                    day['professional'] = professional_object.id
+                    day_serializer = DayAvailableForProfessionalSerializer(data=day)
                     day_serializer.is_valid(raise_exception=True)
                     day_serializer.save()
         
