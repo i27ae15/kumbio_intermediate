@@ -67,8 +67,8 @@ class OrganizationClientPutSerializer(serializers.Serializer):
 class OrganizationProfessionalPutBodySerializer(serializers.Serializer):
 
     professional_id = serializers.IntegerField(required=True, help_text='Professional id')
-    professional_data = OrganizationProfessionalSerializer(required=True, help_text='Professional data')
-    days = serializers.ListField(allow_null=True, help_text='Days data', child=AvailableDaysSerializer())
+    professional_data = OrganizationProfessionalSerializer(required=True, help_text='Professional data', partial=True)
+    days = serializers.ListField(allow_null=True, required=False, help_text='Days data', child=AvailableDaysSerializer())
 
 
     def validate(self, attrs:dict):

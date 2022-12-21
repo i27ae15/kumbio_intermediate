@@ -19,3 +19,4 @@ urlpatterns = [
     # path('extra_fields_for_client_type/', get_extra_fields_for_client_type, name='extra_fields_for_client_type'),
 
 ]
+
