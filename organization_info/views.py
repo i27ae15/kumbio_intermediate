@@ -289,11 +289,13 @@ class OrganizationProfessionalView(APIView):
         
         services = body_data['professional_data'].get('services_ids', [])
         
+        professional_object.services.clear()
         for service_id in services:
             professional_object.services.add(service_id)
 
         specialties = body_data['professional_data'].get('specialties_ids', [])
 
+        professional_object.specialties.clear()
         for specialty_id in specialties:
             professional_object.specialties.add(specialty_id)
 
@@ -546,31 +548,12 @@ class OrganizationPlaceView(APIView):
         Delete a Place
         """
         try:
-
-            place = self.check_if_place_exists(request.user, request.data['place_id'])
-
-            if not place:
-                return Response(
-                {
-                    'error': 'el lugar no existe'
-                }, status=status.HTTP_404_NOT_FOUND)
-
+            place:OrganizationPlace = OrganizationPlace.objects.get(id=request.data['place_id'], organization=request.user.organization)
         except KeyError:
-            return Response(
-                {
-                    'error': 'place_id es requerido'
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-
-        if not request.data.get('delete_calendars'):
-            # TODO: Perform communication with calendar api to delete calendars
-            calendars:Calendar = place.get_calendars()
-
-            for calendar in calendars:
-                calendar:Calendar
-                calendar.clear_place()
+            raise exceptions.NotFound(_('No se ha encontrado el lugar'))
 
         place.delete()
+        # TODO: Perform communication with calendar api to delete calendars
 
         return Response({'message': 'lugar eliminado'}, status=status.HTTP_200_OK)
     
