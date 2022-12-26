@@ -168,6 +168,17 @@ class OrganizationProfessionalView(APIView):
         query_serializer.is_valid(raise_exception=True)
         query_params = query_serializer.validated_data
 
+        organization_professionals:QuerySet[OrganizationProfessional] = None
+
+        if query_params['kumbio_user_id']:
+            organization_professionals = OrganizationProfessional.objects.filter(kumbio_user__id=int(query_params['kumbio_user_id']))
+        else:
+            organization_professionals = OrganizationProfessional.objects.filter(organization__id=query_params['organization_id'])
+        serializer = OrganizationProfessionalSerializer(organization_professionals, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
         if not query_params['kumbio_user_id']:
             # check if the user is an admin
             if check_if_user_is_admin(request) != True:
