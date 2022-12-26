@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from organization_info.utils.validators import get_places
 
+from django.utils.translation import gettext_lazy as _
+
 from print_pp.logging import Print
 
 class OrganizationQuerySerializer(serializers.Serializer):
