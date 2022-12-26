@@ -17,6 +17,14 @@ class OrganizationProfessionalQuerySerializer(serializers.Serializer):
                                             lo cual traerá todos los profesionales que la organización tenga ligados, (para poder traer a todos los profesionales \
                                             y a un usuario diferente al de la petición, el usuario debe ser admin)")
 
+    organization_id = serializers.IntegerField(default=None, allow_null=True, help_text="el id de la organización que se quiere, por defecto es None, \
+                                            lo cual traerá todos los profesionales que la organización tenga ligados, (para poder traer a todos los profesionales \
+                                            y a un usuario diferente al de la petición, el usuario debe ser admin)")
+
+    def validate(self, attrs):
+        if not attrs['kumbio_user_id'] and not attrs['organization_id']:
+            raise serializers.ValidationError(_("Si no hay un kumbio_user_id, se debe enviar el id de la organización"))
+        return super().validate(attrs)
 
 class OrganizationSectorQuerySerializer(serializers.Serializer):
         
