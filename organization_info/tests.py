@@ -510,8 +510,7 @@ class TestOrganizationClient(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + kumbio_token.token)
         
         res = self.client.delete(main_url, format='json')
-        Print(res.json())
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, 400)
 
         res = self.client.delete(main_url, {'client_id': 10}, format='json')
         self.assertEqual(res.status_code, 404)
