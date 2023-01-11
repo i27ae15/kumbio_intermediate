@@ -35,7 +35,9 @@ OrganizationClientTypeQuerySerializer, OrganizationQuerySerializer)
 
 # body serializers
 from .serializers.body_serializers import (PlacePutSerializer, OrganizationClientPutSerializer, 
-OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySerializer, OrganizationPlacePostSerializer)
+OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySerializer,
+OrganizationPlacePostSerializer, OrganizationClientDeleteSerializer)
+
 
 
 # model serializers
@@ -888,7 +890,6 @@ class OrganizationClientView(APIView):
             body parameters:
             client_id (int) (required): id del cliente
             client_data (dict) (required): {}
-
         """
 
         # write a similar as above, for the client put
@@ -902,6 +903,24 @@ class OrganizationClientView(APIView):
         client_serializer.save()
 
         return Response(client_serializer.data, status=status.HTTP_200_OK)
+
+
+    @swagger_auto_schema(request_body=OrganizationClientDeleteSerializer())
+    def delete(self, request):
+
+        """
+            body parameters:
+            client_id (int) (required): id del cliente
+        """
+
+        try:
+            client = OrganizationClient.objects.get(id=request.data['client_id'])
+        except OrganizationClient.DoesNotExist:
+            raise exceptions.NotFound(_("Client not found"))
+
+        client.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 # function types

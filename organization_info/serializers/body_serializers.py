@@ -64,6 +64,11 @@ class OrganizationClientPutSerializer(serializers.Serializer):
     client_data = OrganizationClientSerializer(required=True, help_text='Client data')
 
 
+class OrganizationClientDeleteSerializer(serializers.Serializer):
+
+    client_id = serializers.IntegerField(required=True, help_text='Client id')
+
+
 class OrganizationProfessionalPutBodySerializer(serializers.Serializer):
 
     professional_id = serializers.IntegerField(required=True, help_text='Professional id')

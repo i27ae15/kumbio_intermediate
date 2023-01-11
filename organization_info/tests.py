@@ -501,6 +501,21 @@ class TestOrganizationClient(APITestCase):
 
         self.assertEqual(len(res.json()), 1)
 
+    
+    def test_delete_clients(self):
+        create_client(self.organization, create_client_type(self.organization))
+        main_url = reverse('organization_info:client')
+
+        kumbio_token = create_kumbio_token(organization=self.organization, app=AppToken.CALENDAR)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + kumbio_token.token)
+                
+        res = self.client.delete(main_url, {'client_id': 10}, format='json')
+        self.assertEqual(res.status_code, 404)
+
+        res = self.client.delete(main_url, {'client_id': 1}, format='json')
+        self.assertEqual(res.status_code, 204)
+
+
 
 class TestOrganizationProfesional(APITestCase):
 
@@ -547,8 +562,6 @@ class TestOrganizationProfesional(APITestCase):
         data = json.loads(data_json)
 
         # Ahora puedes trabajar con el objeto de Python como lo desees
-        Print(data)
-
         data_to_update_professional = {
             'professional_id': self.professional.pk,
             'professional_data': {
@@ -567,9 +580,7 @@ class TestOrganizationProfesional(APITestCase):
         }
 
         res = self.client.put(url, data, format='json')
-        Print(res.json())
         
-        Print(res.json()['dayavailableforprofessional_set'])
 
         data['days'][0] = {
             'week_day': 0,
@@ -580,9 +591,6 @@ class TestOrganizationProfesional(APITestCase):
         data['professional_data']['services_ids'] = []
         res = self.client.put(url, data, format='json')
         
-        Print(res.json()['dayavailableforprofessional_set'])
-
-
 class TestOrganizationService(APITestCase):
     
         def setUp(self) -> None:
@@ -601,3 +609,5 @@ class TestOrganizationService(APITestCase):
 
             res = self.client.get(url, format='json')
             self.assertEqual(res.status_code, 200)
+
+
