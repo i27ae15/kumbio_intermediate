@@ -508,7 +508,11 @@ class TestOrganizationClient(APITestCase):
 
         kumbio_token = create_kumbio_token(organization=self.organization, app=AppToken.CALENDAR)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + kumbio_token.token)
-                
+        
+        res = self.client.delete(main_url, format='json')
+        Print(res.json())
+        self.assertEqual(res.status_code, 200)
+
         res = self.client.delete(main_url, {'client_id': 10}, format='json')
         self.assertEqual(res.status_code, 404)
 

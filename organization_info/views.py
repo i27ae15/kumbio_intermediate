@@ -913,8 +913,13 @@ class OrganizationClientView(APIView):
             client_id (int) (required): id del cliente
         """
 
+        body_serializer = OrganizationClientDeleteSerializer(data=request.data)
+        body_serializer.is_valid(raise_exception=True)
+        body_data:dict = body_serializer.validated_data
+
+
         try:
-            client = OrganizationClient.objects.get(id=request.data['client_id'])
+            client = OrganizationClient.objects.get(id=body_data['client_id'])
         except OrganizationClient.DoesNotExist:
             raise exceptions.NotFound(_("Client not found"))
 
