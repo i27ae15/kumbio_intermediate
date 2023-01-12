@@ -519,7 +519,6 @@ class TestOrganizationClient(APITestCase):
         self.assertEqual(res.status_code, 204)
 
 
-
 class TestOrganizationProfesional(APITestCase):
 
     def setUp(self) -> None:
@@ -593,7 +592,8 @@ class TestOrganizationProfesional(APITestCase):
 
         data['professional_data']['services_ids'] = []
         res = self.client.put(url, data, format='json')
-        
+
+
 class TestOrganizationService(APITestCase):
     
         def setUp(self) -> None:
@@ -614,3 +614,4 @@ class TestOrganizationService(APITestCase):
             self.assertEqual(res.status_code, 200)
 
 
+# https://stackoverflow.com/questions/45372428/django-rest-swagger-https-requests
