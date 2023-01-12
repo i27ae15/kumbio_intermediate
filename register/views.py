@@ -3,9 +3,10 @@ import requests
 import os
 
 # django 
+from django.utils.translation import gettext_lazy as _
 
 # rest-framework
-from rest_framework import status
+from rest_framework import status, exceptions
 from rest_framework.authtoken.views import ObtainAuthToken, APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -208,6 +209,11 @@ class CreateUserAPI(APIView):
         except TypeError:
             is_owner = True
             # this will create the organization, assuming that the person that is being creating it is the owner of the organization
+            
+            if Organization.objects.filter(owner_email=request.data['email']).exists():
+                raise exceptions.NotAcceptable(_('Ya existe una organización con ese email'))
+
+            
             organization:Organization = Organization.objects.create(
                 # org info
                 name=organization_data['name'],
