@@ -198,10 +198,9 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     
 
     def save(self, *args, **kwargs):
+        first_time = True if not self.pk else False
         if not self.pk and not kwargs.get('set_verified_email') and not 'test' in sys.argv:
             self.send_verification_code(save=False)
-            NotificationsSettings.objects.create(user=self)
-
             # by default create the settings for the notifications
         
         elif kwargs.get('set_verified_email'):
@@ -229,6 +228,9 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
                 self.calendar_token = 'token-test-for-calendar'
 
         super().save(*args, **kwargs)
+        
+        if first_time:
+            NotificationsSettings.objects.create(user=self)
 
 
     def __str__(self):
