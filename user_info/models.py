@@ -220,7 +220,8 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
                     'email': self.email,
                     'first_name': self.first_name,
                     'last_name': self.last_name, 
-                    'role': self.role.pk,
+                    # TODO: change this to the role of the user
+                    'role': self.role.pk if self.role else 1,
                 })
                 
                 self.calendar_token = res.json()['token']
