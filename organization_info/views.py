@@ -386,7 +386,7 @@ class OrganizationProfessionalView(APIView):
 
         # Asigna el rol de "organization_professional" al usuario y guarda la organización y el token del calendario
         kumbio_user.role = KumbioUserRole.objects.get(id=PROFESSIONAL_ROLE_ID)
-        kumbio_user.organization = Organization.objects.get(id=request_data['organization_id'])
+        kumbio_user.organization = Organization.objects.get(id=request_data['organization'])
         kumbio_user.calendar_token = calendar_token
         kumbio_user.set_password(request_data['password'])
         kumbio_user.save()
