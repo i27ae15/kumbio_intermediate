@@ -19,7 +19,7 @@ class OrganizationProfessionalQuerySerializer(serializers.Serializer):
                                             lo cual traerá todos los profesionales que la organización tenga ligados, (para poder traer a todos los profesionales \
                                             y a un usuario diferente al de la petición, el usuario debe ser admin)")
 
-    organization_id = serializers.IntegerField(default=None, allow_null=True, help_text="el id de la organización que se quiere, por defecto es None, \
+    organization_id = serializers.CharField(default=None, allow_null=True, help_text="el id de la organización que se quiere, por defecto es None, \
                                             lo cual traerá todos los profesionales que la organización tenga ligados, (para poder traer a todos los profesionales \
                                             y a un usuario diferente al de la petición, el usuario debe ser admin)")
 
