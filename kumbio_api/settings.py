@@ -81,7 +81,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://10.0.0.206:5173",
     "http://192.168.1.8:5173",
     "https://app.kumbio.com",
-    ]
+    "https://booking.kumbio.com",
+]
 
 MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
