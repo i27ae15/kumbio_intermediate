@@ -242,7 +242,7 @@ class OrganizationProfessionalView(APIView):
         body_data:dict = body_serializer.validated_data
         
         # Se crea el usuario Kumbio
-        kumbio_user_serializer = CreateKumbioUserSerializer(body_data, context={'set_verified_email': True})
+        kumbio_user_serializer = CreateKumbioUserSerializer(data=body_data, context={'set_verified_email': True})
         kumbio_user_serializer.is_valid(raise_exception=True)
 
         # Se obtiene el token del usuario creado en el calendario
