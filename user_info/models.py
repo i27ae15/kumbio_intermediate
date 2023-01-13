@@ -29,7 +29,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TOKEN_FOR_CALENDAR = "Token Calendar-8795fc177ff14ecb9199c83a4625dfd93bca76c0c0"
+# TODO: User environ instead of hardcode
+TOKEN_FOR_CALENDAR = os.environ['TOKEN_FOR_CALENDAR']
 CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
 
 
