@@ -241,20 +241,21 @@ class OrganizationProfessionalView(APIView):
         body_serializer = OrganizationProfessionalPostBodySerializer(data=request.data)
         body_serializer.is_valid(raise_exception=True)
         body_data:dict = body_serializer.validated_data
+        body_data['role'] = PROFESSIONAL_ROLE_ID
         
         # Se crea el usuario Kumbio
         kumbio_user_serializer = CreateKumbioUserSerializer(data=body_data, context={'set_verified_email': True})
         kumbio_user_serializer.is_valid(raise_exception=True)
 
         # Se obtiene el token del usuario creado en el calendario
-        token = self.__create_calendar_user(body_data)
+        # token = self.__create_calendar_user(body_data)
         
         # Se guarda el usuario Kumbio
         kumbio_user_serializer.save()
         kumbio_user:KumbioUser = kumbio_user_serializer.instance
         
         # Se guarda la información extra del usuario y se serializa el profesional
-        professional_data = self.__save_user_extra_information(kumbio_user, body_data, calendar_token=token, created_by=request.user.id)
+        professional_data = self.__save_user_extra_information(kumbio_user, body_data, calendar_token=kumbio_user.calendar_token, created_by=request.user.id)
         professional_serializer = OrganizationProfessionalSerializer(data=professional_data)
         professional_serializer.is_valid(raise_exception=True)
         professional_serializer.save()
