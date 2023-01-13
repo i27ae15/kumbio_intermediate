@@ -580,6 +580,7 @@ class OrganizationProfessional(models.Model):
 
 
     def __set_default_days_available(self):
+        return
         days_available = self.place.available_days
         for day in days_available:
             DayAvailableForProfessional.objects.create(
