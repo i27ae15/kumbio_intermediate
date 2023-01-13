@@ -338,7 +338,7 @@ class OrganizationProfessionalView(APIView):
             Crea un nuevo usuario en el calendario.
 
             Parameters:
-            - organization_id (int): ID de la organización.
+            - organization (str): ID de la organización.
             - email (str): Correo electrónico del usuario.
             - first_name (str): Nombre del usuario.
             - last_name (str): Apellido del usuario.
@@ -351,7 +351,7 @@ class OrganizationProfessionalView(APIView):
         
         res = requests.post(f'{CALENDAR_ENDPOINT}register/api/v2/create-user/', 
         json={
-            'organization_id': request_data['organization_id'],
+            'organization_id': request_data['organization'],
             'email':request_data['email'],
             'first_name': request_data['first_name'],
             'last_name': request_data['last_name'],
