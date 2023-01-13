@@ -256,7 +256,6 @@ class OrganizationProfessionalView(APIView):
         # Se guarda la información extra del usuario y se serializa el profesional
         professional_data = self.__save_user_extra_information(kumbio_user, body_data, calendar_token=kumbio_user.calendar_token, created_by=request.user.id)
 
-        professional_data['organization'] = body_data['organization']
         professional_serializer = OrganizationProfessionalSerializer(data=professional_data)
         professional_serializer.is_valid(raise_exception=True)
         professional_serializer.save()
@@ -397,6 +396,8 @@ class OrganizationProfessionalView(APIView):
         professional_data = request_data.copy()
         professional_data['created_by_id'] = created_by
         professional_data['kumbio_user_id'] = kumbio_user.pk
+        professional_data['organization_id'] = request_data['organization']
+
 
         return professional_data
 
