@@ -286,11 +286,19 @@ class OrganizationProfessionalView(APIView):
                 exclude:list = [[0, 7], [18, 23]]
             }
         ]
+        - profile_picture (file): profile picture of the professional
         """
+
 
         body_serializer = OrganizationProfessionalPutBodySerializer(data=request.data)
         body_serializer.is_valid(raise_exception=True)
         body_data:dict = body_serializer.validated_data
+
+        profile_picture = request.GET.get('profile_picture', None)
+        if profile_picture:
+            body_data['professional_data'] = dict()
+            body_data['professional_data']['profile_picture'] = profile_picture
+
         
         professional:OrganizationProfessional = body_data['professional']
 
@@ -926,7 +934,6 @@ class OrganizationClientView(APIView):
 
         client.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 
 # function types
