@@ -277,7 +277,8 @@ class OrganizationProfessionalView(APIView):
     })
     def put(self, request):
         """
-        body parameters::
+        body parameters:
+
             - professional_id (int): id of the professional to update
             - professional_data (dict): data to update the professional with
             - days (list): list of days to update the professional with = [
@@ -296,12 +297,11 @@ class OrganizationProfessionalView(APIView):
 
         professional:OrganizationProfessional = body_data['professional']
 
-        profile_photo = request.GET.get('profile_photo', None)
+        profile_photo = request.data.get('profile_photo', None)
+
         if profile_photo:
             body_data['professional_data'] = dict()
             body_data['professional_data']['profile_photo'] = profile_photo
-
-        
 
         professional_serializer = OrganizationProfessionalSerializer(professional, data=body_data['professional_data'], partial=True)
         professional_serializer.is_valid(raise_exception=True)
