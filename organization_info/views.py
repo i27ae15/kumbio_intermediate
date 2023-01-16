@@ -278,16 +278,16 @@ class OrganizationProfessionalView(APIView):
     })
     def put(self, request):
         """
-        Parameters:
-        - professional_id (int): id of the professional to update
-        - professional_data (dict): data to update the professional with
-        - days (list): list of days to update the professional with = [
-            {
-                week_day: (int) day of the week
-                exclude:list = [[0, 7], [18, 23]]
-            }
-        ]
-        - profile_photo (file): profile picture of the professional
+        body parameters::
+            - professional_id (int): id of the professional to update
+            - professional_data (dict): data to update the professional with
+            - days (list): list of days to update the professional with = [
+                {
+                    week_day: (int) day of the week
+                    exclude:list = [[0, 7], [18, 23]]
+                }
+            ]
+            - profile_photo (file): profile picture of the professional
         """
 
 
