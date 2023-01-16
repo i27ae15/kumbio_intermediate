@@ -278,7 +278,8 @@ class OrganizationProfessionalView(APIView):
     })
     def put(self, request):
         """
-        body parameters::
+        body parameters:
+        
             - professional_id (int): id of the professional to update
             - professional_data (dict): data to update the professional with
             - days (list): list of days to update the professional with = [
