@@ -5,8 +5,8 @@ import requests
 import os
 import sys
 import json
-from types import SimpleNamespace
 
+from types import SimpleNamespace
 from dotenv import load_dotenv
 
 # django
@@ -16,8 +16,8 @@ from django.db.models.query import QuerySet
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 # models
-from .default_values import DEFAULT_CLIENT_TYPES
 import user_info.models as user_models
+from .default_values import DEFAULT_CLIENT_TYPES
 
 
 # utils
@@ -252,7 +252,7 @@ class Organization(models.Model):
                     headers={'Authorization': os.environ["TOKEN_FOR_CALENDAR"]},
                     json={
                         'organization_id': self.id,
-                        'created_by': 0, # id 0 is for owner of the organization
+                        'created_by': 0, # id 0 is for owner of the organization when the organization is being created
                         'use_default_templates': True
                     })
             
@@ -800,7 +800,7 @@ class Rating(models.Model):
     created_by:int = models.IntegerField(choices=RatingMadeBy.choices)
     
     def __str__(self):
-        return f'{self.id} - {self.client.first_name} {self.client.last_name} - {self.organization.name}'
+        return f'{self.id} - {self.client.first_name} {self.client.last_name}'
 
  
 class ProfessionalSpecialty(models.Model):
