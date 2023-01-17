@@ -115,6 +115,7 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     # -----------------------------------------------------------
     # fields 
 
+    # this must be one just for the moment
     available_places = models.ManyToManyField('organization_info.OrganizationPlace', blank=True, related_name='available_places')
     available_services = models.ManyToManyField('organization_info.OrganizationService', blank=True, related_name='available_services')
     
@@ -206,21 +207,24 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         
         elif kwargs.get('set_verified_email'):
             self.is_email_verified = True
-        
+
         try:
             del kwargs['set_verified_email']
         except KeyError:
             pass
             # we set pass here because we need to assure that set_verified_email is not in kwargs, so, if key_error is raised, we just pass
         
-        if not self.pk:
+        super().save(*args, **kwargs)
+        
+        if first_time:
             # creating the user in the calendar app so we can obtain the token for the user in calendar
             if not 'test' in sys.argv:
                 res = requests.post(f'{CALENDAR_ENDPOINT}register/api/v2/create-user/', json={
                     'organization_id': self.organization.id,
                     'email': self.email,
                     'first_name': self.first_name,
-                    'last_name': self.last_name, 
+                    'last_name': self.last_name,
+                    'kumbio_user_id': self.pk,
                     # TODO: change this to the role of the user
                     'role': self.role.pk if self.role else 1,
                 })
@@ -229,14 +233,11 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
             else:
                 self.calendar_token = 'token-test-for-calendar'
 
-        super().save(*args, **kwargs)
-        
-        if first_time:
             NotificationsSettings.objects.create(user=self)
 
 
     def __str__(self):
         try: return f'{self.id} - {self.email} - {self.organization.name}'
-        except Exception: return f'{self.id} - {self.email} - {self.organization}'
+        except Exception: return f'{self.pk} - {self.email} - {self.organization}'
 
 

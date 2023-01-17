@@ -10,11 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
-from pathlib import Path
 import os
 import sys
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from dotenv import load_dotenv
+load_dotenv()
 
 sentry_sdk.init(
     dsn="https://5bec2f6b03e44942bcc5bc2bd009240f@o4504254534189056.ingest.sentry.io/4504254536286209",
@@ -115,12 +116,23 @@ WSGI_APPLICATION = 'kumbio_api.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
+USE_LOCAL_DB = os.environ.get('USE_LOCAL_DB', False)
 
 if 'test' in sys.argv:
     DATABASES = {
         'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': 'mydatabase'
+        }
+    }
+elif USE_LOCAL_DB:
+        DATABASES = {
+        'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'local_db',
+        'OPTIONS': {
+            'timeout': 60,  # in seconds
+        }
         }
     }
 else:
@@ -139,7 +151,7 @@ else:
 REST_FRAMEWORK = {
    'DEFAULT_AUTHENTICATION_CLASSES': (
        'rest_framework.authentication.TokenAuthentication',
-       )
+    )
 }
 
 

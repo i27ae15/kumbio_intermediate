@@ -7,6 +7,7 @@ import os
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
 
+
 # rest-framework
 from rest_framework import status, exceptions
 from rest_framework.response import Response
@@ -15,9 +16,11 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 
+
 # Swagger
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+
 
 # models
 from user_info.models import KumbioUser, KumbioUserRole
@@ -25,8 +28,10 @@ from .models.main_models import (Organization, OrganizationProfessional, Organiz
 OrganizationService, OrganizationClient, OrganizationClientType)
 from authentication_manager.models import KumbioToken
 
+
 # serializers
 from user_info.serializers import CreateKumbioUserSerializer
+
 
 # query serializers
 from .serializers.query_serializers import (OrganizationPlaceQuerySerializer, OrganizationProfessionalQuerySerializer,
@@ -37,7 +42,6 @@ OrganizationClientTypeQuerySerializer, OrganizationQuerySerializer)
 from .serializers.body_serializers import (PlacePutSerializer, OrganizationClientPutSerializer, 
 OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySerializer,
 OrganizationPlacePostSerializer, OrganizationClientDeleteSerializer)
-
 
 
 # model serializers
@@ -226,13 +230,15 @@ class OrganizationProfessionalView(APIView):
         Crea un nuevo profesional en la organización.
 
         Body Parameters:
-        - email (str): Correo electrónico del profesional.
-        - first_name (str): Nombre del profesional.
-        - last_name (str): Apellido del profesional.
-        - phone (str): Teléfono del profesional.
-        - username (str): Nombre de usuario del profesional.
-        - organization (int): ID de la organización del profesional.
-        - password (str): Contraseña del profesional.
+
+            - email (str): Correo electrónico del profesional.
+            - first_name (str): Nombre del profesional.
+            - last_name (str): Apellido del profesional.
+            - phone (str): Teléfono del profesional.
+            - username (str): Nombre de usuario del profesional.
+            - organization (int): ID de la organización del profesional.
+            - password (str): Contraseña del profesional.
+        
         """
         
         # OrganizationProfessional hereda de KumbioUser, por lo que para crear un nuevo profesional primero hay que crear 
@@ -344,6 +350,8 @@ class OrganizationProfessionalView(APIView):
     
 
     # Private functions
+    # Deprecated? since this function is being called when the user is created
+    # further testing is needed
     def __create_calendar_user(self, request_data:dict) -> str:
         
         """

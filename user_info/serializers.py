@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import KumbioUser, NotificationsSettings
+from organization_info.serializers.model_serializers import OrganizationPlaceSerializer
 
 from print_pp.logging import Print, check_caller_line
 
@@ -10,9 +11,20 @@ class NotificationsSettingsSerializer(serializers.ModelSerializer):
         model = NotificationsSettings
         fields = '__all__'
 
+
+class KumbioUserAvailablePlacesSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = KumbioUser
+        fields = ("available_places",)
+        depth = 1
+        
+
+
 class KumbioUserSerializer(serializers.ModelSerializer):    
     
     notificationssettings_set = NotificationsSettingsSerializer(many=True)
+    available_places = OrganizationPlaceSerializer(many=True)
     
     class Meta:
         model = KumbioUser
@@ -37,13 +49,7 @@ class CreateKumbioUserSerializer(serializers.ModelSerializer):
         fields = ( "id", "email", "username", "password", "organization", "first_name", "last_name")
 
 
-class KumbioUserAvailablePlacesSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model = KumbioUser
-        fields = ("available_places",)
-        depth = 1
-        
+
         
 class KumbioUserAvailableServicesSerializer(serializers.ModelSerializer):
     
