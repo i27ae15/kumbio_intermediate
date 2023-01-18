@@ -182,7 +182,7 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
             self.save()
         
         send_notification(token_for_app=TOKEN_FOR_CALENDAR, 
-                          organization_id=0,
+                          organization_id=self.organization.id if self.organization else 0,
                           send_to=[self.email],
                           messages=[f'Your verification code is {self.code_to_verify_email}'],
                           subjects=['Verify your email'])
