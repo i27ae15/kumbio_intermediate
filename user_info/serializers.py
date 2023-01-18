@@ -40,6 +40,7 @@ class CreateKumbioUserSerializer(serializers.ModelSerializer):
             
         user = KumbioUser(**validated_data)
         user.save(set_verified_email=set_verified_email)
+        user.set_password(validated_data['password'])
         
         return user
 

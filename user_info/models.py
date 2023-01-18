@@ -29,9 +29,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# TODO: User environ instead of hardcode
-TOKEN_FOR_CALENDAR = os.environ['TOKEN_FOR_CALENDAR']
-CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
+
+TOKEN_FOR_CALENDAR = os.environ.get('TOKEN_FOR_CALENDAR')
+CALENDAR_ENDPOINT = os.environ.get('CALENDAR_ENDPOINT')
+MAKE_CONNECTIONS = os.environ.get('MAKE_CONNECTIONS')
 
 
 class KumbioUserPermission(models.Model):
@@ -226,8 +227,14 @@ from django.dispatch import receiver
 
 @receiver(post_save, sender=KumbioUser)
 def my_handler(sender, instance:KumbioUser, created, **kwargs):
-    
+
     if created:
+        
+        if MAKE_CONNECTIONS == "0":
+            instance.calendar_token = 'token-not-connected-to-calendar'
+            instance.save(set_verified_email=True)
+            return
+
         if not 'test' in sys.argv:
             res = requests.post(f'{CALENDAR_ENDPOINT}register/api/v2/create-user/', json={
                 'organization_id': instance.organization.id,
