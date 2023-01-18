@@ -47,7 +47,7 @@ class OrganizationClientType(models.Model):
         name:str = models.CharField(max_length=100)
         description:str = models.TextField(blank=True, null=True, default='')
 
-        fields:list = models.JSONField(default=list)
+        fields:list[tuple] = models.JSONField(default=list)
 
         """
             fields is going to be a JSON object where the person is going to be able to save as many fields 
@@ -283,11 +283,11 @@ class OrganizationService(models.Model):
     
     price:float = models.FloatField(default=0)
 
-    buffer:int = models.IntegerField(default=0)
+    buffer:float = models.FloatField(default=0)
     only_booking:int = models.BooleanField(default=True)
 
     # logs fields
-    created_at:datetime.datetime = models.DateTimeField(default=datetime.datetime.utcnow)
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
 
     deleted_at:datetime.datetime = models.DateTimeField(null=True, blank=True, default=None)
     deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, blank=True, on_delete=models.CASCADE, default=None, related_name='service_deleted_by')
@@ -313,15 +313,15 @@ class OrganizationService(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            self.created_at = datetime.datetime.utcnow()
+            self.created_at = timezone.now()
         else:
-            self.updated_at = datetime.datetime.utcnow()
+            self.updated_at = timezone.now()
                     
         super().save(*args, **kwargs)
     
     
     def delete(self, *args, **kwargs):
-        self.deleted_at = datetime.datetime.utcnow()
+        self.deleted_at = timezone.now()
         self.deleted_by = kwargs.get('user')
         self.save()
     
@@ -344,6 +344,8 @@ class OrganizationPlace(models.Model):
     accepts_pets:bool = models.BooleanField(default=True)
     additional_info:str = models.CharField(max_length=255, null=True, default=None, blank=True)
     after_hours_phone:str = models.CharField(max_length=255, null=True, default=None, blank=True)
+
+    description:str = models.TextField(null=True, default=None, blank=True)
 
     email:str = models.EmailField(max_length=255, null=True, default=None, blank=True)
 
@@ -459,7 +461,6 @@ class DayAvailableForProfessional(models.Model):
     
     week_day:int = models.IntegerField(choices=DayName.choices)
     exclude:list = models.JSONField(default=list, null=True, blank=True)
-    
 
     note:str = models.TextField(null=True, blank=True)
 
@@ -696,8 +697,8 @@ class OrganizationClientDependent(models.Model):
     first_name:str = models.CharField(max_length=100)
     last_name:str = models.CharField(max_length=100)
     email:str = models.EmailField()
-    phone:str = models.CharField(max_length=20)
-    phone_2:str = models.CharField(max_length=20, blank=True, null=True, default=None)
+    phone:str = models.CharField(max_length=50)
+    phone_2:str = models.CharField(max_length=50, blank=True, null=True, default=None)
 
     same_as_client:bool = models.BooleanField(default=True)
     

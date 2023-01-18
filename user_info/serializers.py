@@ -40,15 +40,14 @@ class CreateKumbioUserSerializer(serializers.ModelSerializer):
             
         user = KumbioUser(**validated_data)
         user.save(set_verified_email=set_verified_email)
+        user.set_password(validated_data['password'])
         
         return user
 
     
     class Meta:
         model = KumbioUser
-        fields = ( "id", "email", "username", "password", "organization", "first_name", "last_name")
-
-
+        fields = ( "id", "email", "username", "password", "organization", "role", "first_name", "last_name")
 
         
 class KumbioUserAvailableServicesSerializer(serializers.ModelSerializer):
