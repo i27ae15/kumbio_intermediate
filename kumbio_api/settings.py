@@ -66,6 +66,9 @@ INSTALLED_APPS = [
     'authentication_manager',
     'transactions',
     'inventory',
+
+    # information
+    'information_manager',
     
     # third party apps
     'rest_framework',
@@ -129,7 +132,7 @@ elif USE_LOCAL_DB:
         DATABASES = {
         'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'local_db',
+        'NAME': 'local_db.db',
         'OPTIONS': {
             'timeout': 60,  # in seconds
         }
