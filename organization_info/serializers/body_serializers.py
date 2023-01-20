@@ -12,7 +12,7 @@ from organization_info.utils.validators import get_places
 
 # private serializers
 # these serializers are used to validate a dict that comes within the properties of another serializer
-class AvailableDaysSerializer(serializers.Serializer):
+class AvailableDaysPrivateSerializer(serializers.Serializer):
 
     week_day = serializers.IntegerField(allow_null=False, help_text="el día de la semana que se quiere modificar")
     exclude = serializers.ListField(allow_null=False, help_text="las horas que se quiere excluir")
@@ -38,6 +38,13 @@ class AvailableDaysSerializer(serializers.Serializer):
         
         return super().validate(attrs)
 
+
+
+class KumbioUserPrivateSerializer(serializers.Serializer):
+    first_name = serializers.CharField(required=False, allow_null=True, help_text="el nombre del usuario")
+    last_name = serializers.CharField(required=False, allow_null=True, help_text="el apellido del usuario")
+    email = serializers.EmailField(required=False, allow_null=True, help_text="el email del usuario")
+    phone = serializers.CharField(required=False, allow_null=True, help_text="el teléfono del usuario")
 
 
 # public serializers
@@ -72,8 +79,9 @@ class OrganizationClientDeleteSerializer(serializers.Serializer):
 class OrganizationProfessionalPutBodySerializer(serializers.Serializer):
 
     professional_id = serializers.IntegerField(required=True, help_text='Professional id')
-    professional_data = OrganizationProfessionalSerializer(required=False, help_text='Professional data', partial=True)
-    days = serializers.ListField(allow_null=True, required=False, help_text='Days data', child=AvailableDaysSerializer())
+    professional_data = OrganizationProfessionalSerializer(default=dict, help_text='Professional data', partial=True)
+    kumbio_user_data = KumbioUserPrivateSerializer(default=dict, help_text='Kumbio user data', partial=True)
+    days = serializers.ListField(allow_null=True, required=False, help_text='Days data', child=AvailableDaysPrivateSerializer())
 
 
     def validate(self, attrs:dict):
@@ -104,7 +112,7 @@ class OrganizationProfessionalPostBodySerializer(serializers.Serializer):
 class OrganizationPlacePostSerializer(serializers.Serializer):
 
     place = OrganizationPlaceSerializer(required=True, help_text='Place data')
-    days = serializers.ListField(allow_null=True, help_text='Days data', child=AvailableDaysSerializer())
+    days = serializers.ListField(allow_null=True, help_text='Days data', child=AvailableDaysPrivateSerializer())
 
     def validate(self, attrs:dict):
 

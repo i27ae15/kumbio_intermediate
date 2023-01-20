@@ -30,7 +30,7 @@ from authentication_manager.models import KumbioToken
 
 
 # serializers
-from user_info.serializers import CreateKumbioUserSerializer
+from user_info.serializers import CreateKumbioUserSerializer, KumbioUserSerializer
 
 
 # query serializers
@@ -288,6 +288,7 @@ class OrganizationProfessionalView(APIView):
 
             - professional_id (int): id of the professional to update
             - professional_data (dict): data to update the professional with
+            - kumbio_user_data (dict): data to update the kumbio user with
             - days (list): list of days to update the professional with = [
                 {
                     week_day: (int) day of the week
@@ -295,9 +296,10 @@ class OrganizationProfessionalView(APIView):
                 }
             ]
             - profile_photo (file): profile picture of the professional
+            
+            Profile photo does not appear on the serializer cause it is a file and swagger does not support file fields
         """
 
-        # TODO: Create the possibility to edit the kumbio user data parent from the professional
         body_serializer = OrganizationProfessionalPutBodySerializer(data=request.data)
         body_serializer.is_valid(raise_exception=True)
         body_data:dict = body_serializer.validated_data
@@ -312,7 +314,12 @@ class OrganizationProfessionalView(APIView):
 
         professional_serializer = OrganizationProfessionalSerializer(professional, data=body_data['professional_data'], partial=True)
         professional_serializer.is_valid(raise_exception=True)
+
+        kumbio_user_serializer = KumbioUserSerializer(professional.kumbio_user, data=body_data['kumbio_user_data'], partial=True)
+        kumbio_user_serializer.is_valid(raise_exception=True)
+        
         professional_serializer.save()
+        kumbio_user_serializer.save()
 
         professional_object:OrganizationProfessional = professional_serializer.instance
         

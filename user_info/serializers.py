@@ -28,8 +28,8 @@ class KumbioUserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = KumbioUser
-        exclude = ('password', 'extra_permissions')
-        read_only_fields = ('calendar_token', 'selene_token')
+        exclude = ('password', 'extra_permissions', 'is_tester', 'is_staff', 'is_active')
+        read_only_fields = ('calendar_token', 'selene_token', 'registration_date')
 
 
 class CreateKumbioUserSerializer(serializers.ModelSerializer):
