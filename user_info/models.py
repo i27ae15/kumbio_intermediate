@@ -18,8 +18,6 @@ from django.contrib.auth.models import (
 # utils
 from utils.numbers import random_with_N_digits
 
-
-
 # notifications
 from kumbio_communications import send_notification
 
@@ -29,9 +27,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# TODO: User environ instead of hardcode
-TOKEN_FOR_CALENDAR = os.environ['TOKEN_FOR_CALENDAR']
-CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
+
+TOKEN_FOR_CALENDAR = os.environ.get('TOKEN_FOR_CALENDAR')
+CALENDAR_ENDPOINT = os.environ.get('CALENDAR_ENDPOINT')
+MAKE_CONNECTIONS = os.environ.get('MAKE_CONNECTIONS')
 
 
 class KumbioUserPermission(models.Model):
@@ -200,7 +199,6 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     
 
     def save(self, *args, **kwargs):
-        first_time = True if not self.pk else False
         if not self.pk and not kwargs.get('set_verified_email') and not 'test' in sys.argv:
             self.send_verification_code(save=False)
             # by default create the settings for the notifications
@@ -214,26 +212,7 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
             pass
             # we set pass here because we need to assure that set_verified_email is not in kwargs, so, if key_error is raised, we just pass
         
-        super().save(*args, **kwargs)
-        
-        if first_time:
-            # creating the user in the calendar app so we can obtain the token for the user in calendar
-            if not 'test' in sys.argv:
-                res = requests.post(f'{CALENDAR_ENDPOINT}register/api/v2/create-user/', json={
-                    'organization_id': self.organization.id,
-                    'email': self.email,
-                    'first_name': self.first_name,
-                    'last_name': self.last_name,
-                    'kumbio_user_id': self.pk,
-                    # TODO: change this to the role of the user
-                    'role': self.role.pk if self.role else 1,
-                })
-                
-                self.calendar_token = res.json()['token']
-            else:
-                self.calendar_token = 'token-test-for-calendar'
-
-            NotificationsSettings.objects.create(user=self)
+        super().save(*args, **kwargs)           
 
 
     def __str__(self):
@@ -241,3 +220,38 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         except Exception: return f'{self.pk} - {self.email} - {self.organization}'
 
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=KumbioUser)
+def my_handler(sender, instance:KumbioUser, created, **kwargs):
+
+    if created:
+        
+        if MAKE_CONNECTIONS == "0":
+            instance.calendar_token = 'token-not-connected-to-calendar'
+            instance.save(set_verified_email=True)
+            return
+
+        if not 'test' in sys.argv:
+            res = requests.post(f'{CALENDAR_ENDPOINT}register/api/v2/create-user/', json={
+                'organization_id': instance.organization.id,
+                'email': instance.email,
+                'first_name': instance.first_name,
+                'last_name': instance.last_name,
+                'kumbio_user_id': instance.pk,
+                'role': instance.role.pk
+            })
+            
+            instance.calendar_token = res.json()['token']
+        else:
+            instance.calendar_token = 'token-test-for-calendar'
+        instance.save(set_verified_email=True)
+
+        NotificationsSettings.objects.create(user=instance)
+        # create the default booking settings for calendar
+        if os.environ.get('FILLING_TEST_DB', False):
+            res = requests.post(f'{CALENDAR_ENDPOINT}settings/api/v2/booking/', json={'organization_id': instance.organization.pk}, headers={'Authorization': f'Token {instance.calendar_token}'})
+        else:
+            res = requests.post(f'{CALENDAR_ENDPOINT}settings/api/v2/booking/', json={}, headers={'Authorization': f'Token {instance.calendar_token}'})
+            

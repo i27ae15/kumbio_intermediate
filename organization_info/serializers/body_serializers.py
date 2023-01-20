@@ -112,3 +112,22 @@ class OrganizationPlacePostSerializer(serializers.Serializer):
         attrs['place']['created_by'] = self.context['created_by']    
 
         return super().validate(attrs)
+
+
+# serializers for delete requests
+
+class OrganizationProfessionalDeleteBodySerializer(serializers.Serializer):
+
+    professional_id = serializers.IntegerField(required=True, help_text='Professional id')
+
+
+    def validate(self, attrs:dict):
+        self.__convert_to_objects(attrs)
+        return super().validate(attrs)
+
+
+    def __convert_to_objects(self, attrs):
+        try:
+            attrs['professional'] = OrganizationProfessional.objects.get(id=attrs['professional_id'])
+        except OrganizationProfessional.DoesNotExist:
+            raise serializers.ValidationError(_('Professional does not exist'))
