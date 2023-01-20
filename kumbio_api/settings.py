@@ -132,7 +132,7 @@ elif USE_LOCAL_DB:
         DATABASES = {
         'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'local_db.db',
+        'NAME': 'local_db.sqlite3',
         'OPTIONS': {
             'timeout': 60,  # in seconds
         }
