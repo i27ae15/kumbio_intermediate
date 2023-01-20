@@ -730,20 +730,6 @@ class OrganizationServiceView(APIView):
         else:
             services = OrganizationService.objects.all()
 
-<<<<<<< HEAD
-        @swagger_auto_schema(
-            request_body=OrganizationServiceSerializer(),
-        )
-        def post(self, request):
-            """
-                Create a new Service
-                Solo los administradores pueden crear servicios
-            """
-            request.data['organization'] = request.user.organization.id
-            request.data['created_by'] = request.user.id
-            
-            service_serializer = OrganizationServiceSerializer(data=request.data)
-=======
 
         service_serializer = OrganizationServiceSerializer(services, many=True)
         return Response(service_serializer.data, status=status.HTTP_200_OK)
@@ -760,8 +746,7 @@ class OrganizationServiceView(APIView):
         """
         request.data['organization'] = request.user.organization.id
         request.data['created_by'] = request.user.id
->>>>>>> 4cc8786d022a1a31bc09c4041170b1bef8b3be1f
-        
+
         service_serializer = OrganizationServiceSerializer(data=request.data)
     
         service_serializer.is_valid(raise_exception=True)
