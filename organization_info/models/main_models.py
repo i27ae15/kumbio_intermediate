@@ -26,6 +26,9 @@ from organization_info.utils.time import get_start_and_end_time
 from organization_info.utils.enums import DayName, OrganizationClientCreatedBy
 from .payment_models import PaymentMethodAcceptedByOrg
 
+from kumbio_communications import send_notification
+
+
 from print_pp.logging import Print
 
 
@@ -33,6 +36,8 @@ load_dotenv()
 
 KUMBIO_COMMUNICATIONS_ENDPOINT = os.getenv('KUMBIO_COMMUNICATIONS_ENDPOINT')
 SELF_CALENDAR_USER = os.getenv('SELF_CALENDAR_USER')
+TOKEN_FOR_CALENDAR = os.getenv('TOKEN_FOR_CALENDAR')
+COMMUNICATIONS_TOKEN = os.getenv('COMMUNICATIONS_TOKEN')
 
 
 class OrganizationClientType(models.Model):
@@ -462,6 +467,8 @@ class DayAvailableForProfessional(models.Model):
     week_day:int = models.IntegerField(choices=DayName.choices)
     exclude:list = models.JSONField(default=list, null=True, blank=True)
 
+    #TODO: Add interval for each day
+
     note:str = models.TextField(null=True, blank=True)
 
 
@@ -573,13 +580,14 @@ class OrganizationProfessional(models.Model):
 
         if first_time:
             self.__set_default_days_available()
+            self.__send_welcome_message()
             self.save()
     
 
     # -----------------------------------------------------------
     # private methods
 
-
+    # why is this commented out?
     def __set_default_days_available(self):
         return
         days_available = self.place.available_days
@@ -590,6 +598,15 @@ class OrganizationProfessional(models.Model):
                 exclude=day.exclude,
                 note=day.note
             )
+
+
+    def __send_welcome_message(self):
+
+        send_notification(token_for_app=COMMUNICATIONS_TOKEN, 
+                          organization_id=self.organization.id,
+                          send_to=[self.kumbio_user.email],
+                          messages=[f'Welcome to {self.organization.name}'],
+                          subjects=['Welcome to kumbio'])
 
     
     def __str__(self) -> str:

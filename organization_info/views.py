@@ -30,7 +30,7 @@ from authentication_manager.models import KumbioToken
 
 
 # serializers
-from user_info.serializers import CreateKumbioUserSerializer
+from user_info.serializers import CreateKumbioUserSerializer, KumbioUserSerializer
 
 
 # query serializers
@@ -38,8 +38,9 @@ from .serializers.query_serializers import (OrganizationPlaceQuerySerializer, Or
 OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer, OrganizationClientQuerySerializer,
 OrganizationClientTypeQuerySerializer, OrganizationQuerySerializer)
 
+
 # body serializers
-from .serializers.body_serializers import (PlacePutSerializer, OrganizationClientPutSerializer, 
+from .serializers.body_serializers import (OrganizationProfessionalDeleteBodySerializer, PlacePutSerializer, OrganizationClientPutSerializer, 
 OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySerializer,
 OrganizationPlacePostSerializer, OrganizationClientDeleteSerializer)
 
@@ -146,9 +147,9 @@ class OrganizationProfessionalView(APIView):
     permission_classes = (IsAuthenticated,) 
     authentication_classes = (TokenAuthentication,)
 
-
     @swagger_auto_schema(
     operation_description="Obtener todos los profesionales de la organización",
+    tags=['professionals'],
     query_serializer=OrganizationProfessionalQuerySerializer,
     responses={
         200: openapi.Response(
@@ -208,6 +209,7 @@ class OrganizationProfessionalView(APIView):
 
     @swagger_auto_schema(
     operation_description="Crear un nuevo profesional de la organización",
+    tags=['professionals'],
     request_body=OrganizationProfessionalPostBodySerializer,
     responses={
         201: openapi.Response(
@@ -270,7 +272,28 @@ class OrganizationProfessionalView(APIView):
 
 
     @swagger_auto_schema(
-    operation_description="Actualizar un profesional",
+    operation_description=
+    """
+        Actualizar un profesional
+
+        body parameters:
+
+            - professional_id (int): id del profesional a actualizar
+            - professional_data (dict): datos para actualizar al profesional
+            - kumbio_user_data (dict): datos para actualizar al usuario de kumbio
+            - days (lista): lista de días para actualizar al profesional con = 
+                [
+                    {
+                    week_day: (int) día de la semana
+                    exclude: lista = [[0, 7], [18, 23]]
+                    }
+                ]
+            - profile_photo (archivo): foto de perfil del profesional.
+            
+            La foto de perfil no aparece en el serializador ya que es un archivo y swagger no admite campos de archivos.
+
+    """,
+    tags=['professionals'],
     request_body=OrganizationProfessionalPutBodySerializer,
     responses={
         200: openapi.Response(
@@ -283,19 +306,21 @@ class OrganizationProfessionalView(APIView):
     })
     def put(self, request):
         """
-        body parameters:
+            request body:
 
-            - professional_id (int): id of the professional to update
-            - professional_data (dict): data to update the professional with
-            - days (list): list of days to update the professional with = [
-                {
-                    week_day: (int) day of the week
-                    exclude:list = [[0, 7], [18, 23]]
-                }
-            ]
-            - profile_photo (file): profile picture of the professional
+                - professional_id (int): id of the professional to update
+                - professional_data (dict): data to update the professional with
+                - kumbio_user_data (dict): data to update the kumbio user with
+                - days (list): list of days to update the professional with = [
+                    {
+                        week_day: (int) day of the week
+                        exclude:list = [[0, 7], [18, 23]]
+                    }
+                ]
+                - profile_photo (file): profile picture of the professional
+                
+                Profile photo does not appear on the serializer cause it is a file and swagger does not support file fields
         """
-
 
         body_serializer = OrganizationProfessionalPutBodySerializer(data=request.data)
         body_serializer.is_valid(raise_exception=True)
@@ -311,7 +336,12 @@ class OrganizationProfessionalView(APIView):
 
         professional_serializer = OrganizationProfessionalSerializer(professional, data=body_data['professional_data'], partial=True)
         professional_serializer.is_valid(raise_exception=True)
+
+        kumbio_user_serializer = KumbioUserSerializer(professional.kumbio_user, data=body_data['kumbio_user_data'], partial=True)
+        kumbio_user_serializer.is_valid(raise_exception=True)
+        
         professional_serializer.save()
+        kumbio_user_serializer.save()
 
         professional_object:OrganizationProfessional = professional_serializer.instance
         
@@ -347,6 +377,40 @@ class OrganizationProfessionalView(APIView):
 
         return Response(professional_serializer.data, status=status.HTTP_200_OK)
     
+
+    @swagger_auto_schema(
+    operation_description="Eliminar un profesional",
+    tags=['professionals'],
+    request_body=OrganizationProfessionalDeleteBodySerializer,
+    responses={
+        204: openapi.Response(
+            description="Profesional eliminado",
+        ),
+        400: openapi.Response(
+            description="Error de validación",
+        )
+    })
+    def delete(self, request):
+        """
+        body parameters:
+            - professional_id (int): id of the professional to delete
+        """
+
+        # TODO: Ask for confirmation to delete all the information
+
+        body_serializer = OrganizationProfessionalDeleteBodySerializer(data=request.data)
+        body_serializer.is_valid(raise_exception=True)
+        body_data:dict = body_serializer.validated_data
+        professional:OrganizationProfessional = body_data['professional']
+
+        res = requests.delete(f'{CALENDAR_ENDPOINT}users/api/v2/', data={'user_token': professional.kumbio_user.calendar_token, 'delete_all_information': False})
+
+        if res.status_code != 204:
+            raise exceptions.ValidationError(_('Error al eliminar el usuario del calendario'))
+        
+        professional.kumbio_user.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     # Private functions
     # Deprecated? since this function is being called when the user is created
@@ -426,6 +490,7 @@ class OrganizationPlaceView(APIView):
 
     @swagger_auto_schema(
     operation_description="Obtener lugares de la organización del usuario",
+    tags=['places'],
     query_serializer=OrganizationPlaceQuerySerializer,
     responses={
         200: openapi.Response(
@@ -451,6 +516,7 @@ class OrganizationPlaceView(APIView):
 
     @swagger_auto_schema(
     request_body=OrganizationPlacePostSerializer,
+    tags=['places'],
     responses={
         201: openapi.Response(
             description="Datos del lugar creado",
@@ -514,6 +580,7 @@ class OrganizationPlaceView(APIView):
 
     @swagger_auto_schema(
     request_body=PlacePutSerializer,
+    tags=['places'],
     responses={
         200: openapi.Response(
             description="Datos del lugar actualizados",
@@ -564,6 +631,7 @@ class OrganizationPlaceView(APIView):
 
         
     @swagger_auto_schema(
+    tags=['places'],
     request_body= openapi.Schema(
     type=openapi.TYPE_OBJECT, 
     properties={
@@ -641,32 +709,28 @@ class OrganizationSectorView(APIView):
 
 class OrganizationServiceView(APIView):
     
-        permission_classes = (IsAuthenticated,) 
-        authentication_classes = (TokenAuthentication,) 
-    
+    permission_classes = (IsAuthenticated,) 
+    authentication_classes = (TokenAuthentication,) 
 
-        @swagger_auto_schema(
-            query_serializer=OrganizationServiceQuerySerializer(),
-        )
-        def get(self, request):
-    
-            query_serializer = OrganizationServiceQuerySerializer(data=request.query_params)
-            query_serializer.is_valid(raise_exception=True)
-            query_params = query_serializer.validated_data
-            
-            if query_params['service_id']:
-                services = OrganizationService.objects.filter(id=query_params['service_id'])
-                if not services:
-                    raise exceptions.NotFound(_('el servicio no existe'))
-            
-            else:
-                services = OrganizationService.objects.all()
-    
-    
-            service_serializer = OrganizationServiceSerializer(services, many=True)
-            return Response(service_serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        query_serializer=OrganizationServiceQuerySerializer(),
+    )
+    def get(self, request):
+
+        query_serializer = OrganizationServiceQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        query_params = query_serializer.validated_data
         
+        if query_params['service_id']:
+            services = OrganizationService.objects.filter(id=query_params['service_id'])
+            if not services:
+                raise exceptions.NotFound(_('el servicio no existe'))
+        
+        else:
+            services = OrganizationService.objects.all()
 
+<<<<<<< HEAD
         @swagger_auto_schema(
             request_body=OrganizationServiceSerializer(),
         )
@@ -679,75 +743,95 @@ class OrganizationServiceView(APIView):
             request.data['created_by'] = request.user.id
             
             service_serializer = OrganizationServiceSerializer(data=request.data)
+=======
+
+        service_serializer = OrganizationServiceSerializer(services, many=True)
+        return Response(service_serializer.data, status=status.HTTP_200_OK)
+    
+
+    @swagger_auto_schema(
+        request_body=OrganizationServiceSerializer(),
+    )
+    @check_if_user_is_admin_decorator
+    def post(self, request):
+        """
+            Create a new Service
+            Solo los administradores pueden crear servicios
+        """
+        request.data['organization'] = request.user.organization.id
+        request.data['created_by'] = request.user.id
+>>>>>>> 4cc8786d022a1a31bc09c4041170b1bef8b3be1f
         
-            service_serializer.is_valid(raise_exception=True)
+        service_serializer = OrganizationServiceSerializer(data=request.data)
+    
+        service_serializer.is_valid(raise_exception=True)
+        service_serializer.save()
+
+        return Response(service_serializer.data, status.HTTP_201_CREATED)
+        
+
+    @swagger_auto_schema(
+        request_body=OrganizationServiceSerializer(),
+    )
+    def put(self, request):
+
+        """
+            Update an existent Service
+            Solo los administradores pueden actualizar servicios
+
+            request body:
+
+                {
+                    "service": OrganizationServiceSerializer
+                    "service_id": int
+                }
+        """
+
+        try:
+            service:OrganizationService = OrganizationService.objects.get(id=request.data['service_id'])
+        except OrganizationService.DoesNotExist:
+            raise exceptions.NotFound(_('el servicio no existe'))
+        except KeyError:
+            raise exceptions.ParseError(_('service_id es requerido'))
+
+        
+        data_for_serializer = request.data['service']
+        service_serializer = OrganizationServiceSerializer(instance=service, data=data_for_serializer)
+    
+        if service_serializer.is_valid():
             service_serializer.save()
-    
+
             return Response(service_serializer.data, status.HTTP_201_CREATED)
-            
-
-        @swagger_auto_schema(
-            request_body=OrganizationServiceSerializer(),
-        )
-        def put(self, request):
-
-            """
-                Update an existent Service
-                Solo los administradores pueden actualizar servicios
-
-                request body:
-
-                    {
-                        "service": OrganizationServiceSerializer
-                        "service_id": int
-                    }
-            """
-
-            try:
-                service:OrganizationService = OrganizationService.objects.get(id=request.data['service_id'])
-            except OrganizationService.DoesNotExist:
-                raise exceptions.NotFound(_('el servicio no existe'))
-            except KeyError:
-                raise exceptions.ParseError(_('service_id es requerido'))
-
-            
-            data_for_serializer = request.data['service']
-            service_serializer = OrganizationServiceSerializer(instance=service, data=data_for_serializer)
         
-            if service_serializer.is_valid():
-                service_serializer.save()
+        return Response(service_serializer.errors, status.HTTP_400_BAD_REQUEST)
+
     
-                return Response(service_serializer.data, status.HTTP_201_CREATED)
-            
-            return Response(service_serializer.errors, status.HTTP_400_BAD_REQUEST)
+    @swagger_auto_schema()
+    def delete(self, request):
 
-        
-        @swagger_auto_schema()
-        def delete(self, request):
+        """
+            Delete an existent Service
+            Solo los administradores pueden eliminar servicios
 
-            """
-                Delete an existent Service
-                Solo los administradores pueden eliminar servicios
+            request body:
 
-                request body:
+                {
+                    "service_id": int
+                }
+        """
 
-                    {
-                        "service_id": int
-                    }
-            """
+        # make connections with calendar api to check if there is any appointment with this service associated
+        # if there is, return error, cause the user cannot delete a service if there is any appointment with it
 
-            # make connections with calendar api to check if there is any appointment with this service associated
-            # if there is, return error, cause the user cannot delete a service if there is any appointment with it
+        try:
+            service:OrganizationService = OrganizationService.objects.get(id=request.data['service_id'])
+        except OrganizationService.DoesNotExist:
+            raise exceptions.NotFound(_('el servicio no existe'))
+        except KeyError:
+            raise exceptions.ParseError(_('service_id es requerido'))
 
-            try:
-                service:OrganizationService = OrganizationService.objects.get(id=request.data['service_id'])
-            except OrganizationService.DoesNotExist:
-                raise exceptions.NotFound(_('el servicio no existe'))
-            except KeyError:
-                raise exceptions.ParseError(_('service_id es requerido'))
-
-            service.delete()
-            return Response({'message': 'servicio eliminado'}, status=status.HTTP_200_OK)
+        service.delete()
+        return Response({'message': 'servicio eliminado'}, status=status.HTTP_200_OK)
 
 
 class OrganizationClientView(APIView):
@@ -759,6 +843,7 @@ class OrganizationClientView(APIView):
     
     @swagger_auto_schema(
         query_serializer=OrganizationClientQuerySerializer(),
+        tags=['clients'],
     )
     def get(self, request):
         """
@@ -795,7 +880,9 @@ class OrganizationClientView(APIView):
         return Response(client_serializer.data, status=status.HTTP_200_OK)
 
 
-    @swagger_auto_schema()
+    @swagger_auto_schema(
+        tags=['clients'],
+    )
     def post(self, request):
 
         """
@@ -847,7 +934,6 @@ class OrganizationClientView(APIView):
                 "same_as_client": True
             }
         }
-
 
         """
         
@@ -901,7 +987,10 @@ class OrganizationClientView(APIView):
         return Response(client_serializer.data, status.HTTP_201_CREATED)
 
 
-    @swagger_auto_schema(request_body=OrganizationClientPutSerializer())
+    @swagger_auto_schema(
+        tags=['clients'],
+        request_body=OrganizationClientPutSerializer()
+    )
     def put(self, request):
 
         """
@@ -923,7 +1012,10 @@ class OrganizationClientView(APIView):
         return Response(client_serializer.data, status=status.HTTP_200_OK)
 
 
-    @swagger_auto_schema(request_body=OrganizationClientDeleteSerializer())
+    @swagger_auto_schema(
+        tags=['clients'],
+        request_body=OrganizationClientDeleteSerializer()
+    )
     def delete(self, request):
 
         """
@@ -946,7 +1038,7 @@ class OrganizationClientView(APIView):
 
 
 # function types
-@swagger_auto_schema(query_serializer=OrganizationClientTypeQuerySerializer(), method='GET')
+@swagger_auto_schema(query_serializer=OrganizationClientTypeQuerySerializer(), method='GET', tags=['clients'])
 @api_view(['GET'])
 @authentication_classes([KumbioAuthentication])
 @permission_classes([IsAuthenticated])
@@ -986,7 +1078,6 @@ def get_organization_client_types(request):
 
     client_types_serializer = OrganizationClientTypeSerializer(client_types, many=True)
     return Response(client_types_serializer.data, status=status.HTTP_200_OK)
-
 
 
 @swagger_auto_schema(query_serializer=OrganizationClientTypeQuerySerializer(), method='GET')
@@ -1034,9 +1125,8 @@ def get_extra_fields_for_client_type(request):
 def create_clients(request):
 
     """
-    
+
         Este endpoint es para crear clientes, se crean 10 clientes entrando en este endpoint
-    
     """
     clients = []
 

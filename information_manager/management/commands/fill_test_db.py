@@ -32,6 +32,7 @@ load_dotenv()
 fake = Faker()
 Faker.seed(115)
 
+
 USER_ROLES = [
     {
         'name': 'organization_owner',
@@ -46,6 +47,7 @@ USER_ROLES = [
         'description': 'Organization professional'
     }
 ]
+
 
 PAYMENT_METHODS = [
     'CASH',
@@ -316,7 +318,7 @@ class Command(BaseCommand):
                     'created_by_id': 1,
                 }
                 
-                user = self.create_kumbio_user(org, professional_data)
+                user = self.create_kumbio_user(org)
                 professional_data['kumbio_user_id'] = user.pk
             
                 serializer = OrganizationProfessionalSerializer(data=professional_data)
@@ -349,7 +351,7 @@ class Command(BaseCommand):
             serializer.save()
             
 
-    def create_kumbio_user(self, org:Organization, professional_data:dict) -> KumbioUser:
+    def create_kumbio_user(self, org:Organization) -> KumbioUser:
         user_data = {
             'organization': org.pk,
             'first_name': fake.first_name(),
