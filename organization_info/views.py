@@ -150,6 +150,7 @@ class OrganizationProfessionalView(APIView):
 
     @swagger_auto_schema(
     operation_description="Obtener todos los profesionales de la organización",
+    tags=['professionals'],
     query_serializer=OrganizationProfessionalQuerySerializer,
     responses={
         200: openapi.Response(
@@ -209,6 +210,7 @@ class OrganizationProfessionalView(APIView):
 
     @swagger_auto_schema(
     operation_description="Crear un nuevo profesional de la organización",
+    tags=['professionals'],
     request_body=OrganizationProfessionalPostBodySerializer,
     responses={
         201: openapi.Response(
@@ -271,7 +273,28 @@ class OrganizationProfessionalView(APIView):
 
 
     @swagger_auto_schema(
-    operation_description="Actualizar un profesional",
+    operation_description=
+    """
+        Actualizar un profesional
+
+        body parameters:
+
+            - professional_id (int): id del profesional a actualizar
+            - professional_data (dict): datos para actualizar al profesional
+            - kumbio_user_data (dict): datos para actualizar al usuario de kumbio
+            - days (lista): lista de días para actualizar al profesional con = 
+                [
+                    {
+                    week_day: (int) día de la semana
+                    exclude: lista = [[0, 7], [18, 23]]
+                    }
+                ]
+            - profile_photo (archivo): foto de perfil del profesional.
+            
+            La foto de perfil no aparece en el serializador ya que es un archivo y swagger no admite campos de archivos.
+
+    """,
+    tags=['professionals'],
     request_body=OrganizationProfessionalPutBodySerializer,
     responses={
         200: openapi.Response(
@@ -284,20 +307,20 @@ class OrganizationProfessionalView(APIView):
     })
     def put(self, request):
         """
-        body parameters:
+            request body:
 
-            - professional_id (int): id of the professional to update
-            - professional_data (dict): data to update the professional with
-            - kumbio_user_data (dict): data to update the kumbio user with
-            - days (list): list of days to update the professional with = [
-                {
-                    week_day: (int) day of the week
-                    exclude:list = [[0, 7], [18, 23]]
-                }
-            ]
-            - profile_photo (file): profile picture of the professional
-            
-            Profile photo does not appear on the serializer cause it is a file and swagger does not support file fields
+                - professional_id (int): id of the professional to update
+                - professional_data (dict): data to update the professional with
+                - kumbio_user_data (dict): data to update the kumbio user with
+                - days (list): list of days to update the professional with = [
+                    {
+                        week_day: (int) day of the week
+                        exclude:list = [[0, 7], [18, 23]]
+                    }
+                ]
+                - profile_photo (file): profile picture of the professional
+                
+                Profile photo does not appear on the serializer cause it is a file and swagger does not support file fields
         """
 
         body_serializer = OrganizationProfessionalPutBodySerializer(data=request.data)
@@ -358,6 +381,7 @@ class OrganizationProfessionalView(APIView):
 
     @swagger_auto_schema(
     operation_description="Eliminar un profesional",
+    tags=['professionals'],
     request_body=OrganizationProfessionalDeleteBodySerializer,
     responses={
         204: openapi.Response(
@@ -467,6 +491,7 @@ class OrganizationPlaceView(APIView):
 
     @swagger_auto_schema(
     operation_description="Obtener lugares de la organización del usuario",
+    tags=['places'],
     query_serializer=OrganizationPlaceQuerySerializer,
     responses={
         200: openapi.Response(
@@ -492,6 +517,7 @@ class OrganizationPlaceView(APIView):
 
     @swagger_auto_schema(
     request_body=OrganizationPlacePostSerializer,
+    tags=['places'],
     responses={
         201: openapi.Response(
             description="Datos del lugar creado",
@@ -555,6 +581,7 @@ class OrganizationPlaceView(APIView):
 
     @swagger_auto_schema(
     request_body=PlacePutSerializer,
+    tags=['places'],
     responses={
         200: openapi.Response(
             description="Datos del lugar actualizados",
@@ -605,6 +632,7 @@ class OrganizationPlaceView(APIView):
 
         
     @swagger_auto_schema(
+    tags=['places'],
     request_body= openapi.Schema(
     type=openapi.TYPE_OBJECT, 
     properties={
@@ -801,6 +829,7 @@ class OrganizationClientView(APIView):
     
     @swagger_auto_schema(
         query_serializer=OrganizationClientQuerySerializer(),
+        tags=['clients'],
     )
     def get(self, request):
         """
@@ -838,7 +867,9 @@ class OrganizationClientView(APIView):
         return Response(client_serializer.data, status=status.HTTP_200_OK)
 
 
-    @swagger_auto_schema()
+    @swagger_auto_schema(
+        tags=['clients'],
+    )
     def post(self, request):
 
         """
@@ -943,7 +974,10 @@ class OrganizationClientView(APIView):
         return Response(client_serializer.data, status.HTTP_201_CREATED)
 
 
-    @swagger_auto_schema(request_body=OrganizationClientPutSerializer())
+    @swagger_auto_schema(
+        tags=['clients'],
+        request_body=OrganizationClientPutSerializer()
+    )
     def put(self, request):
 
         """
@@ -965,7 +999,10 @@ class OrganizationClientView(APIView):
         return Response(client_serializer.data, status=status.HTTP_200_OK)
 
 
-    @swagger_auto_schema(request_body=OrganizationClientDeleteSerializer())
+    @swagger_auto_schema(
+        tags=['clients'],
+        request_body=OrganizationClientDeleteSerializer()
+    )
     def delete(self, request):
 
         """
@@ -988,7 +1025,7 @@ class OrganizationClientView(APIView):
 
 
 # function types
-@swagger_auto_schema(query_serializer=OrganizationClientTypeQuerySerializer(), method='GET')
+@swagger_auto_schema(query_serializer=OrganizationClientTypeQuerySerializer(), method='GET', tags=['clients'])
 @api_view(['GET'])
 @authentication_classes([KumbioAuthentication])
 @permission_classes([IsAuthenticated])
