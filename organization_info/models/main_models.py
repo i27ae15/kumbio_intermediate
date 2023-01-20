@@ -462,6 +462,8 @@ class DayAvailableForProfessional(models.Model):
     week_day:int = models.IntegerField(choices=DayName.choices)
     exclude:list = models.JSONField(default=list, null=True, blank=True)
 
+    #TODO: Add interval for each day
+
     note:str = models.TextField(null=True, blank=True)
 
 

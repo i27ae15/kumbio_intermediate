@@ -18,8 +18,6 @@ from django.contrib.auth.models import (
 # utils
 from utils.numbers import random_with_N_digits
 
-
-
 # notifications
 from kumbio_communications import send_notification
 
