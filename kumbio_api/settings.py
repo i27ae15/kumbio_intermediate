@@ -133,13 +133,24 @@ if 'test' in sys.argv:
         }
     }
 elif USE_LOCAL_DB:
-        DATABASES = {
+    #     DATABASES = {
+    #     'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': 'local_db.sqlite3',
+    #     'OPTIONS': {
+    #         'timeout': 60,  # in seconds
+    #     }
+    #     }
+    # }
+
+    DATABASES = {
         'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'local_db.sqlite3',
-        'OPTIONS': {
-            'timeout': 60,  # in seconds
-        }
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'a',
+            'USER': 'aa',
+            'PASSWORD': 'WYK7H8z2GaDf',
+            'HOST': '167.235.147.49',
+            'PORT': '5432',
         }
     }
 else:
