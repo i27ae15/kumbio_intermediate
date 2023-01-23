@@ -78,9 +78,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
 
-        # if not os.getenv('USE_LOCAL_DB'):
-        #     self.stdout.write('USE_LOCAL_DB is not set to True')
-        #     return
+        if not os.getenv('USE_LOCAL_DB'):
+            self.stdout.write('USE_LOCAL_DB is not set to True')
+            return
         
         # static values creation
         self.stdout.write('-' * 50)
