@@ -25,6 +25,10 @@ from print_pp.logging import Print
 
 from dotenv import load_dotenv
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
 load_dotenv()
 
 
@@ -220,11 +224,8 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         except Exception: return f'{self.pk} - {self.email} - {self.organization}'
 
 
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
 @receiver(post_save, sender=KumbioUser)
-def my_handler(sender, instance:KumbioUser, created, **kwargs):
+def kumbio_user_handler(sender, instance:KumbioUser, created, **kwargs):
 
     if created:
         
