@@ -328,6 +328,8 @@ class Command(BaseCommand):
 
                 professional.services.set([service.pk for service in services])
                 professional.specialties.set([specialty.pk for specialty in specialties])
+                professional.kumbio_user.available_places.set([place.pk for place in places])
+                professional.kumbio_user.available_services.set([service.pk for service in services])
 
                 self.create_professional_days(professional)
                 total_professionals += 1

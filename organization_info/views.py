@@ -1195,7 +1195,7 @@ class OrganizationClientDashboardInfoView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [ClientDashboardAuthentication]
 
-    @swagger_auto_schema(query_serializer=OrganizationQuerySerializer())
+    @swagger_auto_schema(query_serializer=OrganizationQuerySerializer(), tags=['booking_dashboard'])
     def get(self, request):
         query_serializer = OrganizationQuerySerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)
@@ -1214,7 +1214,7 @@ class OrganizationServiceDashboardInfoView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [ClientDashboardAuthentication]
 
-    @swagger_auto_schema(query_serializer=OrganizationServiceDashboardInfoQuerySerializer())
+    @swagger_auto_schema(query_serializer=OrganizationServiceDashboardInfoQuerySerializer(), tags=['booking_dashboard'])
     def get(self, request):
         query_serializer = OrganizationServiceDashboardInfoQuerySerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)
@@ -1234,7 +1234,7 @@ class OrganizationProfessionalDashboardInfoView(APIView):
     authentication_classes = [ClientDashboardAuthentication]
 
 
-    @swagger_auto_schema(query_serializer=OrganizationProfessionalQuerySerializer())
+    @swagger_auto_schema(query_serializer=OrganizationProfessionalQuerySerializer(), tags=['booking_dashboard'])
     def get(self, request):
         query_serializer = OrganizationProfessionalQuerySerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)
@@ -1253,7 +1253,7 @@ class OrganizationPlaceDashboardInfoView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [ClientDashboardAuthentication]
 
-
+    @swagger_auto_schema(query_serializer=OrganizationPlaceDashboardInfoQuerySerializer(), tags=['booking_dashboard'])
     def get(self, request):
         query_serializer = OrganizationPlaceDashboardInfoQuerySerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)
