@@ -34,8 +34,8 @@ from user_info.serializers import CreateKumbioUserSerializer, KumbioUserSerializ
 
 
 # query serializers
-from .serializers.query_serializers import (OrganizationPlaceQuerySerializer, OrganizationProfessionalQuerySerializer,
-OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer, OrganizationClientQuerySerializer,
+from .serializers.query_serializers import (OrganizationPlaceDashboardInfoQuerySerializer, OrganizationPlaceQuerySerializer, OrganizationProfessionalQuerySerializer,
+OrganizationSectorQuerySerializer, OrganizationServiceDashboardInfoQuerySerializer, OrganizationServiceQuerySerializer, OrganizationClientQuerySerializer,
 OrganizationClientTypeQuerySerializer, OrganizationQuerySerializer)
 
 
@@ -51,8 +51,12 @@ OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClien
 OrganizationClientTypeSerializer, DayAvailableForProfessionalSerializer)
 
 
+# dashboard serializers
+from .serializers.dashboard_info_serializer import (OrganizationDashboardInfoSerializer, OrganizationServiceDashboardInfoSerializer,
+OrganizationProfessionalDashboardInfoSerializer, OrganizationPlaceDashboardInfoSerializer)
+
 # others
-from authentication_manager.authenticate import KumbioAuthentication
+from authentication_manager.authenticate import ClientDashboardAuthentication, KumbioAuthentication
 
 from print_pp.logging import Print
 from dotenv import load_dotenv
@@ -1106,7 +1110,6 @@ def get_extra_fields_for_client_type(request):
     return Response(extra_fields, status=status.HTTP_200_OK)
 
 
-
 @swagger_auto_schema(query_serializer=OrganizationClientTypeQuerySerializer(), method='GET')
 @api_view(['GET'])
 def create_clients(request):
@@ -1181,3 +1184,83 @@ def create_clients(request):
         data_from_serializer.append(client_serializer.data)
 
     return Response(data_from_serializer, status=status.HTTP_201_CREATED)
+
+
+# For dashboard info
+
+class OrganizationClientDashboardInfoView(APIView):
+
+    # Using the class here cause for some reason the decorators does not take the authentication_classes and permission_classes
+
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [ClientDashboardAuthentication]
+
+    @swagger_auto_schema(query_serializer=OrganizationQuerySerializer())
+    def get(self, request):
+        query_serializer = OrganizationQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        query_params = query_serializer.validated_data
+        
+        organization = query_params['organization']
+
+        organization_serializer = OrganizationDashboardInfoSerializer(organization)
+        return Response(organization_serializer.data, status=status.HTTP_200_OK)
+
+
+class OrganizationServiceDashboardInfoView(APIView):
+
+    # Using the class here cause for some reason the decorators does not take the authentication_classes and permission_classes
+
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [ClientDashboardAuthentication]
+
+    @swagger_auto_schema(query_serializer=OrganizationServiceDashboardInfoQuerySerializer())
+    def get(self, request):
+        query_serializer = OrganizationServiceDashboardInfoQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        query_params = query_serializer.validated_data
+
+        service = query_params['service']
+
+        service_serializer = OrganizationServiceDashboardInfoSerializer(service)
+        return Response(service_serializer.data, status=status.HTTP_200_OK)
+
+
+class OrganizationProfessionalDashboardInfoView(APIView):
+
+    # Using the class here cause for some reason the decorators does not take the authentication_classes and permission_classes
+
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [ClientDashboardAuthentication]
+
+
+    @swagger_auto_schema(query_serializer=OrganizationProfessionalQuerySerializer())
+    def get(self, request):
+        query_serializer = OrganizationProfessionalQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        query_params = query_serializer.validated_data
+
+        professionals = query_params['professionals']
+
+        professional_serializer = OrganizationProfessionalDashboardInfoSerializer(professionals, many=True)
+        return Response(professional_serializer.data, status=status.HTTP_200_OK)
+
+
+class OrganizationPlaceDashboardInfoView(APIView):
+
+    # Using the class here cause for some reason the decorators does not take the authentication_classes and permission_classes
+
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [ClientDashboardAuthentication]
+
+
+    def get(self, request):
+        query_serializer = OrganizationPlaceDashboardInfoQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        query_params = query_serializer.validated_data
+
+        place = query_params['place']
+
+        place_serializer = OrganizationPlaceDashboardInfoSerializer(place)
+        return Response(place_serializer.data, status=status.HTTP_200_OK)
+

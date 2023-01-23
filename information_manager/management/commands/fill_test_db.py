@@ -20,7 +20,8 @@ from user_info.models import KumbioUser, KumbioUserRole, KumbioUserPermission
 from organization_info.utils.enums import FieldType
 
 # serializers
-from organization_info.serializers.model_serializers import (DayAvailableForProfessionalSerializer, OrganizationClientDependentFromSerializer, OrganizationClientSerializer, OrganizationProfessionalSerializer, OrganizationServiceSerializer, OrganizationPlaceSerializer,
+from organization_info.serializers.model_serializers import (DayAvailableForProfessionalSerializer, OrganizationClientDependentFromSerializer,
+OrganizationClientSerializer, OrganizationProfessionalSerializer, OrganizationServiceSerializer, OrganizationPlaceSerializer,
 DayAvailableForPlaceSerializer)
 from user_info.serializers import CreateKumbioUserSerializer
 
@@ -217,16 +218,15 @@ class Command(BaseCommand):
     def create_places(self):
 
         RANGE_LIMIT = 3
-        total_places = 0
         self.stdout.write('-' * 50)
-        self.stdout.write(f'Creating places between 1 & {RANGE_LIMIT}')
+        self.stdout.write(f'Creating {RANGE_LIMIT} places per organization')
 
         organizations = Organization.objects.all()
         payment_methods = [n + 1 for n in range(len(PAYMENT_METHODS))]
 
         for org in organizations:
             services:QuerySet[OrganizationService] = OrganizationService.objects.filter(organization=org)
-            for _ in range(random.randrange(1, RANGE_LIMIT)):
+            for _ in range(RANGE_LIMIT):
                 place_data = {
                     'organization': org.pk,
                     'address': fake.address(),
@@ -250,9 +250,8 @@ class Command(BaseCommand):
                 place.payment_methods_accepted.set(payment_methods)
                 
                 self.create_place_days(place)
-                total_places += 1
 
-        self.stdout.write(f'Places created successfully; total: {total_places}')
+        self.stdout.write(f'Places created successfully; total: {RANGE_LIMIT * organizations.count()}')
         self.stdout.write('-' * 50)
 
 
@@ -278,7 +277,7 @@ class Command(BaseCommand):
         self.stdout.write(f'Creating professional specialties between 1 & {RANGE_LIMIT}')
 
         for org in organizations:
-            for _ in range(random.randrange(1, 3)):
+            for _ in range(RANGE_LIMIT):
                 ProfessionalSpecialty.objects.create(
                     organization=org,
                     name=fake.job(),
@@ -295,7 +294,7 @@ class Command(BaseCommand):
         RANGE_LIMIT = 10
         total_professionals = 0
         self.stdout.write('-' * 50)
-        self.stdout.write(f'Creating professionals between 0 & {RANGE_LIMIT} per organization')
+        self.stdout.write(f'Creating professionals: {RANGE_LIMIT} per organization')
         
         organizations = Organization.objects.all()
 
@@ -304,7 +303,7 @@ class Command(BaseCommand):
             specialties:QuerySet[ProfessionalSpecialty] = ProfessionalSpecialty.objects.filter(organization=org)
             places:QuerySet[OrganizationPlace] = OrganizationPlace.objects.filter(organization=org)
 
-            for _ in range(random.randrange(6, RANGE_LIMIT)):
+            for _ in range(RANGE_LIMIT):
                 professional_data = {
                     'organization_id': org.pk,
 
@@ -339,11 +338,15 @@ class Command(BaseCommand):
     
 
     def create_professional_days(self, professional:OrganizationProfessional):
+
+        services:QuerySet[OrganizationService] = OrganizationService.objects.filter(organization=professional.organization.pk)
+
         for day in range(5):
             day_data = {
                 'professional': professional.pk,
                 'week_day': day,
                 'exclude': [[0, random.randint(5, 8)], [random.randint(10, 12), random.randint(13, 16)], [random.randint(17, 20), 23]],
+                'services':{service.pk: {'time_interval': service.time_interval} for service in services},
                 'note': fake.text(),
             }
             serializer = DayAvailableForProfessionalSerializer(data=day_data)
@@ -371,11 +374,10 @@ class Command(BaseCommand):
 
     
     def create_clients(self):
-        RANGE_MIN = 20
         RANGE_LIMIT = 50
         total_clients = 0
         self.stdout.write('-' * 50)
-        self.stdout.write(f'Creating clients between ({RANGE_MIN} & {RANGE_LIMIT}) * org.num_professionals()')
+        self.stdout.write(f'Creating clients: {RANGE_LIMIT} * org.num_professionals()')
         
         organizations = Organization.objects.all()
 
@@ -383,7 +385,7 @@ class Command(BaseCommand):
             client_types:QuerySet[OrganizationClientType] = OrganizationClientType.objects.filter(organization=org)
             professionals:int = OrganizationProfessional.objects.filter(organization=org).count()
 
-            range_to_create = random.randint(RANGE_MIN, RANGE_LIMIT) * professionals
+            range_to_create = RANGE_LIMIT * professionals
 
             for _ in range(range_to_create):
                 client_type = random.choice(client_types)

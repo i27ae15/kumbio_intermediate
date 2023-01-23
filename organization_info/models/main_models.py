@@ -42,75 +42,75 @@ COMMUNICATIONS_TOKEN = os.getenv('COMMUNICATIONS_TOKEN')
 
 class OrganizationClientType(models.Model):
 
-        """
-            When a new organization is created, it will be a list of default client types that will be created
-            along with the organization. This way, with each organization with its own client types, it will be
-            possible for the organization to create new client types, edit and delete them.
-        """
+    """
+        When a new organization is created, it will be a list of default client types that will be created
+        along with the organization. This way, with each organization with its own client types, it will be
+        possible for the organization to create new client types, edit and delete them.
+    """
+
+    organization:'Organization' = models.ForeignKey('Organization', on_delete=models.CASCADE, related_name='organization_client_type')
+    name:str = models.CharField(max_length=100)
+    description:str = models.TextField(blank=True, null=True, default='')
+
+    fields:list[tuple] = models.JSONField(default=list)
+
+    """
+        fields is going to be a JSON object where the person is going to be able to save as many fields 
+        as they want; this way we can assure that we can save any kind of information that the client
+        wants to save
+
+        the way this information is saved, is with a list of tuples, where the first element is the name
+        and the second element is the type of the field
+
+        example:
+
+        fields = [('name', FieldType.TEXT), ('age', FieldType.NUMBER)]
+
+        where, for the moment, there are just two types of fields: text and number
+
+        we can also place a third element in the tuple, which can be a validator for the field
+        where some settings can be set, like the minimum and maximum length of the text, or the minimum
+        and maximum value of the number. Also to check more specific things, like if the number is
+        positive or negative, or if the text is a valid email, or if the number is a valid phone number.
+    """
+    # -----------------------------------------------------------
+    # Logs 
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+    deleted_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+
+    created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_created_by')
+    updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_updated_by')
+    deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_deleted_by')
     
-        organization:'Organization' = models.ForeignKey('Organization', on_delete=models.CASCADE, related_name='organization_client_type')
-        name:str = models.CharField(max_length=100)
-        description:str = models.TextField(blank=True, null=True, default='')
+    # -----------------------------------------------------------
+    # properties
 
-        fields:list[tuple] = models.JSONField(default=list)
-
-        """
-            fields is going to be a JSON object where the person is going to be able to save as many fields 
-            as they want; this way we can assure that we can save any kind of information that the client
-            wants to save
-
-            the way this information is saved, is with a list of tuples, where the first element is the name
-            and the second element is the type of the field
-
-            example:
-
-            fields = [('name', FieldType.TEXT), ('age', FieldType.NUMBER)]
-
-            where, for the moment, there are just two types of fields: text and number
-
-            we can also place a third element in the tuple, which can be a validator for the field
-            where some settings can be set, like the minimum and maximum length of the text, or the minimum
-            and maximum value of the number. Also to check more specific things, like if the number is
-            positive or negative, or if the text is a valid email, or if the number is a valid phone number.
-        """
-        # -----------------------------------------------------------
-        # Logs 
-        created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
-        updated_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
-        deleted_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+    @property
+    def fields_available(self) -> list:
+        return list(self.fields.keys())
     
-        created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_created_by')
-        updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_updated_by')
-        deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, blank=True, null=True, on_delete=models.CASCADE, default=None, related_name='client_type_deleted_by')
+    # -----------------------------------------------------------
+    # methods
+
+    def convert_fields_to_object(self) -> object:
+        return json.loads(self.fields, object_hook=lambda d: SimpleNamespace(**d))
+
+    
+    def save(self, *args, **kwargs):
+
+        if not self.pk and not self.created_by:
+            try: self.created_by = user_models.KumbioUser.objects.get(pk=kwargs.get('created_by'))
+            except user_models.KumbioUser.DoesNotExist: pass 
+            # this pass is here because if the user is not specified, it will mean
+            # that the user is the one that is creating the organization, and that
+            # user will be the one that is creating the client type      
+
+        super().save(*args, **kwargs)
         
-        # -----------------------------------------------------------
-        # properties
-
-        @property
-        def fields_available(self) -> list:
-            return list(self.fields.keys())
         
-        # -----------------------------------------------------------
-        # methods
-
-        def convert_fields_to_object(self) -> object:
-            return json.loads(self.fields, object_hook=lambda d: SimpleNamespace(**d))
-
-        
-        def save(self, *args, **kwargs):
-
-            if not self.pk and not self.created_by:
-                try: self.created_by = user_models.KumbioUser.objects.get(pk=kwargs.get('created_by'))
-                except user_models.KumbioUser.DoesNotExist: pass 
-                # this pass is here because if the user is not specified, it will mean
-                # that the user is the one that is creating the organization, and that
-                # user will be the one that is creating the client type      
-
-            super().save(*args, **kwargs)
-            
-            
-        def __str__(self) -> str:
-            return f'{self.pk} - {self.name} - {self.organization.name}'
+    def __str__(self) -> str:
+        return f'{self.pk} - {self.name} - {self.organization.name}'
 
 
 class Sector(models.Model):
@@ -416,7 +416,7 @@ class OrganizationPlace(models.Model):
         
         if first_time:
             if not self.payment_methods_accepted:
-                self.payment_methods.add(*self.organization.payment_methods_accepted.all())
+                self.payment_methods_accepted.add(*self.organization.payment_methods_accepted.all())
         
     
     def __str__(self):
@@ -466,6 +466,22 @@ class DayAvailableForProfessional(models.Model):
     
     week_day:int = models.IntegerField(choices=DayName.choices)
     exclude:list = models.JSONField(default=list, null=True, blank=True)
+
+    services:dict = models.JSONField(default=dict, null=True, blank=True)
+
+    """
+        services = {
+            int['service_id']: {
+                'time_interval': 1,
+            },
+            int['service_id']: {
+                'time_interval': 0.5,
+            },
+            int['service_id']: {
+                'time_interval': .25,
+            },
+        }
+    """
 
     #TODO: Add interval for each day
 
