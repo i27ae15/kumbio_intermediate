@@ -86,6 +86,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.1.8:5173",
     "https://app.kumbio.com",
     "https://booking.kumbio.com",
+    "https://subtle-raindrop-c72beb.netlify.app"
+    
 ]
 
 MIDDLEWARE = [
