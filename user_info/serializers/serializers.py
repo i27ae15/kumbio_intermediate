@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import KumbioUser, NotificationsSettings
+from ..models import KumbioUser, NotificationsSettings
 from organization_info.serializers.model_serializers import OrganizationPlaceSerializer
 
 from print_pp.logging import Print, check_caller_line

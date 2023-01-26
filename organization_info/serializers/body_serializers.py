@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .model_serializers import (OrganizationClientSerializer, OrganizationProfessionalSerializer, 
 OrganizationPlaceSerializer)
-from organization_info.models.main_models import OrganizationProfessional
+from organization_info.models.main_models import OrganizationProfessional, OrganizationService
 
 from organization_info.utils.validators import get_places
 
@@ -14,9 +14,10 @@ from organization_info.utils.validators import get_places
 # these serializers are used to validate a dict that comes within the properties of another serializer
 class AvailableDaysPrivateSerializer(serializers.Serializer):
 
-    week_day = serializers.IntegerField(allow_null=False, help_text="el día de la semana que se quiere modificar")
-    exclude = serializers.ListField(allow_null=False, help_text="las horas que se quiere excluir")
-    note = serializers.CharField(allow_null=True, help_text="la nota que se quiere agregar")
+    week_day = serializers.IntegerField(required=True, help_text="el día de la semana que se quiere modificar")
+    exclude = serializers.ListField(required=False, help_text="las horas que se quiere excluir")
+    service = serializers.DictField(required=False, help_text="el servicio que se quiere agregar")
+    note = serializers.CharField(required=False, help_text="la nota que se quiere agregar")
 
     def validate(self, attrs:dict):
         week_day = attrs.get("week_day")
@@ -37,7 +38,6 @@ class AvailableDaysPrivateSerializer(serializers.Serializer):
                     raise serializers.ValidationError(_("time_range[0] must be less than time_range[1]"))
         
         return super().validate(attrs)
-
 
 
 class KumbioUserPrivateSerializer(serializers.Serializer):
@@ -139,3 +139,20 @@ class OrganizationProfessionalDeleteBodySerializer(serializers.Serializer):
             attrs['professional'] = OrganizationProfessional.objects.get(id=attrs['professional_id'])
         except OrganizationProfessional.DoesNotExist:
             raise serializers.ValidationError(_('Professional does not exist'))
+
+
+class DeleteServiceSerializer(serializers.Serializer):
+
+    service_id = serializers.IntegerField(required=True, help_text='Service id')
+
+
+    def validate(self, attrs:dict):
+        self.__convert_to_objects(attrs)
+        return super().validate(attrs)
+
+
+    def __convert_to_objects(self, attrs):
+        try:
+            attrs['service'] = OrganizationService.objects.get(id=attrs['service_id'])
+        except OrganizationService.DoesNotExist:
+            raise serializers.ValidationError(_('Service does not exist'))

@@ -23,7 +23,7 @@ from organization_info.utils.enums import FieldType
 from organization_info.serializers.model_serializers import (DayAvailableForProfessionalSerializer, OrganizationClientDependentFromSerializer,
 OrganizationClientSerializer, OrganizationProfessionalSerializer, OrganizationServiceSerializer, OrganizationPlaceSerializer,
 DayAvailableForPlaceSerializer)
-from user_info.serializers import CreateKumbioUserSerializer
+from user_info.serializers.serializers import CreateKumbioUserSerializer
 
 # kumbio_user_serializer = CreateKumbioUserSerializer(data=body_data, context={'set_verified_email': True})
 # kumbio_user_serializer.is_valid(raise_exception=True)

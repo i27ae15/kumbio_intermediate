@@ -126,6 +126,7 @@ WSGI_APPLICATION = 'kumbio_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 USE_LOCAL_DB = os.environ.get('USE_LOCAL_DB', False)
+USE_VPS_TEST_DB = os.environ.get('USE_VPS_TEST_DB', False)
 
 if 'test' in sys.argv:
     DATABASES = {
@@ -135,16 +136,16 @@ if 'test' in sys.argv:
         }
     }
 elif USE_LOCAL_DB:
-    #     DATABASES = {
-    #     'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': 'local_db.sqlite3',
-    #     'OPTIONS': {
-    #         'timeout': 60,  # in seconds
-    #     }
-    #     }
-    # }
-
+        DATABASES = {
+        'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'local_db.sqlite3',
+        'OPTIONS': {
+            'timeout': 60,  # in seconds
+        }
+        }
+    }
+elif USE_VPS_TEST_DB:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',

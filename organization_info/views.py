@@ -24,13 +24,13 @@ from drf_yasg import openapi
 
 # models
 from user_info.models import KumbioUser, KumbioUserRole
-from .models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, Sector, 
+from .models.main_models import (DayAvailableForProfessional, Organization, OrganizationProfessional, OrganizationPlace, Sector, 
 OrganizationService, OrganizationClient, OrganizationClientType)
 from authentication_manager.models import KumbioToken
 
 
 # serializers
-from user_info.serializers import CreateKumbioUserSerializer, KumbioUserSerializer
+from user_info.serializers.serializers import CreateKumbioUserSerializer, KumbioUserSerializer
 
 
 # query serializers
@@ -40,7 +40,7 @@ OrganizationClientTypeQuerySerializer, OrganizationQuerySerializer)
 
 
 # body serializers
-from .serializers.body_serializers import (OrganizationProfessionalDeleteBodySerializer, PlacePutSerializer, OrganizationClientPutSerializer, 
+from .serializers.body_serializers import (DeleteServiceSerializer, OrganizationProfessionalDeleteBodySerializer, PlacePutSerializer, OrganizationClientPutSerializer, 
 OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySerializer,
 OrganizationPlacePostSerializer, OrganizationClientDeleteSerializer)
 
@@ -148,7 +148,9 @@ class OrganizationView(APIView):
 
 
 class OrganizationProfessionalView(APIView):
-    permission_classes = (IsAuthenticated,) 
+    # TODO: Make this call being completely managed by the calendar api
+    
+    permission_classes = (IsAuthenticated,)
     authentication_classes = (TokenAuthentication,)
 
     @swagger_auto_schema(
@@ -369,15 +371,17 @@ class OrganizationProfessionalView(APIView):
 
                 if available_day:
                     day_serializer = DayAvailableForProfessionalSerializer(available_day, data=day, partial=True)
-                    day_serializer.is_valid(raise_exception=True)
-                    day_serializer.save()
                 else:
                     # this will mean that this day has not been created yet, so we have to create it
-                    day['professional'] = professional_object.id
+                    day['professional'] = professional_object.pk
                     day_serializer = DayAvailableForProfessionalSerializer(data=day)
-                    day_serializer.is_valid(raise_exception=True)
-                    day_serializer.save()
-        
+
+                day_serializer.is_valid(raise_exception=True)
+                day_serializer.save()
+
+                day_available:DayAvailableForProfessional = day_serializer.instance
+                self.__update_days_on_calendar_api(day_available)
+
 
         return Response(professional_serializer.data, status=status.HTTP_200_OK)
     
@@ -485,6 +489,30 @@ class OrganizationProfessionalView(APIView):
 
 
         return professional_data
+    
+
+    def __update_days_on_calendar_api(self, day_available:DayAvailableForProfessional):
+        """
+        Actualiza los días disponibles en el calendario.
+
+        Parameters:
+        - day_available (DayAvailable): Instancia del día disponible.
+        """
+
+        data = {
+            'calendar_token': day_available.professional.kumbio_user.calendar_token,
+            'days': [{
+                'week_day': day_available.week_day,
+                'exclude': day_available.exclude,
+                'services': day_available.services
+            }]
+        }
+
+        res = requests.put(f'{CALENDAR_ENDPOINT}calendar/api/v2/day-available-for-professional/', json=data)
+        
+        if res.status_code != 200:
+            Print('err', res.json())
+            raise exceptions.ValidationError(_('Error al actualizar los días disponibles en el calendario'))
 
 
 class OrganizationPlaceView(APIView):
@@ -795,7 +823,9 @@ class OrganizationServiceView(APIView):
         return Response(service_serializer.errors, status.HTTP_400_BAD_REQUEST)
 
     
-    @swagger_auto_schema()
+    @swagger_auto_schema(
+        request_body=DeleteServiceSerializer()
+    )
     def delete(self, request):
 
         """
@@ -812,12 +842,21 @@ class OrganizationServiceView(APIView):
         # make connections with calendar api to check if there is any appointment with this service associated
         # if there is, return error, cause the user cannot delete a service if there is any appointment with it
 
-        try:
-            service:OrganizationService = OrganizationService.objects.get(id=request.data['service_id'])
-        except OrganizationService.DoesNotExist:
-            raise exceptions.NotFound(_('el servicio no existe'))
-        except KeyError:
-            raise exceptions.ParseError(_('service_id es requerido'))
+        body_serializer = DeleteServiceSerializer(data=request.data)
+        body_serializer.is_valid(raise_exception=True)
+        body_data = body_serializer.validated_data
+
+        service:OrganizationService = body_data['service']
+
+
+        res = requests.delete(f'{CALENDAR_ENDPOINT}calendar/api/v2/delete-service/', 
+        json={'service_id': service.pk}, 
+        headers={'Authorization': f'Token {request.user.calendar_token}'})
+
+
+        if res.status_code != 204: 
+            raise exceptions.APIException(_(f'el servicio no pudo ser eliminado por un error en la api de calendario, calendarAPI error code: {res.status_code}'))
+
 
         service.delete()
         return Response({'message': 'servicio eliminado'}, status=status.HTTP_200_OK)
