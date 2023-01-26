@@ -1,8 +1,9 @@
 # python
 # django 
 # rest-framework
-from rest_framework import status
+from django.utils.translation import gettext_lazy as _
 
+from rest_framework import status, exceptions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -19,11 +20,76 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from user_info.models import KumbioUser, NotificationsSettings
 
 # serializers 
-from .serializers import KumbioUserSerializer, KumbioUserAvailablePlacesSerializer, KumbioUserAvailableServicesSerializer, NotificationsSettingsSerializer
-
+from .serializers.serializers import KumbioUserSerializer, KumbioUserAvailablePlacesSerializer, KumbioUserAvailableServicesSerializer, NotificationsSettingsSerializer
+from .serializers.body_serializers import ChangePasswordBodySerializer, RecoverPasswordBodySerializer
+from .serializers.query_serializers import VerifyCodeToRecoverPasswordQuerySerializer
 
 # others
 from print_pp.logging import Print
+
+
+@swagger_auto_schema(
+    method='get',
+    query_serializer=VerifyCodeToRecoverPasswordQuerySerializer,
+    operation_description="""Obtiene la información de un usuario
+        query parameters:
+        code: código de recuperación de contraseña
+    """,
+    responses={
+        200: 'True si el código es válido',
+        400: 'Error en los datos',
+    },
+    tags=['password'])
+@api_view(['GET'])
+def verify_recovery_password_code(request):
+
+    query_serializer = VerifyCodeToRecoverPasswordQuerySerializer(data=request.query_params)
+    query_serializer.is_valid(raise_exception=True)
+    query_data = query_serializer.validated_data
+
+    try: KumbioUser.objects.get(code_to_recover_password=query_data['code'])
+    except KumbioUser.DoesNotExist: raise exceptions.PermissionDenied(_('Código inválido'))
+    return Response({'is_valid_code': True})
+
+
+@swagger_auto_schema(
+    method='post',
+    request_body=ChangePasswordBodySerializer,
+    operation_description="Change password",
+    responses={
+        200: 'Contraseña cambiada',
+        400: 'Error en los datos',
+    },
+    tags=['password'])
+@api_view(['POST'])
+def change_password(request):
+    body_serializer = ChangePasswordBodySerializer(data=request.data)
+    body_serializer.is_valid(raise_exception=True)
+    body_data = body_serializer.validated_data
+
+    user:KumbioUser = body_data['user']
+    user.change_password(body_data['new_password'])
+    return Response({'message': 'Contraseña cambiada'}, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method='post',
+    request_body=RecoverPasswordBodySerializer, 
+    operation_description="Recupera la contraseña de un usuario",
+    responses={
+        200: 'Email enviado',
+    },
+    tags=['password'])
+@api_view(['POST'])
+def recover_password(request):
+    body_serializer = RecoverPasswordBodySerializer(data=request.data)
+    body_serializer.is_valid(raise_exception=True)
+    body_data = body_serializer.validated_data
+
+    user:KumbioUser = body_data['user']
+    user.send_password_recover_email()
+    
+    return Response({'message': 'Email enviado'}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

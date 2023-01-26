@@ -3,6 +3,7 @@ import requests
 import datetime
 import sys
 import os
+import secrets
 
 # django
 from django.db import models
@@ -123,6 +124,8 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     available_services = models.ManyToManyField('organization_info.OrganizationService', blank=True, related_name='available_services')
     
     code_to_verify_email:str = models.CharField(max_length=256, default=None, null=True)
+    code_to_recover_password:str = models.CharField(max_length=256, default=None, null=True)
+    code_to_recover_password_date_expiration:datetime.datetime = models.DateTimeField(default=None, null=True)
     
     email:str = models.EmailField(max_length=255, unique=True)
        
@@ -189,7 +192,6 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
                           send_to=[self.email],
                           messages=[f'Your verification code is {self.code_to_verify_email}'],
                           subjects=['Verify your email'])
-        
     
     def verify_code(self):
         self.is_email_verified = True
@@ -200,7 +202,25 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     def set_role(self, role:KumbioUserRole):
         self.role = role
         self.save()
+
     
+    def send_password_recover_email(self):
+        self.code_to_recover_password = secrets.token_hex(16)
+        self.code_to_recover_password_date_expiration = timezone.now() + datetime.timedelta(minutes=20)
+        self.save()
+        send_notification(token_for_app=TOKEN_FOR_CALENDAR, 
+                          organization_id=self.organization.id if self.organization else 0,
+                          send_to=[self.email],
+                          messages=[f'<a href=app.kumbio.com/recover-password?token={self.code_to_recover_password}>Click to recover password</a>'],
+                          subjects=['Password recover'])
+    
+
+    def change_password(self, new_password):
+        self.set_password(new_password)
+        self.code_to_recover_password = None
+        self.code_to_recover_password_date_expiration = None
+        self.save()
+
 
     def save(self, *args, **kwargs):
         if not self.pk and not kwargs.get('set_verified_email') and not 'test' in sys.argv:

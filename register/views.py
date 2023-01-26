@@ -21,7 +21,7 @@ from organization_info.models.main_models import Organization
 
 # serializers 
 from organization_info.serializers.model_serializers import OrganizationSerializer
-from user_info.serializers import CreateKumbioUserSerializer
+from user_info.serializers.serializers import CreateKumbioUserSerializer
 
 
 # others

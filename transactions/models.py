@@ -35,7 +35,6 @@ class AppointmentInvoice(models.Model):
     professional:OrganizationProfessional = models.ForeignKey(OrganizationProfessional, on_delete=models.CASCADE, related_name='appointment_invoice_professional')
     place:OrganizationPlace = models.ForeignKey(OrganizationPlace, on_delete=models.CASCADE, related_name='appointment_invoice_place')
     promotion:OrganizationPromotion = models.ForeignKey(OrganizationPromotion, on_delete=models.CASCADE, null=True, blank=True, default=None, related_name='appointment_invoice_promotion')
-    
 
     services = models.ManyToManyField(OrganizationService, related_name='appointment_invoice_services')
     products:models.ManyToManyField = models.ManyToManyField(OrganizationService, related_name='appointment_invoice_products', blank=True)

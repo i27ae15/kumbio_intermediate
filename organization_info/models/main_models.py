@@ -483,8 +483,6 @@ class DayAvailableForProfessional(models.Model):
         }
     """
 
-    #TODO: Add interval for each day
-
     note:str = models.TextField(null=True, blank=True)
 
 
@@ -502,6 +500,10 @@ class DayAvailableForProfessional(models.Model):
             self.exclude = [[0, 7], [18, 23]]
                     
         super().save(*args, **kwargs)
+
+    
+    def __str__(self):
+        return f'{self.professional.pk} - {self.day_name} - {self.professional.full_name}'
 
 
 class OrganizationProfessional(models.Model):
