@@ -524,11 +524,11 @@ class OrganizationProfessional(models.Model):
     about_me:str = models.TextField(blank=True, null=True)
 
     identification_number:str = models.TextField(blank=True, null=True, default=None)
-    certification_number:str = models.TextField(blank=True, null=True, default=None)
 
+    certification_number:str = models.TextField(blank=True, null=True, default=None)
     charge:str = models.TextField(blank=True, null=True, default=None)
-    
     certificates = models.FileField(upload_to=f'{organization.name}/professionals/certificates/', null=True, blank=True)
+    calendar_link:str = models.CharField(max_length=255, default='d76-Mz-HcbSlFpXPJ1NN_Dzo3k6v')
 
     experience:str = models.TextField(blank=True, null=True)
     
@@ -788,32 +788,6 @@ class OrganizationCampaigns(models.Model):
     created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='organization_campaign_created_by')
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_campaign_updated_by')
     deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_campaign_deleted_by')
-
-    def __str__(self):
-        return f'{self.id} - {self.name} - {self.organization.name}'
-
-
-class OrganizationProduct(models.Model):
-    
-    organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    
-    name:str = models.CharField(max_length=255)
-    description:str = models.TextField()
-    
-    price:int = models.IntegerField()
-    
-    photo = models.ImageField(upload_to=f'{organization.name}/products/photos/', null=True, blank=True)
-    
-    is_available:bool = models.BooleanField(default=True)
-    amount:int = models.IntegerField()
-    
-    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
-    updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
-    deleted_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
-
-    created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='organization_product_created_by')
-    updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_product_updated_by')
-    deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_product_deleted_by')
 
     def __str__(self):
         return f'{self.id} - {self.name} - {self.organization.name}'

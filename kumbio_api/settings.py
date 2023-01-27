@@ -64,8 +64,8 @@ INSTALLED_APPS = [
     'organization_info',
     'user_info',
     'authentication_manager',
-    'transactions',
-    'inventory',
+    # 'transactions',
+    # 'inventory',
 
     # information
     'information_manager',
