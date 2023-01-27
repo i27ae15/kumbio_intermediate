@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (Organization, FrequentlyAskedQuestion, OrganizationCampaigns, OrganizationClient, OrganizationPlace, 
-                    OrganizationProduct, OrganizationProfessional, OrganizationPromotion, OrganizationService, ProfessionalSpecialty, 
+                    OrganizationProfessional, OrganizationPromotion, OrganizationService, ProfessionalSpecialty, 
                     PaymentMethodAcceptedByOrg, Sector, OrganizationClientType, DayAvailableForPlace, DayAvailableForProfessional)
 
 
@@ -9,7 +9,6 @@ admin.site.register(FrequentlyAskedQuestion)
 admin.site.register(OrganizationCampaigns)
 admin.site.register(OrganizationClient)
 admin.site.register(OrganizationPlace)
-admin.site.register(OrganizationProduct)
 admin.site.register(OrganizationProfessional)
 admin.site.register(OrganizationPromotion)
 admin.site.register(OrganizationService)

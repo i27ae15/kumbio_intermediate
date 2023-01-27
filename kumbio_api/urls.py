@@ -29,7 +29,7 @@ urlpatterns = [
    path('register/', include('register.urls')),
    path('user/', include('user_info.urls')),
    path('organization/', include('organization_info.urls')),
-   path('transactions/', include('transactions.urls')),
+   # path('transactions/', include('transactions.urls')),
    
    # drf urls
    
