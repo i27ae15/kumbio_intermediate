@@ -620,6 +620,8 @@ class OrganizationProfessional(models.Model):
 
 
     def __send_welcome_message(self):
+        #TODO Here
+        return
 
         send_notification(token_for_app=COMMUNICATIONS_TOKEN, 
                           organization_id=self.organization.id,
@@ -672,6 +674,7 @@ class OrganizationClient(models.Model):
     # age:int = models.IntegerField(default=0)
     
     # Foreignkeys
+    # TODO: Change the name of this property to client_parent
     client_dependent:ClientParent = models.ForeignKey(ClientParent, on_delete=models.CASCADE, related_name='client_dependent', default=None, null=True)
     type:OrganizationClientType = models.ForeignKey(OrganizationClientType, on_delete=models.CASCADE, null=True, blank=True, default=None)
     # -----------------------------------------------------------

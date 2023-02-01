@@ -31,9 +31,6 @@ class ChangePasswordBodySerializer(serializers.Serializer):
     def __convert_to_objects(self, attrs:dict):
         try: attrs['user'] = KumbioUser.objects.get(code_to_recover_password=attrs['code'])
         except KumbioUser.DoesNotExist: 
-            print('-'*100)
-            print('getting here')
-            print('-'*100)
             raise exceptions.NotFound(_('El usuario no existe'))
 
 

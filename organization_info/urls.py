@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (OrganizationProfessionalView, OrganizationPlaceView, OrganizationView, 
 OrganizationSectorView, OrganizationServiceView, OrganizationClientView, OrganizationClientDashboardInfoView,
 OrganizationServiceDashboardInfoView, OrganizationProfessionalDashboardInfoView, OrganizationPlaceDashboardInfoView,
-ClientForLandingPage, get_organization_client_types)
+ClientForCalendar, get_client_for_calendar, get_organization_client_types)
 
 app_name = 'organization_info'
 
@@ -24,8 +24,10 @@ urlpatterns = [
     path('staff-dashboard-info/', OrganizationProfessionalDashboardInfoView.as_view(), name='staff_dashboard_info'),
     path('place-dashboard-info/', OrganizationPlaceDashboardInfoView.as_view(), name='place_dashboard_info'),
     
+    
     # For Calendar
-    path('client-for-calendar/', ClientForLandingPage.as_view(), name='client_for_landing_page'),
+    path('client-for-calendar/', ClientForCalendar.as_view(), name='client_for_calendar'),
+    path('get-client-for-calendar/', get_client_for_calendar, name='get_client_for_calendar')
 
 
     # path('extra_fields_for_client_type/', get_extra_fields_for_client_type, name='extra_fields_for_client_type'),

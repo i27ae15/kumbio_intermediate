@@ -117,7 +117,7 @@ class Command(BaseCommand):
 
     
     def create_users(self) -> KumbioUser:
-        USERS_TO_CREATE = 3
+        USERS_TO_CREATE = 11
         self.stdout.write('-' * 50)
         self.stdout.write(f'Creating {USERS_TO_CREATE} organization owners users')
 
@@ -291,7 +291,7 @@ class Command(BaseCommand):
 
     def create_professionals(self):
 
-        RANGE_LIMIT = 1
+        RANGE_LIMIT = 10
         total_professionals = 0
         self.stdout.write('-' * 50)
         self.stdout.write(f'Creating professionals: {RANGE_LIMIT} per organization')
@@ -376,7 +376,7 @@ class Command(BaseCommand):
 
     
     def create_clients(self):
-        RANGE_LIMIT = 2
+        RANGE_LIMIT = 50
         total_clients = 0
         self.stdout.write('-' * 50)
         self.stdout.write(f'Creating clients: {RANGE_LIMIT} * org.num_professionals()')

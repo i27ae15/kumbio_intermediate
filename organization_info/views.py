@@ -1232,10 +1232,16 @@ class OrganizationPlaceDashboardInfoView(APIView):
 
 # For Calendar only 
 
-class ClientForLandingPage(APIView):
-    
+class ClientForCalendar(APIView):
+
     @swagger_auto_schema(tags=['client'])
     def get(self, request):
+
+        """
+
+            This get if for getting the parent of a client
+        
+        """
 
         parent_client_email:int = request.query_params.get('parent_client_email', None)
         parent_client_id:int = request.query_params.get('parent_client_id', None)
@@ -1313,3 +1319,23 @@ class ClientForLandingPage(APIView):
         data_to_return = ClientParentSerializer(parent).data
 
         return Response(data_to_return, status=status.HTTP_201_CREATED)
+
+
+
+@swagger_auto_schema(method='get', tags=['client'])
+@api_view(['GET'])
+def get_client_for_calendar(request):
+    
+    Print('params1', request.GET)
+    Print('params', request.GET.get('client_id'))
+
+    client_id = request.GET.get('client_id', None)
+    
+    if not client_id:
+        raise exceptions.ValidationError(_('client_id is required'))
+    
+    try: client = OrganizationClient.objects.get(id=client_id)
+    except OrganizationClient.DoesNotExist: raise exceptions.NotFound(_('client not found'))
+
+    client_serializer = OrganizationClientSerializer(client)
+    return Response(client_serializer.data, status=status.HTTP_200_OK)

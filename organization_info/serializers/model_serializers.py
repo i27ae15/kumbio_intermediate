@@ -57,6 +57,8 @@ class DayAvailableForPlaceSerializer(serializers.ModelSerializer):
 class OrganizationPlaceSerializer(serializers.ModelSerializer):
 
     dayavailableforplace_set = DayAvailableForPlaceSerializer(many=True, read_only=True)
+
+
     class Meta:
         model = OrganizationPlace
         fields = '__all__'
@@ -87,9 +89,21 @@ class OrganizationClientTypeSerializer(serializers.ModelSerializer):
 
 class OrganizationClientSerializer(serializers.ModelSerializer):
 
-    client_type = OrganizationClientTypeSerializer(many=True, read_only=True)
+    # TODO: Check if this is going to failed at the moment of creating a new client
+    type = OrganizationClientTypeSerializer()
+    client_dependent = serializers.SerializerMethodField()
 
+    def get_client_dependent(self, obj:OrganizationClient):
+        # TODO: Change this to a serializer
+        return {
+            'id': obj.client_dependent.pk,
+            'first_name': obj.client_dependent.first_name,
+            'last_name': obj.client_dependent.last_name,
+            'email': obj.client_dependent.email,
+            'phone': obj.client_dependent.phone,
+        }
 
+    
     def validate(self, data):
 
         extra_fields = data.get('extra_fields', None)
@@ -119,6 +133,7 @@ class OrganizationClientSerializer(serializers.ModelSerializer):
             field = tuple(field)
 
         return data
+
 
     class Meta:
         model = OrganizationClient
