@@ -2,6 +2,7 @@
 # django 
 # rest-framework
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 from rest_framework import status, exceptions
 from rest_framework.response import Response
@@ -47,8 +48,13 @@ def verify_recovery_password_code(request):
     query_serializer.is_valid(raise_exception=True)
     query_data = query_serializer.validated_data
 
-    try: KumbioUser.objects.get(code_to_recover_password=query_data['code'])
+    user:KumbioUser
+    try: user = KumbioUser.objects.get(code_to_recover_password=query_data['code'])
     except KumbioUser.DoesNotExist: raise exceptions.PermissionDenied(_('Código inválido'))
+
+    if user.code_to_recover_password_date_expiration < timezone.now():
+        raise exceptions.ValidationError(_('El código ha expirado'))
+
     return Response({'is_valid_code': True})
 
 
