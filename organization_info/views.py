@@ -1278,12 +1278,22 @@ class ClientForLandingPage(APIView):
         client_parent_serializer.save()
         parent:ClientParent = client_parent_serializer.instance
         
-        
         client_type = organization.client_types[0]
+        extra_fields = list()
+        value = ''
+        
+        for field in client_type.fields:
+            if field[1] != 'TEXT':
+                value = 0
+            else:
+                value = ''
+            
+            extra_fields.append([field[0], field[1], value])
+
         new_client_data = {
-            'client_dependent': parent,
+            'client_dependent': parent.pk,
             'type': client_type.pk,
-            'extra_fields': client_type.fields,
+            'extra_fields': extra_fields,
         }
 
         if parent.same_as_client:
@@ -1292,6 +1302,7 @@ class ClientForLandingPage(APIView):
         else:
             new_client_data['fist_name'] = body_data['client']['first_name']
             new_client_data['last_name'] = body_data['client']['last_name']
+
 
         new_client = OrganizationClientSerializer(data=new_client_data)
         new_client.is_valid(raise_exception=True)

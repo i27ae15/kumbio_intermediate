@@ -56,7 +56,7 @@ class OrganizationClientType(models.Model):
     """
 
     organization:'Organization' = models.ForeignKey('Organization', on_delete=models.CASCADE, related_name='organization_client_type')
-    sector:Sector = models.ForeignKey(Sector, on_delete=models.CASCADE, related_name='sector', default=1)
+    sector:Sector = models.ForeignKey(Sector, on_delete=models.CASCADE, related_name='sector', default=None, null=True)
 
     name:str = models.CharField(max_length=100)
     description:str = models.TextField(blank=True, null=True, default='')
@@ -636,7 +636,7 @@ class ClientParent(models.Model):
 
     # foreignkeys
     # At some moment im going to regret doing null=True, default=None but for now it is ok
-    # organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, default=None)
+    organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, default=None)
 
     first_name:str = models.CharField(max_length=100)
     last_name:str = models.CharField(max_length=100)
@@ -657,6 +657,10 @@ class ClientParent(models.Model):
     @property
     def full_name(self) -> str:
         return f'{self.first_name} {self.last_name}'
+
+    
+    def __str__(self) -> str:
+        return f'{self.pk} - {self.full_name}'
 
 
 class OrganizationClient(models.Model):
@@ -736,7 +740,7 @@ class OrganizationClient(models.Model):
 
     
     def __str__(self):
-        return f'{self.pk} - {self.client_dependent.full_name} - {self.client_dependent.organization.name}'
+        return f'{self.pk} - {self.client_dependent.full_name} - {self.client_dependent}'
     
 
 class OrganizationPromotion(models.Model):
