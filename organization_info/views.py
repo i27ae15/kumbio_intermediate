@@ -24,7 +24,7 @@ from drf_yasg import openapi
 
 # models
 from user_info.models import KumbioUser, KumbioUserRole
-from .models.main_models import (DayAvailableForProfessional, Organization, OrganizationProfessional, OrganizationPlace, Sector, 
+from .models.main_models import (DayAvailableForProfessional, Organization, ClientParent, OrganizationProfessional, OrganizationPlace, Sector, 
 OrganizationService, OrganizationClient, OrganizationClientType)
 from authentication_manager.models import KumbioToken
 
@@ -40,14 +40,15 @@ OrganizationClientTypeQuerySerializer, OrganizationQuerySerializer)
 
 
 # body serializers
-from .serializers.body_serializers import (DeleteServiceSerializer, OrganizationProfessionalDeleteBodySerializer, PlacePutSerializer, OrganizationClientPutSerializer, 
+from .serializers.body_serializers import (DeleteServiceSerializer, OrganizationClientForCalendarBodySerializer, OrganizationProfessionalDeleteBodySerializer, PlacePutSerializer, OrganizationClientPutSerializer, 
 OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySerializer,
 OrganizationPlacePostSerializer, OrganizationClientDeleteSerializer)
 
 
 # model serializers
 from .serializers.model_serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
-OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer,
+OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, 
+ClientParentSerializer,
 OrganizationClientTypeSerializer, DayAvailableForProfessionalSerializer)
 
 
@@ -412,7 +413,7 @@ class OrganizationProfessionalView(APIView):
         body_data:dict = body_serializer.validated_data
         professional:OrganizationProfessional = body_data['professional']
 
-        res = requests.delete(f'{CALENDAR_ENDPOINT}users/api/v2/', data={'user_token': professional.kumbio_user.calendar_token, 'delete_all_information': False})
+        res = requests.delete(f'{CALENDAR_ENDPOINT}users/api/v2/user/', data={'user_token': professional.kumbio_user.calendar_token, 'delete_all_information': False})
 
         if res.status_code != 204:
             raise exceptions.ValidationError(_('Error al eliminar el usuario del calendario'))
@@ -761,7 +762,7 @@ class OrganizationServiceView(APIView):
                 raise exceptions.NotFound(_('el servicio no existe'))
         
         else:
-            services = OrganizationService.objects.all()
+            services = OrganizationService.objects.filter(organization=request.user.organization)
 
 
         service_serializer = OrganizationServiceSerializer(services, many=True)
@@ -1008,7 +1009,8 @@ class OrganizationClientView(APIView):
         else:
             dependent_from['same_as_client'] = False
         
-        dependent_from_serializer = OrganizationClientDependentFromSerializer(data=dependent_from)
+        dependent_from_serializer = ClientParentSerializer(data=dependent_from)
+        client_serializer.instance.client_dependent = dependent_from_serializer.instance
         
         if not dependent_from_serializer.is_valid():
             return Response(dependent_from_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -1149,82 +1151,6 @@ def get_extra_fields_for_client_type(request):
     return Response(extra_fields, status=status.HTTP_200_OK)
 
 
-@swagger_auto_schema(query_serializer=OrganizationClientTypeQuerySerializer(), method='GET')
-@api_view(['GET'])
-def create_clients(request):
-
-    """
-
-        Este endpoint es para crear clientes, se crean 10 clientes entrando en este endpoint
-    """
-    clients = []
-
-    client_type:OrganizationClientType = OrganizationClientType.objects.get(id=18)
-
-    for i in range(10):
-        string_i = str(i)
-        dependent_from = {
-            'first_name': 'parent first name' + string_i,
-            'last_name': 'parent last name' + string_i,
-            'email': 'parent@email.com' + string_i,
-            'phone': 'parent phone' + string_i,
-        }
-
-        client_data = {
-            'organization': 'Yqe0DxtbwcK3KYrakqXY83brcZOr',
-            'type': client_type.pk, # type must come from the organization sector type
-            'first_name': 'child' + string_i,
-            'last_name': 'child' + string_i,
-            'email': 'client@email.com' + string_i,
-            'phone': 'client phone' + string_i,
-        }
-
-
-        extra_fields:list[tuple] = client_type.fields
-        converted_extra_fields:list[list] = []
-
-        for index, field in enumerate(extra_fields):
-            field = list(field)
-
-            if field[1] == 'TEXT':
-                field.append('value' + str(index))
-            
-            elif field[1] == 'NUMBER':
-                num = int(f'{index}0{i}')
-                field.append(num)
-
-            converted_extra_fields.append(field)
-
-        client_data['extra_fields'] = converted_extra_fields
-
-        data_to_create_client = {
-            'client': client_data,
-            'dependent_from': dependent_from,
-        }
-
-        clients.append(data_to_create_client)
-
-
-    data_from_serializer = list()
-
-    for client in clients:
-        client_serializer= OrganizationClientSerializer(data=client['client'])
-        client_serializer.is_valid(raise_exception=True)
-        client_serializer.save()
-
-        client['dependent_from']['client'] = client_serializer.data['id']
-        dependent_from_serializer = OrganizationClientDependentFromSerializer(data=client['dependent_from'])
-        dependent_from_serializer.is_valid(raise_exception=True)
-        dependent_from_serializer.save()
-
-        client_instance:OrganizationClient = client_serializer.instance
-        client_serializer = OrganizationClientSerializer(client_instance)
-
-        data_from_serializer.append(client_serializer.data)
-
-    return Response(data_from_serializer, status=status.HTTP_201_CREATED)
-
-
 # For dashboard info
 
 class OrganizationClientDashboardInfoView(APIView):
@@ -1303,3 +1229,76 @@ class OrganizationPlaceDashboardInfoView(APIView):
         place_serializer = OrganizationPlaceDashboardInfoSerializer(place)
         return Response(place_serializer.data, status=status.HTTP_200_OK)
 
+
+# For Calendar only 
+
+class ClientForLandingPage(APIView):
+    
+    @swagger_auto_schema(tags=['client'])
+    def get(self, request):
+
+        parent_client_email:int = request.query_params.get('parent_client_email', None)
+        parent_client_id:int = request.query_params.get('parent_client_id', None)
+        
+        if not parent_client_email and not parent_client_id: 
+            raise exceptions.ValidationError(_('parent_client_email or parent_client_id is required'))
+
+        client:ClientParent
+        if parent_client_email:
+            try: client = ClientParent.objects.get(email=parent_client_email)
+            except ClientParent.DoesNotExist: raise exceptions.NotFound(_('client_parent not found'))
+        else:
+            try: client = ClientParent.objects.get(id=parent_client_id)
+            except ClientParent.DoesNotExist: raise exceptions.NotFound(_('client_parent not found'))
+        
+
+        client_dependent_serializer = ClientParentSerializer(client)
+        
+        return Response(client_dependent_serializer.data, status=status.HTTP_200_OK)
+
+
+    @swagger_auto_schema(request_body=OrganizationClientForCalendarBodySerializer, tags=['client'])
+    def post(self, request):
+
+        """
+            This method will be only available for creating new users from the calendar endpoint
+        """
+        
+        body_serializer = OrganizationClientForCalendarBodySerializer(data=request.data)
+        body_serializer.is_valid(raise_exception=True)
+        body_data = body_serializer.validated_data
+
+        organization:Organization = body_data['organization']
+
+        data_to_serialize = body_data['client_parent']
+        data_to_serialize['organization'] = organization.pk
+
+        client_parent_serializer = ClientParentSerializer(data=body_data['client_parent'])
+        client_parent_serializer.is_valid(raise_exception=True)
+        client_parent_serializer.save()
+        parent:ClientParent = client_parent_serializer.instance
+        
+        
+        client_type = organization.client_types[0]
+        new_client_data = {
+            'client_dependent': parent,
+            'type': client_type.pk,
+            'extra_fields': client_type.fields,
+        }
+
+        if parent.same_as_client:
+            new_client_data['fist_name'] = parent.first_name
+            new_client_data['last_name'] = parent.last_name
+        else:
+            new_client_data['fist_name'] = body_data['client']['first_name']
+            new_client_data['last_name'] = body_data['client']['last_name']
+
+        new_client = OrganizationClientSerializer(data=new_client_data)
+        new_client.is_valid(raise_exception=True)
+        new_client.save()
+
+
+        parent.refresh_from_db()
+        data_to_return = ClientParentSerializer(parent).data
+
+        return Response(data_to_return, status=status.HTTP_201_CREATED)

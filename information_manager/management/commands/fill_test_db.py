@@ -12,7 +12,7 @@ from print_pp import Print
 
 # models
 from organization_info.models.main_models import (Organization, OrganizationClient, OrganizationClientType, OrganizationProfessional, OrganizationService, 
-PaymentMethodAcceptedByOrg, ProfessionalSpecialty, Sector, OrganizationPlace)
+PaymentMethodAcceptedByOrg, ProfessionalSpecialty, Sector, OrganizationPlace, ClientParent)
 
 from user_info.models import KumbioUser, KumbioUserRole, KumbioUserPermission
 
@@ -20,7 +20,7 @@ from user_info.models import KumbioUser, KumbioUserRole, KumbioUserPermission
 from organization_info.utils.enums import FieldType
 
 # serializers
-from organization_info.serializers.model_serializers import (DayAvailableForProfessionalSerializer, OrganizationClientDependentFromSerializer,
+from organization_info.serializers.model_serializers import (DayAvailableForProfessionalSerializer, ClientParentSerializer,
 OrganizationClientSerializer, OrganizationProfessionalSerializer, OrganizationServiceSerializer, OrganizationPlaceSerializer,
 DayAvailableForPlaceSerializer)
 from user_info.serializers.serializers import CreateKumbioUserSerializer
@@ -117,7 +117,7 @@ class Command(BaseCommand):
 
     
     def create_users(self) -> KumbioUser:
-        USERS_TO_CREATE = 11
+        USERS_TO_CREATE = 3
         self.stdout.write('-' * 50)
         self.stdout.write(f'Creating {USERS_TO_CREATE} organization owners users')
 
@@ -191,7 +191,7 @@ class Command(BaseCommand):
 
     def create_organization_services(self):
 
-        SERVICES_TO_CREATE = 3
+        SERVICES_TO_CREATE = 1
         self.stdout.write('-' * 50)
         self.stdout.write(f'Creating {SERVICES_TO_CREATE} services per organization')
 
@@ -217,7 +217,7 @@ class Command(BaseCommand):
 
     def create_places(self):
 
-        RANGE_LIMIT = 3
+        RANGE_LIMIT = 1
         self.stdout.write('-' * 50)
         self.stdout.write(f'Creating {RANGE_LIMIT} places per organization')
 
@@ -271,7 +271,7 @@ class Command(BaseCommand):
     def create_specialties(self):
         organizations = Organization.objects.all()
 
-        RANGE_LIMIT = 3
+        RANGE_LIMIT = 1
         total_specialties = 0
         self.stdout.write('-' * 50)
         self.stdout.write(f'Creating professional specialties between 1 & {RANGE_LIMIT}')
@@ -291,7 +291,7 @@ class Command(BaseCommand):
 
     def create_professionals(self):
 
-        RANGE_LIMIT = 10
+        RANGE_LIMIT = 1
         total_professionals = 0
         self.stdout.write('-' * 50)
         self.stdout.write(f'Creating professionals: {RANGE_LIMIT} per organization')
@@ -343,7 +343,7 @@ class Command(BaseCommand):
 
         services:QuerySet[OrganizationService] = OrganizationService.objects.filter(organization=professional.organization.pk)
 
-        for day in range(5):
+        for day in range(1):
             day_data = {
                 'professional': professional.pk,
                 'week_day': day,
@@ -376,7 +376,7 @@ class Command(BaseCommand):
 
     
     def create_clients(self):
-        RANGE_LIMIT = 50
+        RANGE_LIMIT = 2
         total_clients = 0
         self.stdout.write('-' * 50)
         self.stdout.write(f'Creating clients: {RANGE_LIMIT} * org.num_professionals()')
@@ -412,37 +412,37 @@ class Command(BaseCommand):
                     'created_by_user': 1,
                     'created_by_app': 3
                 }
-            
-                serializer = OrganizationClientSerializer(data=client_data)
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
-
-                client:OrganizationClient = serializer.instance
 
                 same_as_client = random.choice([True, False])
 
                 if same_as_client:
                     client_dependent_data = {
-                        'client': client.pk,
-                        'first_name': client.first_name,
-                        'last_name': client.last_name,
+                        'first_name': client_data['first_name'],
+                        'last_name': client_data['last_name'],
                         'email': fake.email(),
                         'phone': fake.phone_number(),
                         'same_as_client': True,
                     }
                 else:
                     client_dependent_data = {
-                        'client': client.pk,
                         'first_name': fake.first_name(),
                         'last_name': fake.last_name(),
                         'email': fake.email(),
                         'phone': fake.phone_number(),
                         'same_as_client': False,
-                    }                
+                    }
 
-                serializer = OrganizationClientDependentFromSerializer(data=client_dependent_data)
+
+                serializer = ClientParentSerializer(data=client_dependent_data)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
+                client_parent:ClientParent = serializer.instance
+
+                client_data['client_dependent'] = client_parent.pk
+                serializer = OrganizationClientSerializer(data=client_data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                
                 total_clients += 1
         
         self.stdout.write(f'Clientes created successfully; total: {total_clients}')
