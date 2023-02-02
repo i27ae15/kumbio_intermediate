@@ -620,7 +620,7 @@ class OrganizationProfessional(models.Model):
 
 
     def __send_welcome_message(self):
-        #TODO Here
+        # TODO: Do not send welcome message when filling the db with fake data
         return
 
         send_notification(token_for_app=COMMUNICATIONS_TOKEN, 
