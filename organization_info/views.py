@@ -715,8 +715,8 @@ class OrganizationPlaceView(APIView):
 
 class OrganizationSectorView(APIView):
 
-    permission_classes = (IsAuthenticated,) 
-    authentication_classes = (TokenAuthentication,) 
+    # permission_classes = (IsAuthenticated,) 
+    # authentication_classes = (TokenAuthentication,) 
 
     
     @swagger_auto_schema(
