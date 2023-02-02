@@ -17,7 +17,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 # models 
 from user_info.models import KumbioUser, KumbioUserRole
-from organization_info.models.main_models import Organization
+from organization_info.models.main_models import Organization, Sector
 
 # serializers 
 from organization_info.serializers.model_serializers import OrganizationSerializer
@@ -221,7 +221,7 @@ class CreateUserAPI(APIView):
                 name=organization_data['name'],
                 email=organization_data['email'],
                 phone=organization_data['phone'],
-                sector=organization_data['sector'],
+                sector=Sector.objects.get(pk=int(organization_data['sector'])),
                 
                 # owner info
                 owner_email=request.data['email'],
@@ -233,7 +233,11 @@ class CreateUserAPI(APIView):
             request.data['role'] = 1
         except KeyError as e:
             raise exceptions.NotAcceptable(_(f'Key error {e}'))
-            
+        except Sector.DoesNotExist:
+            raise exceptions.NotAcceptable(_('El sector especificado no existe'))
+        except ValueError:
+            raise exceptions.NotAcceptable(_('sector debe ser un entero'))
+
         # Create the user role that comes by default when creating a new owner
 
         request.data['organization'] = organization_id
