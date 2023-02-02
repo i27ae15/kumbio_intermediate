@@ -88,21 +88,6 @@ class OrganizationClientTypeSerializer(serializers.ModelSerializer):
 
 
 class OrganizationClientSerializer(serializers.ModelSerializer):
-
-    # TODO: Check if this is going to failed at the moment of creating a new client
-    type = OrganizationClientTypeSerializer()
-    client_dependent = serializers.SerializerMethodField()
-
-    def get_client_dependent(self, obj:OrganizationClient):
-        # TODO: Change this to a serializer
-        return {
-            'id': obj.client_dependent.pk,
-            'first_name': obj.client_dependent.first_name,
-            'last_name': obj.client_dependent.last_name,
-            'email': obj.client_dependent.email,
-            'phone': obj.client_dependent.phone,
-        }
-
     
     def validate(self, data):
 
@@ -150,5 +135,31 @@ class ClientParentSerializer(serializers.ModelSerializer):
         model = ClientParent
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at')
+
+
+
+
+class OrganizationClientRelatedFieldsSerializer(serializers.ModelSerializer):
+
+    type = OrganizationClientTypeSerializer()
+    
+    # TODO: Change this to a serializer
+    client_dependent = serializers.SerializerMethodField()
+
+    def get_client_dependent(self, obj:OrganizationClient):
+        return {
+            'id': obj.client_dependent.pk,
+            'first_name': obj.client_dependent.first_name,
+            'last_name': obj.client_dependent.last_name,
+            'email': obj.client_dependent.email,
+            'phone': obj.client_dependent.phone,
+        }
+    
+    
+    class Meta:
+        model = OrganizationClient
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at', 'deleted_at', 'deleted_by', 'updated_by', 'referral_link')
+
 
 

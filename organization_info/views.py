@@ -46,7 +46,7 @@ OrganizationPlacePostSerializer, OrganizationClientDeleteSerializer)
 
 
 # model serializers
-from .serializers.model_serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
+from .serializers.model_serializers import (OrganizationClientRelatedFieldsSerializer, OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
 OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, 
 ClientParentSerializer,
 OrganizationClientTypeSerializer, DayAvailableForProfessionalSerializer)
@@ -1337,5 +1337,5 @@ def get_client_for_calendar(request):
     try: client = OrganizationClient.objects.get(id=client_id)
     except OrganizationClient.DoesNotExist: raise exceptions.NotFound(_('client not found'))
 
-    client_serializer = OrganizationClientSerializer(client)
+    client_serializer = OrganizationClientRelatedFieldsSerializer(client)
     return Response(client_serializer.data, status=status.HTTP_200_OK)
