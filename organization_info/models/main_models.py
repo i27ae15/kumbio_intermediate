@@ -619,6 +619,7 @@ class OrganizationProfessional(models.Model):
 
 
     def __send_welcome_message(self):
+        if 'test' in sys.argv: return
 
         send_notification(token_for_app=COMMUNICATIONS_TOKEN, 
                           organization_id=self.organization.id,
@@ -843,6 +844,7 @@ class FrequentlyAskedQuestion(models.Model):
     created_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, on_delete=models.CASCADE, related_name='faq_created_by')
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='faq_updated_by')
     deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='faq_deleted_by')
+
 
     def __str__(self):
         return f'{self.id} - {self.question[:20]} - {self.organization.name}'
