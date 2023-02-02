@@ -181,17 +181,18 @@ class CreateUserAPI(APIView):
                     name (str): nombre de la organización,
                     phone (str): teléfono del usuario que creara la organización
                     email (str): email del usuario que creara la organización
+                    sector (id): id del sector al que pertenece la organización
                 }
                 phone (str): numero de teléfono del usuario que creara la organización
                 
             para ambos casos:
-            
-                first_name (str): nombre del usuario
-                last_name (str): apellido del usuario
-                email (str): email del usuario
-                username (str): username del usuario
-                password (str): password del usuario
-
+                {
+                    first_name (str): nombre del usuario
+                    last_name (str): apellido del usuario
+                    email (str): email del usuario
+                    username (str): username del usuario
+                    password (str): password del usuario
+                }
         Returns:
             _type_: _description_
         """
@@ -213,12 +214,14 @@ class CreateUserAPI(APIView):
             if Organization.objects.filter(owner_email=request.data['email']).exists():
                 raise exceptions.NotAcceptable(_('Ya existe una organización con ese email'))
 
-            
+        
+        try:
             organization:Organization = Organization.objects.create(
                 # org info
                 name=organization_data['name'],
                 email=organization_data['email'],
                 phone=organization_data['phone'],
+                sector=organization_data['sector'],
                 
                 # owner info
                 owner_email=request.data['email'],
@@ -228,6 +231,8 @@ class CreateUserAPI(APIView):
             )
             organization_id = organization.pk        
             request.data['role'] = 1
+        except KeyError as e:
+            raise exceptions.NotAcceptable(_(f'Key error {e}'))
             
         # Create the user role that comes by default when creating a new owner
 
