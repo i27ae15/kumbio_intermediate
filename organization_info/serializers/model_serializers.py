@@ -137,8 +137,6 @@ class ClientParentSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_at', 'updated_at')
 
 
-
-
 class OrganizationClientRelatedFieldsSerializer(serializers.ModelSerializer):
 
     type = OrganizationClientTypeSerializer()

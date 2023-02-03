@@ -47,7 +47,7 @@ SECRET_KEY = 'django-insecure-41nwz$6_#7(+h)-#6ek7dkuwnvz_+p!ft=ayw=sktx-5q7wd7s
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
+CSRF_TRUSTED_ORIGINS = ['https://api.kumbio.com']
 
 # Application definition
 

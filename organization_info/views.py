@@ -1325,9 +1325,6 @@ class ClientForCalendar(APIView):
 @swagger_auto_schema(method='get', tags=['client'])
 @api_view(['GET'])
 def get_client_for_calendar(request):
-    
-    Print('params1', request.GET)
-    Print('params', request.GET.get('client_id'))
 
     client_id = request.GET.get('client_id', None)
     

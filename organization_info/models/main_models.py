@@ -620,8 +620,6 @@ class OrganizationProfessional(models.Model):
 
 
     def __send_welcome_message(self):
-        # TODO: Do not send welcome message when filling the db with fake data
-        return
 
         send_notification(token_for_app=COMMUNICATIONS_TOKEN, 
                           organization_id=self.organization.id,
@@ -631,7 +629,7 @@ class OrganizationProfessional(models.Model):
 
     
     def __str__(self) -> str:
-        return f'{self.id} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
+        return f'{self.pk} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
 
 
 class ClientParent(models.Model):
