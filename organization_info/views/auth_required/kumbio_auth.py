@@ -893,16 +893,6 @@ class OrganizationClientView(APIView):
 
         else: 
             clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(organization=user.organization.id)
-<<<<<<< HEAD
-            
-            clients = clients.filter(age__gte=query_params['min_age'],
-                           age__lte=query_params['max_age'],
-                           rating__gte=query_params['min_rating'],
-                           rating__lte=query_params['max_rating'])
-
-            if query_params['birth_date']:
-                clients = clients.filter(birth_date=query_params['birth_date'])
-=======
             # raise exceptions.ParseError(_('client_id es requerido, the filter is not working'))
             # Print('age', clients[0].age)
             
@@ -913,7 +903,6 @@ class OrganizationClientView(APIView):
                         
             # if query_params['birth_date']:
             #     clients = clients.filter(birth_date=query_params['birth_date'])
->>>>>>> b4fb6c6a59b76573506ca93c263cb6784fa2b5d0
 
         client_serializer = OrganizationClientSerializer(clients, many=True)
         return Response(client_serializer.data, status=status.HTTP_200_OK)
