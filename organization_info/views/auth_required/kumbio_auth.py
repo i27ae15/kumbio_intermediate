@@ -888,12 +888,12 @@ class OrganizationClientView(APIView):
         query_params = query_serializer.validated_data
 
         if query_params['client_id']:
-            clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(id=query_params['client_id'], organization=request.user.organization.id)
+            clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(id=query_params['client_id'], client_parent__organization=request.user.organization.id)
             if not clients:
                 raise exceptions.NotFound(_('el cliente no existe'))
 
         else: 
-            clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(organization=user.organization.id)
+            clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(client_parent__organization=user.organization.id)
             # raise exceptions.ParseError(_('client_id es requerido, the filter is not working'))
             # Print('age', clients[0].age)
             
