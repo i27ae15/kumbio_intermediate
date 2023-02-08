@@ -1,29 +1,35 @@
 import random
+import os
+
+
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 from django.db.models import QuerySet
 # https://simpleisbetterthancomplex.com/tutorial/2018/08/27/how-to-create-custom-django-management-commands.html
 
-import os
 
 from faker import Faker
 from dotenv import load_dotenv
 from print_pp import Print
 
 # models
-from organization_info.models.main_models import (Organization, OrganizationClient, OrganizationClientType, OrganizationProfessional, OrganizationService, 
-PaymentMethodAcceptedByOrg, ProfessionalSpecialty, Sector, OrganizationPlace, ClientParent)
+from organization_info.models.main_models import (
+    Organization, OrganizationClient, OrganizationClientType, OrganizationProfessional, 
+    OrganizationService, PaymentMethodAcceptedByOrg, ProfessionalSpecialty, Sector, OrganizationPlace, 
+    ClientParent
+)
 
 from user_info.models import KumbioUser, KumbioUserRole, KumbioUserPermission
-
 
 from organization_info.utils.enums import FieldType
 
 # serializers
-from organization_info.serializers.model_serializers import (DayAvailableForProfessionalSerializer, ClientParentSerializer,
-OrganizationClientSerializer, OrganizationProfessionalSerializer, OrganizationServiceSerializer, OrganizationPlaceSerializer,
-DayAvailableForPlaceSerializer)
+from organization_info.serializers.model_serializers import (
+    DayAvailableForProfessionalSerializer, ClientParentSerializer, OrganizationClientSerializer, 
+    OrganizationProfessionalSerializer, OrganizationServiceSerializer, OrganizationPlaceSerializer,
+    DayAvailableForPlaceSerializer
+)
 from user_info.serializers.serializers import CreateKumbioUserSerializer
+
 
 # kumbio_user_serializer = CreateKumbioUserSerializer(data=body_data, context={'set_verified_email': True})
 # kumbio_user_serializer.is_valid(raise_exception=True)
@@ -75,13 +81,14 @@ DEFAULT_SECTORS = [
 class Command(BaseCommand):
     help = 'This will fill the database with test data'
 
-
     def handle(self, *args, **kwargs):
 
-        if not os.getenv('USE_LOCAL_DB'):
-            self.stdout.write('USE_LOCAL_DB is not set to True')
-            return
-        
+        os.environ["FILLING_DB"] = "1"
+
+        Print('FILLING_DB', os.environ.get('FILLING_DB'))
+        return
+
+
         self.USERS_TO_CREATE = 11
         self.SERVICES_TO_CREATE = 1
         self.PLACE_TO_CREATE = 1

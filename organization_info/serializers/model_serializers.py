@@ -129,7 +129,6 @@ class OrganizationClientSerializer(serializers.ModelSerializer):
 
 class ClientParentSerializer(serializers.ModelSerializer):
 
-    client_parent = OrganizationClientSerializer(many=True, read_only=True)
 
     class Meta:
         model = ClientParent

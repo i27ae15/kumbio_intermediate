@@ -54,7 +54,7 @@ from organization_info.serializers.body_serializers import (
 
 # model serializers
 from organization_info.serializers.model_serializers import (
-    OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, 
+    OrganizationClientRelatedFieldsSerializer, OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, 
     OrganizationSectorSerializer, OrganizationServiceSerializer, DayAvailableForPlaceSerializer, 
     OrganizationClientSerializer, ClientParentSerializer, OrganizationClientTypeSerializer, 
     DayAvailableForProfessionalSerializer
@@ -905,7 +905,7 @@ class OrganizationClientView(APIView):
             # if query_params['birth_date']:
             #     clients = clients.filter(birth_date=query_params['birth_date'])
 
-        client_serializer = OrganizationClientSerializer(clients, many=True)
+        client_serializer = OrganizationClientRelatedFieldsSerializer(clients, many=True)
         return Response(client_serializer.data, status=status.HTTP_200_OK)
 
 
