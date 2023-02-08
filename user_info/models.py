@@ -255,7 +255,7 @@ def kumbio_user_handler(sender, instance:KumbioUser, created, **kwargs):
             return
 
         if not 'test' in sys.argv:
-            res = requests.post(f'{CALENDAR_ENDPOINT}users/api/v2/', json={
+            res = requests.post(f'{CALENDAR_ENDPOINT}users/api/v2/user/', json={
                 'organization_id': instance.organization.id,
                 'email': instance.email,
                 'first_name': instance.first_name,
