@@ -129,7 +129,7 @@ class OrganizationClientSerializer(serializers.ModelSerializer):
 
 class ClientParentSerializer(serializers.ModelSerializer):
 
-    client_dependent = OrganizationClientSerializer(many=True, read_only=True)
+    client_parent = OrganizationClientSerializer(many=True, read_only=True)
 
     class Meta:
         model = ClientParent
@@ -142,15 +142,15 @@ class OrganizationClientRelatedFieldsSerializer(serializers.ModelSerializer):
     type = OrganizationClientTypeSerializer()
     
     # TODO: Change this to a serializer
-    client_dependent = serializers.SerializerMethodField()
+    client_parent = serializers.SerializerMethodField()
 
-    def get_client_dependent(self, obj:OrganizationClient):
+    def get_client_parent(self, obj:OrganizationClient):
         return {
-            'id': obj.client_dependent.pk,
-            'first_name': obj.client_dependent.first_name,
-            'last_name': obj.client_dependent.last_name,
-            'email': obj.client_dependent.email,
-            'phone': obj.client_dependent.phone,
+            'id': obj.client_parent.pk,
+            'first_name': obj.client_parent.first_name,
+            'last_name': obj.client_parent.last_name,
+            'email': obj.client_parent.email,
+            'phone': obj.client_parent.phone,
         }
     
     

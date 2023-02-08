@@ -1,8 +1,15 @@
 from django.urls import path
-from .views import (OrganizationProfessionalView, OrganizationPlaceView, OrganizationView, 
-OrganizationSectorView, OrganizationServiceView, OrganizationClientView, OrganizationClientDashboardInfoView,
-OrganizationServiceDashboardInfoView, OrganizationProfessionalDashboardInfoView, OrganizationPlaceDashboardInfoView,
-ClientForCalendar, get_client_for_calendar, get_organization_client_types)
+from .views.auth_required.kumbio_auth import (
+    OrganizationProfessionalView, OrganizationPlaceView, OrganizationView, OrganizationSectorView, 
+    OrganizationServiceView, OrganizationClientView, get_organization_client_types
+)
+from .views.auth_required.dash_auth import (
+    OrganizationClientDashboardInfoView, OrganizationServiceDashboardInfoView, 
+    OrganizationProfessionalDashboardInfoView, OrganizationPlaceDashboardInfoView,
+)
+from .views.auth_required.calendar_auth import (
+    ClientForCalendar, get_client_for_calendar
+)
 
 app_name = 'organization_info'
 
@@ -31,6 +38,5 @@ urlpatterns = [
 
 
     # path('extra_fields_for_client_type/', get_extra_fields_for_client_type, name='extra_fields_for_client_type'),
-
 ]
 

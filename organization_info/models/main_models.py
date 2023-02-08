@@ -643,6 +643,7 @@ class ClientParent(models.Model):
     email:str = models.CharField(max_length=255, blank=True, null=True, default=None)
     phone:str = models.CharField(max_length=50)
     phone_2:str = models.CharField(max_length=50, blank=True, null=True, default=None)
+    address:str = models.CharField(max_length=255, blank=True, null=True, default=None)
 
     identification:str = models.CharField(max_length=255, null=True, blank=True, default=None)
 
@@ -657,6 +658,11 @@ class ClientParent(models.Model):
     @property
     def full_name(self) -> str:
         return f'{self.first_name} {self.last_name}'
+
+
+    @property
+    def children(self) -> QuerySet['OrganizationClient']:
+        return self.client_child.all()
 
     
     def __str__(self) -> str:
@@ -673,7 +679,7 @@ class OrganizationClient(models.Model):
     
     # Foreignkeys
     # TODO: Change the name of this property to client_parent
-    client_dependent:ClientParent = models.ForeignKey(ClientParent, on_delete=models.CASCADE, related_name='client_dependent', default=None, null=True)
+    client_parent:ClientParent = models.ForeignKey(ClientParent, on_delete=models.CASCADE, default=None, null=True, related_name='client_child')
     type:OrganizationClientType = models.ForeignKey(OrganizationClientType, on_delete=models.CASCADE, null=True, blank=True, default=None)
     # -----------------------------------------------------------
 
@@ -741,7 +747,7 @@ class OrganizationClient(models.Model):
 
     
     def __str__(self):
-        return f'{self.pk} - {self.client_dependent.full_name} - {self.client_dependent}'
+        return f'{self.pk} - {self.client_parent.full_name} - {self.client_parent}'
     
 
 class OrganizationPromotion(models.Model):
@@ -765,8 +771,9 @@ class OrganizationPromotion(models.Model):
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_promotion_updated_by')
     deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_promotion_deleted_by')
 
+
     def __str__(self):
-        return f'{self.id} - {self.name} - {self.organization.name}'
+        return f'{self.pk} - {self.name} - {self.organization.name}'
 
 
 class OrganizationCampaigns(models.Model):
