@@ -678,8 +678,6 @@ class OrganizationClient(models.Model):
     # birthday:datetime.date = models.DateField(null=True, blank=True, default=None)
     # age:int = models.IntegerField(default=0)
     
-    # Foreignkeys
-    # TODO: Change the name of this property to client_parent
     client_parent:ClientParent = models.ForeignKey(ClientParent, on_delete=models.CASCADE, default=None, null=True, related_name='client_child')
     type:OrganizationClientType = models.ForeignKey(OrganizationClientType, on_delete=models.CASCADE, null=True, blank=True, default=None)
     # -----------------------------------------------------------
