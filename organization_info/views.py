@@ -509,6 +509,8 @@ class OrganizationProfessionalView(APIView):
             }]
         }
 
+        Print('data', data)
+
         res = requests.put(
             f'{CALENDAR_ENDPOINT}calendar/api/v2/day-available-for-professional/', 
             headers={'authorization':f'Token {day_available.professional.kumbio_user.calendar_token}'},
