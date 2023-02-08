@@ -494,7 +494,6 @@ class OrganizationProfessionalView(APIView):
         """
 
         data = {
-            'calendar_token': day_available.professional.kumbio_user.calendar_token,
             'days': [{
                 'week_day': day_available.week_day,
                 'exclude': day_available.exclude,
@@ -502,7 +501,11 @@ class OrganizationProfessionalView(APIView):
             }]
         }
 
-        res = requests.put(f'{CALENDAR_ENDPOINT}calendar/api/v2/day-available-for-professional/', json=data)
+        res = requests.put(
+            f'{CALENDAR_ENDPOINT}calendar/api/v2/day-available-for-professional/', 
+            headers={'authorization':f'Token {day_available.professional.kumbio_user.calendar_token}'},
+            json=data
+        )
         
         if res.status_code != 200:
             Print('err', res.json())
