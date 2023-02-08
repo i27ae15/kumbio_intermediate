@@ -2,9 +2,9 @@ from rest_framework import serializers
 
 from django.utils.translation import gettext_lazy as _
 
-from .model_serializers import (OrganizationClientSerializer, OrganizationProfessionalSerializer, 
+from .model_serializers import (ClientParentSerializer, OrganizationClientSerializer, OrganizationProfessionalSerializer, 
 OrganizationPlaceSerializer)
-from organization_info.models.main_models import OrganizationProfessional, OrganizationService
+from organization_info.models.main_models import Organization, OrganizationProfessional, OrganizationService
 
 from organization_info.utils.validators import get_places
 
@@ -108,7 +108,6 @@ class OrganizationProfessionalPostBodySerializer(serializers.Serializer):
     password = serializers.CharField(required=True, help_text='Password of the professional')
 
 
-
 class OrganizationPlacePostSerializer(serializers.Serializer):
 
     place = OrganizationPlaceSerializer(required=True, help_text='Place data')
@@ -121,6 +120,24 @@ class OrganizationPlacePostSerializer(serializers.Serializer):
 
         return super().validate(attrs)
 
+
+class OrganizationClientForCalendarBodySerializer(serializers.Serializer):
+
+    client_parent = ClientParentSerializer(required=True, help_text='Parent data')
+    client = serializers.DictField(required=True, help_text='Client data')
+    organization_id = serializers.CharField(required=True, help_text='Organization id of the parent')
+
+    def validate(self, attrs:dict):
+        self.__convert_to_objects(attrs)
+        return super().validate(attrs)
+    
+
+    def __convert_to_objects(self, attrs:dict):
+        try:
+            attrs['organization'] = Organization.objects.get(id=attrs['organization_id'])
+        except Organization.DoesNotExist:
+            raise serializers.ValidationError(_('Organization does not exist'))
+    
 
 # serializers for delete requests
 

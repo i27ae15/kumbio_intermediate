@@ -28,7 +28,6 @@ from .payment_models import PaymentMethodAcceptedByOrg
 
 from kumbio_communications import send_notification
 
-
 from print_pp.logging import Print
 
 
@@ -40,6 +39,14 @@ TOKEN_FOR_CALENDAR = os.getenv('TOKEN_FOR_CALENDAR')
 COMMUNICATIONS_TOKEN = os.getenv('COMMUNICATIONS_TOKEN')
 
 
+class Sector(models.Model):
+    name:str = models.CharField(max_length=100)
+    description:str = models.TextField()
+    
+    def __str__(self) -> str:
+        return f'{self.pk} - {self.name}'
+
+
 class OrganizationClientType(models.Model):
 
     """
@@ -49,6 +56,8 @@ class OrganizationClientType(models.Model):
     """
 
     organization:'Organization' = models.ForeignKey('Organization', on_delete=models.CASCADE, related_name='organization_client_type')
+    sector:Sector = models.ForeignKey(Sector, on_delete=models.CASCADE, related_name='sector', default=None, null=True)
+
     name:str = models.CharField(max_length=100)
     description:str = models.TextField(blank=True, null=True, default='')
 
@@ -111,14 +120,6 @@ class OrganizationClientType(models.Model):
         
     def __str__(self) -> str:
         return f'{self.pk} - {self.name} - {self.organization.name}'
-
-
-class Sector(models.Model):
-    name:str = models.CharField(max_length=100)
-    description:str = models.TextField()
-    
-    def __str__(self) -> str:
-        return f'{self.pk} - {self.name}'
 
 
 class Organization(models.Model):
@@ -289,7 +290,7 @@ class OrganizationService(models.Model):
     price:float = models.FloatField(default=0)
 
     buffer:float = models.FloatField(default=0)
-    only_booking:int = models.BooleanField(default=True)
+    online_booking:int = models.BooleanField(default=True)
 
     # logs fields
     created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
@@ -629,18 +630,61 @@ class OrganizationProfessional(models.Model):
 
     
     def __str__(self) -> str:
-        return f'{self.id} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
+        return f'{self.pk} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
+
+
+class ClientParent(models.Model):
+
+    # foreignkeys
+    # At some moment im going to regret doing null=True, default=None but for now it is ok
+    organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, default=None)
+
+    first_name:str = models.CharField(max_length=100)
+    last_name:str = models.CharField(max_length=100)
+    email:str = models.CharField(max_length=255, blank=True, null=True, default=None)
+    phone:str = models.CharField(max_length=50)
+    phone_2:str = models.CharField(max_length=50, blank=True, null=True, default=None)
+    address:str = models.CharField(max_length=255, blank=True, null=True, default=None)
+
+    identification:str = models.CharField(max_length=255, null=True, blank=True, default=None)
+
+    emergency_contact:str = models.CharField(max_length=255, null=True, blank=True, default=None)
+
+    same_as_client:bool = models.BooleanField(default=True)
+
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    updated_at:datetime.datetime = models.DateTimeField(default=None, blank=True, null=True)
+
+
+    @property
+    def full_name(self) -> str:
+        return f'{self.first_name} {self.last_name}'
+
+
+    @property
+    def children(self) -> QuerySet['OrganizationClient']:
+        return self.client_child.all()
+
+    
+    def __str__(self) -> str:
+        return f'{self.pk} - {self.full_name}'
 
 
 class OrganizationClient(models.Model):
+    # TODO: add professional fields to the client
+    # TODO: Create referral_by field
+    
+    # Send these fields to the extra fields property
+    # birthday:datetime.date = models.DateField(null=True, blank=True, default=None)
+    # age:int = models.IntegerField(default=0)
+    
     # Foreignkeys
-    organization:Organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    # TODO: Change the name of this property to client_parent
+    client_parent:ClientParent = models.ForeignKey(ClientParent, on_delete=models.CASCADE, default=None, null=True, related_name='client_child')
     type:OrganizationClientType = models.ForeignKey(OrganizationClientType, on_delete=models.CASCADE, null=True, blank=True, default=None)
     # -----------------------------------------------------------
 
     extra_fields:list = models.JSONField(default=list, null=False)
-
-    # TODO: add professional fields to the client
 
     """
         extra_fields is going to be a JSON coming from the type of client that was selected when creating
@@ -660,23 +704,15 @@ class OrganizationClient(models.Model):
         and maximum value of the number. Also to check more specific things, like if the number is
         positive or negative, or if the text is a valid email, or if the number is a valid phone number.
     """
-    
+
     comments:str = models.TextField(null=True, blank=True, default=None)
-
-    emergency_contact:str = models.CharField(max_length=255, null=True, blank=True, default=None)
-
-    first_name:str = models.CharField(max_length=255)
-    last_name:str = models.CharField(max_length=255)
-
-    identification:str = models.CharField(max_length=255, null=True, blank=True, default=None)
-
-    birthday:datetime.date = models.DateField(null=True, blank=True, default=None)
-    age:int = models.IntegerField(default=0)
 
     rating:int = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(5)])
     referral_link:str = models.CharField(max_length=255)
+
+    first_name:str = models.CharField(max_length=100, default='first_name')
+    last_name:str = models.CharField(max_length=100, default='last_name')
     
-    # TODO: Create referral_by field
 
     # notifications information
     # general notifications
@@ -696,23 +732,13 @@ class OrganizationClient(models.Model):
     updated_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
     deleted_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
+
     created_by_app:int = models.IntegerField(choices=OrganizationClientCreatedBy.choices, default=OrganizationClientCreatedBy.CALENDAR)
     created_by_user:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, blank=True, related_name='organization_client_created_by')
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, blank=True, related_name='organization_client_updated_by')
     deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, blank=True, related_name='organization_client_deleted_by')
 
     # to get the appointment that this client had done, we have to call the calendar api
-    
-
-    @property
-    def full_name(self) -> str:
-        return f'{self.first_name} {self.last_name}'
-    
-
-    @property
-    def dependent(self) -> 'OrganizationClientDependent':
-        return self.client_dependent.all()[0]
-
     
     def save(self, *args, **kwargs):
         if not self.pk:
@@ -722,21 +748,7 @@ class OrganizationClient(models.Model):
 
     
     def __str__(self):
-        return f'{self.id} - {self.full_name} - {self.organization.name}'
-    
-
-class OrganizationClientDependent(models.Model):
-
-    # foreignkeys
-    client:OrganizationClient = models.ForeignKey(OrganizationClient, on_delete=models.CASCADE, related_name='client_dependent')
-
-    first_name:str = models.CharField(max_length=100)
-    last_name:str = models.CharField(max_length=100)
-    email:str = models.EmailField()
-    phone:str = models.CharField(max_length=50)
-    phone_2:str = models.CharField(max_length=50, blank=True, null=True, default=None)
-
-    same_as_client:bool = models.BooleanField(default=True)
+        return f'{self.pk} - {self.client_parent.full_name} - {self.client_parent}'
     
 
 class OrganizationPromotion(models.Model):
@@ -760,8 +772,9 @@ class OrganizationPromotion(models.Model):
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_promotion_updated_by')
     deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, related_name='organization_promotion_deleted_by')
 
+
     def __str__(self):
-        return f'{self.id} - {self.name} - {self.organization.name}'
+        return f'{self.pk} - {self.name} - {self.organization.name}'
 
 
 class OrganizationCampaigns(models.Model):

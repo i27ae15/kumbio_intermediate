@@ -3,11 +3,16 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from ..models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, 
-OrganizationService, Sector, DayAvailableForPlace, OrganizationClient, OrganizationClientDependent,
+OrganizationService, Sector, DayAvailableForPlace, OrganizationClient, ClientParent,
 OrganizationClientType, DayAvailableForProfessional)
 from ..utils.enums import FieldType
 
 from print_pp.logging import Print
+
+
+def organization_class_serializer():
+    return OrganizationClientSerializer
+
 
 class OrganizationSerializer(serializers.ModelSerializer):
     
@@ -52,6 +57,8 @@ class DayAvailableForPlaceSerializer(serializers.ModelSerializer):
 class OrganizationPlaceSerializer(serializers.ModelSerializer):
 
     dayavailableforplace_set = DayAvailableForPlaceSerializer(many=True, read_only=True)
+
+
     class Meta:
         model = OrganizationPlace
         fields = '__all__'
@@ -73,13 +80,6 @@ class OrganizationSectorSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class OrganizationClientDependentFromSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = OrganizationClientDependent
-        fields = '__all__'
-
-
 class OrganizationClientTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -88,10 +88,7 @@ class OrganizationClientTypeSerializer(serializers.ModelSerializer):
 
 
 class OrganizationClientSerializer(serializers.ModelSerializer):
-
-    client_dependent = OrganizationClientDependentFromSerializer(many=True, read_only=True)
-    client_type = OrganizationClientTypeSerializer(many=True, read_only=True)
-
+    
     def validate(self, data):
 
         extra_fields = data.get('extra_fields', None)
@@ -122,9 +119,45 @@ class OrganizationClientSerializer(serializers.ModelSerializer):
 
         return data
 
+
     class Meta:
         model = OrganizationClient
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at', 'deleted_at', 'deleted_by', 'updated_by', 'referral_link')
+
+
+
+class ClientParentSerializer(serializers.ModelSerializer):
+
+    client_parent = OrganizationClientSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ClientParent
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at')
+
+
+class OrganizationClientRelatedFieldsSerializer(serializers.ModelSerializer):
+
+    type = OrganizationClientTypeSerializer()
+    
+    # TODO: Change this to a serializer
+    client_parent = serializers.SerializerMethodField()
+
+    def get_client_parent(self, obj:OrganizationClient):
+        return {
+            'id': obj.client_parent.pk,
+            'first_name': obj.client_parent.first_name,
+            'last_name': obj.client_parent.last_name,
+            'email': obj.client_parent.email,
+            'phone': obj.client_parent.phone,
+        }
+    
+    
+    class Meta:
+        model = OrganizationClient
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at', 'deleted_at', 'deleted_by', 'updated_by', 'referral_link')
+
 
 

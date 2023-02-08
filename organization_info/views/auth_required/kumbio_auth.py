@@ -24,8 +24,10 @@ from drf_yasg import openapi
 
 # models
 from user_info.models import KumbioUser, KumbioUserRole
-from .models.main_models import (DayAvailableForProfessional, Organization, OrganizationProfessional, OrganizationPlace, Sector, 
-OrganizationService, OrganizationClient, OrganizationClientType)
+from organization_info.models.main_models import (
+    DayAvailableForProfessional, Organization, OrganizationProfessional, 
+    OrganizationPlace, Sector, OrganizationService, OrganizationClient
+)
 from authentication_manager.models import KumbioToken
 
 
@@ -34,56 +36,47 @@ from user_info.serializers.serializers import CreateKumbioUserSerializer, Kumbio
 
 
 # query serializers
-from .serializers.query_serializers import (OrganizationPlaceDashboardInfoQuerySerializer, OrganizationPlaceQuerySerializer, OrganizationProfessionalQuerySerializer,
-OrganizationSectorQuerySerializer, OrganizationServiceDashboardInfoQuerySerializer, OrganizationServiceQuerySerializer, OrganizationClientQuerySerializer,
-OrganizationClientTypeQuerySerializer, OrganizationQuerySerializer)
+from organization_info.serializers.query_serializers import (
+    OrganizationPlaceQuerySerializer, OrganizationProfessionalQuerySerializer, 
+    OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer, 
+    OrganizationClientQuerySerializer, OrganizationClientTypeQuerySerializer, OrganizationQuerySerializer
+)
 
 
 # body serializers
-from .serializers.body_serializers import (DeleteServiceSerializer, OrganizationProfessionalDeleteBodySerializer, PlacePutSerializer, OrganizationClientPutSerializer, 
-OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySerializer,
-OrganizationPlacePostSerializer, OrganizationClientDeleteSerializer)
+from organization_info.serializers.body_serializers import (
+    DeleteServiceSerializer, OrganizationProfessionalDeleteBodySerializer,
+    PlacePutSerializer, OrganizationClientPutSerializer, OrganizationProfessionalPostBodySerializer, 
+    OrganizationProfessionalPutBodySerializer, OrganizationPlacePostSerializer, 
+    OrganizationClientDeleteSerializer
+)
 
 
 # model serializers
-from .serializers.model_serializers import (OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, OrganizationSectorSerializer, 
-OrganizationServiceSerializer, DayAvailableForPlaceSerializer, OrganizationClientSerializer, OrganizationClientDependentFromSerializer,
-OrganizationClientTypeSerializer, DayAvailableForProfessionalSerializer)
+from organization_info.serializers.model_serializers import (
+    OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, 
+    OrganizationSectorSerializer, OrganizationServiceSerializer, DayAvailableForPlaceSerializer, 
+    OrganizationClientSerializer, ClientParentSerializer, OrganizationClientTypeSerializer, 
+    DayAvailableForProfessionalSerializer
+)
 
 
-# dashboard serializers
-from .serializers.dashboard_info_serializer import (OrganizationDashboardInfoSerializer, OrganizationServiceDashboardInfoSerializer,
-OrganizationProfessionalDashboardInfoSerializer, OrganizationPlaceDashboardInfoSerializer)
+# authentication
+from authentication_manager.authenticate import KumbioAuthentication
 
-# others
-from authentication_manager.authenticate import ClientDashboardAuthentication, KumbioAuthentication
+
+# views utils
+from organization_info.views.utils import check_if_user_is_admin, check_if_user_is_admin_decorator
 
 from print_pp.logging import Print
 from dotenv import load_dotenv
-from user_info.info import ADMIN_ROLE_ID, PROFESSIONAL_ROLE_ID
+from user_info.info import PROFESSIONAL_ROLE_ID
 
 load_dotenv()
 
 
 CALENDAR_ENDPOINT = os.environ['CALENDAR_ENDPOINT']
 
-
-# Functions
-
-def check_if_user_is_admin_decorator(func, *args, **kwargs):
-    def wrapper(self, request, *args, **kwargs):
-        if request.user.role.id == ADMIN_ROLE_ID:
-            return func(self, request, *args, **kwargs)
-        else:
-            return Response({"message": "You are not authorized to perform this action"}, status=status.HTTP_401_UNAUTHORIZED)
-    return wrapper
-
-
-def check_if_user_is_admin(request) -> 'True | Response':
-    if request.user.role.id == ADMIN_ROLE_ID:
-        return True
-    else:
-        return Response({"message": "You are not authorized to perform this action"}, status=status.HTTP_401_UNAUTHORIZED)
 
 # classes
 
@@ -412,7 +405,7 @@ class OrganizationProfessionalView(APIView):
         body_data:dict = body_serializer.validated_data
         professional:OrganizationProfessional = body_data['professional']
 
-        res = requests.delete(f'{CALENDAR_ENDPOINT}users/api/v2/', data={'user_token': professional.kumbio_user.calendar_token, 'delete_all_information': False})
+        res = requests.delete(f'{CALENDAR_ENDPOINT}users/api/v2/user/', data={'user_token': professional.kumbio_user.calendar_token, 'delete_all_information': False})
 
         if res.status_code != 204:
             raise exceptions.ValidationError(_('Error al eliminar el usuario del calendario'))
@@ -501,7 +494,6 @@ class OrganizationProfessionalView(APIView):
         """
 
         data = {
-            'calendar_link': day_available.professional.calendar_link,
             'days': [{
                 'week_day': day_available.week_day,
                 'exclude': day_available.exclude,
@@ -765,7 +757,7 @@ class OrganizationServiceView(APIView):
                 raise exceptions.NotFound(_('el servicio no existe'))
         
         else:
-            services = OrganizationService.objects.all()
+            services = OrganizationService.objects.filter(organization=request.user.organization)
 
 
         service_serializer = OrganizationServiceSerializer(services, many=True)
@@ -899,6 +891,7 @@ class OrganizationClientView(APIView):
                 raise exceptions.NotFound(_('el cliente no existe'))
 
         else: 
+            raise exceptions.ParseError(_('client_id es requerido, the filter is not working'))
             clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(organization=user.organization.id)
             Print('age', clients[0].age)
             
@@ -1012,7 +1005,8 @@ class OrganizationClientView(APIView):
         else:
             dependent_from['same_as_client'] = False
         
-        dependent_from_serializer = OrganizationClientDependentFromSerializer(data=dependent_from)
+        dependent_from_serializer = ClientParentSerializer(data=dependent_from)
+        client_serializer.instance.client_parent = dependent_from_serializer.instance
         
         if not dependent_from_serializer.is_valid():
             return Response(dependent_from_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -1151,159 +1145,3 @@ def get_extra_fields_for_client_type(request):
     extra_fields = client_type[0].fields
     
     return Response(extra_fields, status=status.HTTP_200_OK)
-
-
-@swagger_auto_schema(query_serializer=OrganizationClientTypeQuerySerializer(), method='GET')
-@api_view(['GET'])
-def create_clients(request):
-
-    """
-
-        Este endpoint es para crear clientes, se crean 10 clientes entrando en este endpoint
-    """
-    clients = []
-
-    client_type:OrganizationClientType = OrganizationClientType.objects.get(id=18)
-
-    for i in range(10):
-        string_i = str(i)
-        dependent_from = {
-            'first_name': 'parent first name' + string_i,
-            'last_name': 'parent last name' + string_i,
-            'email': 'parent@email.com' + string_i,
-            'phone': 'parent phone' + string_i,
-        }
-
-        client_data = {
-            'organization': 'Yqe0DxtbwcK3KYrakqXY83brcZOr',
-            'type': client_type.pk, # type must come from the organization sector type
-            'first_name': 'child' + string_i,
-            'last_name': 'child' + string_i,
-            'email': 'client@email.com' + string_i,
-            'phone': 'client phone' + string_i,
-        }
-
-
-        extra_fields:list[tuple] = client_type.fields
-        converted_extra_fields:list[list] = []
-
-        for index, field in enumerate(extra_fields):
-            field = list(field)
-
-            if field[1] == 'TEXT':
-                field.append('value' + str(index))
-            
-            elif field[1] == 'NUMBER':
-                num = int(f'{index}0{i}')
-                field.append(num)
-
-            converted_extra_fields.append(field)
-
-        client_data['extra_fields'] = converted_extra_fields
-
-        data_to_create_client = {
-            'client': client_data,
-            'dependent_from': dependent_from,
-        }
-
-        clients.append(data_to_create_client)
-
-
-    data_from_serializer = list()
-
-    for client in clients:
-        client_serializer= OrganizationClientSerializer(data=client['client'])
-        client_serializer.is_valid(raise_exception=True)
-        client_serializer.save()
-
-        client['dependent_from']['client'] = client_serializer.data['id']
-        dependent_from_serializer = OrganizationClientDependentFromSerializer(data=client['dependent_from'])
-        dependent_from_serializer.is_valid(raise_exception=True)
-        dependent_from_serializer.save()
-
-        client_instance:OrganizationClient = client_serializer.instance
-        client_serializer = OrganizationClientSerializer(client_instance)
-
-        data_from_serializer.append(client_serializer.data)
-
-    return Response(data_from_serializer, status=status.HTTP_201_CREATED)
-
-
-# For dashboard info
-
-class OrganizationClientDashboardInfoView(APIView):
-
-    # Using the class here cause for some reason the decorators does not take the authentication_classes and permission_classes
-
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [ClientDashboardAuthentication]
-
-    @swagger_auto_schema(query_serializer=OrganizationQuerySerializer(), tags=['booking_dashboard'])
-    def get(self, request):
-        query_serializer = OrganizationQuerySerializer(data=request.query_params)
-        query_serializer.is_valid(raise_exception=True)
-        query_params = query_serializer.validated_data
-        
-        organization = query_params['organization']
-
-        organization_serializer = OrganizationDashboardInfoSerializer(organization)
-        return Response(organization_serializer.data, status=status.HTTP_200_OK)
-
-
-class OrganizationServiceDashboardInfoView(APIView):
-
-    # Using the class here cause for some reason the decorators does not take the authentication_classes and permission_classes
-
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [ClientDashboardAuthentication]
-
-    @swagger_auto_schema(query_serializer=OrganizationServiceDashboardInfoQuerySerializer(), tags=['booking_dashboard'])
-    def get(self, request):
-        query_serializer = OrganizationServiceDashboardInfoQuerySerializer(data=request.query_params)
-        query_serializer.is_valid(raise_exception=True)
-        query_params = query_serializer.validated_data
-
-        service = query_params['service']
-
-        service_serializer = OrganizationServiceDashboardInfoSerializer(service)
-        return Response(service_serializer.data, status=status.HTTP_200_OK)
-
-
-class OrganizationProfessionalDashboardInfoView(APIView):
-
-    # Using the class here cause for some reason the decorators does not take the authentication_classes and permission_classes
-
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [ClientDashboardAuthentication]
-
-
-    @swagger_auto_schema(query_serializer=OrganizationProfessionalQuerySerializer(), tags=['booking_dashboard'])
-    def get(self, request):
-        query_serializer = OrganizationProfessionalQuerySerializer(data=request.query_params)
-        query_serializer.is_valid(raise_exception=True)
-        query_params = query_serializer.validated_data
-
-        professionals = query_params['professionals']
-
-        professional_serializer = OrganizationProfessionalDashboardInfoSerializer(professionals, many=True)
-        return Response(professional_serializer.data, status=status.HTTP_200_OK)
-
-
-class OrganizationPlaceDashboardInfoView(APIView):
-
-    # Using the class here cause for some reason the decorators does not take the authentication_classes and permission_classes
-
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [ClientDashboardAuthentication]
-
-    @swagger_auto_schema(query_serializer=OrganizationPlaceDashboardInfoQuerySerializer(), tags=['booking_dashboard'])
-    def get(self, request):
-        query_serializer = OrganizationPlaceDashboardInfoQuerySerializer(data=request.query_params)
-        query_serializer.is_valid(raise_exception=True)
-        query_params = query_serializer.validated_data
-
-        place = query_params['place']
-
-        place_serializer = OrganizationPlaceDashboardInfoSerializer(place)
-        return Response(place_serializer.data, status=status.HTTP_200_OK)
-
