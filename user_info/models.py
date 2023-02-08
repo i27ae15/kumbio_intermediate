@@ -187,11 +187,14 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         if save:
             self.save()
         
+        print('getting here')
         send_notification(token_for_app=TOKEN_FOR_CALENDAR, 
                           organization_id=self.organization.id if self.organization else 0,
                           send_to=[self.email],
-                          messages=[f'Your verification code is {self.code_to_verify_email}'],
-                          subjects=['Verify your email'])
+                          templates=[2913],
+                          data_to_replace={'code': self.code_to_verify_email, 'name': self.get_full_name()}),
+                        #   messages=[f'Your verification code is {self.code_to_verify_email}'],
+                        #   subjects=['Verify your email'])
     
     def verify_code(self):
         self.is_email_verified = True

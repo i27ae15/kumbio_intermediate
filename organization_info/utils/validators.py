@@ -7,6 +7,7 @@ from organization_info.models.main_models import Organization, OrganizationPlace
 
 from print_pp.logging import Print
 
+
 def get_places(organization:Organization, place_id:int=None, return_as_query_set=False) -> 'QuerySet[OrganizationPlace] | OrganizationPlace':
 
     """
