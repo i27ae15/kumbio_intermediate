@@ -7,6 +7,7 @@ import secrets
 
 # django
 from django.db import models
+from django.db.models import QuerySet
 from django.utils import timezone
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -147,7 +148,7 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     username:str = models.CharField(max_length=255, unique=True)
     
     # tokens
-    
+    calendar_link = models.CharField(max_length=255, default=None, null=True)
     calendar_token:str = models.CharField(max_length=255, default=None, null=True)
     selene_token:str = models.CharField(max_length=255, default=None, null=True)
     
@@ -161,7 +162,15 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
 
     @property
     def notifications_settings(self) -> NotificationsSettings:
-        return self.notificationssettings_set.all()[0] 
+        return self.notificationssettings_set.all()[0]
+
+    
+    @property
+    def professional(self) -> QuerySet:
+        prof = self.user_professional.all()
+        if not prof.count():
+            return None
+        return prof
 
     # functions
     # -------------------------------------------------------------------
@@ -183,11 +192,14 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     
     
     def send_verification_code(self, save=True):
+        if os.environ.get('FILLING_DB'):
+            self.verify_code()
+            return
+
         self.code_to_verify_email = random_with_N_digits(6)
         if save:
             self.save()
-        
-        print('getting here')
+    
         send_notification(token_for_app=TOKEN_FOR_CALENDAR, 
                           organization_id=self.organization.id if self.organization else 0,
                           send_to=[self.email],
@@ -243,8 +255,8 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
 
 
     def __str__(self):
-        try: return f'{self.id} - {self.email} - {self.organization.name}'
-        except Exception: return f'{self.pk} - {self.email} - {self.organization}'
+        try: return f'{self.id} - {self.email} - {self.organization.name} - {self.calendar_link}'
+        except Exception: return f'{self.pk} - {self.email} - {self.organization} - {self.calendar_link}'
 
 
 @receiver(post_save, sender=KumbioUser)
@@ -254,27 +266,43 @@ def kumbio_user_handler(sender, instance:KumbioUser, created, **kwargs):
         
         if MAKE_CONNECTIONS == "0":
             instance.calendar_token = 'token-not-connected-to-calendar'
+            instance.calendar_link = 'link-not-connected-to-calendar'
             instance.save(set_verified_email=True)
             return
 
         if not 'test' in sys.argv:
-            res = requests.post(f'{CALENDAR_ENDPOINT}users/api/v2/user/', json={
+            data = {
                 'organization_id': instance.organization.id,
                 'email': instance.email,
                 'first_name': instance.first_name,
                 'last_name': instance.last_name,
                 'kumbio_user_id': instance.pk,
-                'role': instance.role.pk
-            })
+                'role': instance.role.pk,
+                'default_timezone': instance.organization.default_timezone,
+            }
+            
+            if prof:=instance.professional:
+                days=list()
+                for d in prof.available_days:
+                    days.append({
+                        'week-day': d.week_day,
+                        'exclude': d.exclude,
+                        'services': d.services
+                    })
+                data['days'] = days
+            
+            res = requests.post(f'{CALENDAR_ENDPOINT}users/api/v2/user/', json=data)
             
             instance.calendar_token = res.json()['token']
+            instance.calendar_link = res.json()['link']
         else:
             instance.calendar_token = 'token-test-for-calendar'
+            instance.calendar_link = 'link-test-for-calendar'
         instance.save(set_verified_email=True)
 
         NotificationsSettings.objects.create(user=instance)
         # create the default booking settings for calendar
-        if os.environ.get('FILLING_TEST_DB', False):
+        if os.environ.get('FILLING_DB', False):
             res = requests.post(f'{CALENDAR_ENDPOINT}settings/api/v2/booking/', json={'organization_id': instance.organization.pk}, headers={'Authorization': f'Token {instance.calendar_token}'})
         else:
             res = requests.post(f'{CALENDAR_ENDPOINT}settings/api/v2/booking/', json={}, headers={'Authorization': f'Token {instance.calendar_token}'})
