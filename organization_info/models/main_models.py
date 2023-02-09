@@ -746,7 +746,7 @@ class OrganizationClient(models.Model):
 
     
     def __str__(self):
-        return f'{self.pk} - {self.client_parent.full_name} - {self.client_parent}'
+        return f'{self.pk} - {self.client_parent}'
     
 
 class OrganizationPromotion(models.Model):
