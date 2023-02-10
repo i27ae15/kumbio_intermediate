@@ -85,12 +85,12 @@ class Command(BaseCommand):
 
         os.environ["FILLING_DB"] = "1"
 
-        self.USERS_TO_CREATE = 2
-        self.SERVICES_TO_CREATE = 1
-        self.PLACE_TO_CREATE = 1
-        self.SPECIALTIES_TO_CREATE = 1
-        self.PROFESSIONAL_TO_CREATE = 1
-        self.CLIENT_TO_CREATE = 5
+        self.USERS_TO_CREATE = 10
+        self.SERVICES_TO_CREATE = 3
+        self.PLACE_TO_CREATE = 3
+        self.SPECIALTIES_TO_CREATE = 3
+        self.PROFESSIONAL_TO_CREATE = 10
+        self.CLIENT_TO_CREATE = 10
         self.DAY_AVAILABLE_FOR_PROFESSIONAL_TO_CREATE = 5
         
         # static values creation

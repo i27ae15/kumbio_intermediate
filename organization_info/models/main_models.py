@@ -807,11 +807,7 @@ class OrganizationClient(models.Model):
 
     
     def __str__(self):
-<<<<<<< HEAD
-        return f'{self.pk} - {self.client_parent}'
-=======
         return f'{self.pk} - {self.full_name} - {self.client_parent}'
->>>>>>> 39bddf04d9e9201bac9be8804f66bafec603fd11
     
 
 class OrganizationPromotion(models.Model):
