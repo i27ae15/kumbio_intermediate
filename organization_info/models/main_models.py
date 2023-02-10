@@ -13,7 +13,12 @@ from dotenv import load_dotenv
 from django.db import models
 from django.utils import timezone
 from django.db.models.query import QuerySet
+from django.utils.translation import gettext_lazy as _
 from django.core.validators import MaxValueValidator, MinValueValidator
+
+
+# rest_framework
+from rest_framework import exceptions
 
 # models
 import user_info.models as user_models
@@ -37,6 +42,7 @@ KUMBIO_COMMUNICATIONS_ENDPOINT = os.getenv('KUMBIO_COMMUNICATIONS_ENDPOINT')
 SELF_CALENDAR_USER = os.getenv('SELF_CALENDAR_USER')
 TOKEN_FOR_CALENDAR = os.getenv('TOKEN_FOR_CALENDAR')
 COMMUNICATIONS_TOKEN = os.getenv('COMMUNICATIONS_TOKEN')
+CALENDAR_ENDPOINT = os.getenv('CALENDAR_ENDPOINT')
 
 
 class Sector(models.Model):
@@ -144,7 +150,8 @@ class Organization(models.Model):
     
     data_policy:str = models.TextField(null=True, blank=True)
     description:str = models.CharField(max_length=120, default=None, null=True, blank=True)
-    
+    default_timezone:str = models.CharField(max_length=120, default=None, null=True, blank=True)
+
     email:str = models.EmailField(unique=True)
     
     invitation_link:str = models.CharField(max_length=256, unique=True, null=True, default=None)
@@ -497,12 +504,62 @@ class DayAvailableForProfessional(models.Model):
 
 
     def save(self, *args, **kwargs):
-        if not self.pk and not self.exclude:
-            self.exclude = [[0, 7], [18, 23]]
+        if not self.pk:
+            if not self.exclude:
+                self.exclude = [[0, 7], [18, 23]]
+            self.__add_day_to_calendar()
+        else:
+            self.__update_days_on_calendar_api()
                     
         super().save(*args, **kwargs)
 
     
+    def __add_day_to_calendar(self):
+        data = {
+            'calendar_link': self.professional.kumbio_user.calendar_link,
+            'days': [{
+                'week_day': self.week_day,
+                'exclude': self.exclude,
+                'services': self.services,
+            }]
+        }
+        res = requests.post(
+            f'{CALENDAR_ENDPOINT}calendar/api/v2/day-available-for-professional/', 
+            headers={'authorization': 'Token ' + self.professional.kumbio_user.calendar_token}, 
+            json=data
+        )
+        if res.status_code != 201:
+            Print(res.json())
+            raise exceptions.APIException(res.json())
+        
+
+    def __update_days_on_calendar_api(self):
+        """
+        Actualiza los días disponibles en el calendario.
+
+        Parameters:
+        - day_available (DayAvailable): Instancia del día disponible.
+        """
+
+        data = {
+            'calendar_link': self.professional.kumbio_user.calendar_link,
+            'days': [{
+                'week_day': self.week_day,
+                'exclude': self.exclude,
+                'services': self.services
+            }]
+        }
+
+        res = requests.put(
+            f'{CALENDAR_ENDPOINT}calendar/api/v2/day-available-for-professional/', 
+            headers={'authorization':f'Token {self.professional.kumbio_user.calendar_token}'},
+            json=data
+        )
+        
+        if res.status_code != 200:
+            try: raise exceptions.ValidationError(_(res.json()))
+            except: raise exceptions.APIException(_('error in calendar api'))
+
     def __str__(self):
         return f'{self.professional.pk} - {self.day_name} - {self.professional.full_name}'
 
@@ -529,7 +586,6 @@ class OrganizationProfessional(models.Model):
     certification_number:str = models.TextField(blank=True, null=True, default=None)
     charge:str = models.TextField(blank=True, null=True, default=None)
     certificates = models.FileField(upload_to=f'{organization.name}/professionals/certificates/', null=True, blank=True)
-    calendar_link:str = models.CharField(max_length=255, default='d76-Mz-HcbSlFpXPJ1NN_Dzo3k6v')
 
     experience:str = models.TextField(blank=True, null=True)
     
@@ -620,7 +676,7 @@ class OrganizationProfessional(models.Model):
 
 
     def __send_welcome_message(self):
-        if 'test' in sys.argv: return
+        if 'test' in sys.argv or os.environ.get('FILLING_DB'): return
 
         send_notification(token_for_app=COMMUNICATIONS_TOKEN, 
                           organization_id=self.organization.id,
@@ -737,6 +793,11 @@ class OrganizationClient(models.Model):
     deleted_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, on_delete=models.CASCADE, default=None, blank=True, related_name='organization_client_deleted_by')
 
     # to get the appointment that this client had done, we have to call the calendar api
+
+    @property
+    def full_name(self) -> str:
+        return f'{self.first_name} {self.last_name}'
+        
     
     def save(self, *args, **kwargs):
         if not self.pk:
@@ -746,7 +807,11 @@ class OrganizationClient(models.Model):
 
     
     def __str__(self):
+<<<<<<< HEAD
         return f'{self.pk} - {self.client_parent}'
+=======
+        return f'{self.pk} - {self.full_name} - {self.client_parent}'
+>>>>>>> 39bddf04d9e9201bac9be8804f66bafec603fd11
     
 
 class OrganizationPromotion(models.Model):

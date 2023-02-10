@@ -226,6 +226,7 @@ class OrganizationProfessionalView(APIView):
         )
     })
     def post(self, request):
+        # TODO: Add place id to the requested data
         """
         Crea un nuevo profesional en la organización.
 
@@ -372,10 +373,6 @@ class OrganizationProfessionalView(APIView):
                 day_serializer.is_valid(raise_exception=True)
                 day_serializer.save()
 
-                day_available:DayAvailableForProfessional = day_serializer.instance
-                self.__update_days_on_calendar_api(day_available)
-
-
         return Response(professional_serializer.data, status=status.HTTP_200_OK)
     
 
@@ -413,45 +410,6 @@ class OrganizationProfessionalView(APIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # Private functions
-    # Deprecated? since this function is being called when the user is created
-    # further testing is needed
-    def __create_calendar_user(self, request_data:dict) -> str:
-        
-        """
-            Crea un nuevo usuario en el calendario.
-
-            Parameters:
-            - organization (str): ID de la organización.
-            - email (str): Correo electrónico del usuario.
-            - first_name (str): Nombre del usuario.
-            - last_name (str): Apellido del usuario.
-
-            Returns:
-            - str: Token del usuario creado en el calendario.
-        """
-
-        # TODO: manejar la eliminación del usuario creado en caso de que no se haya creado correctamente
-        
-        res = requests.post(f'{CALENDAR_ENDPOINT}register/api/v2/create-user/', 
-        json={
-            'organization_id': request_data['organization'],
-            'email':request_data['email'],
-            'first_name': request_data['first_name'],
-            'last_name': request_data['last_name'],
-            'role': PROFESSIONAL_ROLE_ID, 
-        })
-        
-        # Si la respuesta no tiene un código de estado HTTP 201 o no incluye el token, se lanza una excepción
-        if res.status_code != status.HTTP_201_CREATED or 'token' not in res.json():
-            try:
-                raise exceptions.APIException(_(res.json()))
-            except Exception as e:
-                raise exceptions.APIException(_("Something went wrong with the calendar_api: {e}"))
-        
-        # Si la respuesta tiene un código de estado HTTP
-        return res.json()['token']
-
 
     def __save_user_extra_information(self, kumbio_user:KumbioUser, request_data:dict, calendar_token:dict, created_by:int) -> dict:
         """
@@ -483,36 +441,7 @@ class OrganizationProfessionalView(APIView):
 
         return professional_data
     
-
-    def __update_days_on_calendar_api(self, day_available:DayAvailableForProfessional):
-        """
-        Actualiza los días disponibles en el calendario.
-
-        Parameters:
-        - day_available (DayAvailable): Instancia del día disponible.
-        """
-
-        data = {
-            'days': [{
-                'week_day': day_available.week_day,
-                'exclude': day_available.exclude,
-                'services': day_available.services
-            }]
-        }
-
-        Print('data', data)
-
-        res = requests.put(
-            f'{CALENDAR_ENDPOINT}calendar/api/v2/day-available-for-professional/', 
-            headers={'authorization':f'Token {day_available.professional.kumbio_user.calendar_token}'},
-            json=data
-        )
-        
-        if res.status_code != 200:
-            Print('err', res.json())
-            raise exceptions.ValidationError(_('Error al actualizar los días disponibles en el calendario'))
-
-
+    
 class OrganizationPlaceView(APIView):
     permission_classes = (IsAuthenticated,) 
     authentication_classes = (TokenAuthentication,) 

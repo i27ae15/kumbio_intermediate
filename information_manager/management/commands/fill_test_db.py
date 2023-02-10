@@ -13,8 +13,8 @@ from print_pp import Print
 
 # models
 from organization_info.models.main_models import (
-    Organization, OrganizationClient, OrganizationClientType, OrganizationProfessional, 
-    OrganizationService, PaymentMethodAcceptedByOrg, ProfessionalSpecialty, Sector, OrganizationPlace, 
+    Organization, OrganizationClientType, OrganizationProfessional, OrganizationService, 
+    PaymentMethodAcceptedByOrg, ProfessionalSpecialty, Sector, OrganizationPlace, 
     ClientParent
 )
 
@@ -85,16 +85,13 @@ class Command(BaseCommand):
 
         os.environ["FILLING_DB"] = "1"
 
-        Print('FILLING_DB', os.environ.get('FILLING_DB'))
-        return
-
-
-        self.USERS_TO_CREATE = 11
+        self.USERS_TO_CREATE = 2
         self.SERVICES_TO_CREATE = 1
         self.PLACE_TO_CREATE = 1
         self.SPECIALTIES_TO_CREATE = 1
-        self.PROFESSIONAL_TO_CREATE = 10
+        self.PROFESSIONAL_TO_CREATE = 1
         self.CLIENT_TO_CREATE = 5
+        self.DAY_AVAILABLE_FOR_PROFESSIONAL_TO_CREATE = 5
         
         # static values creation
         self.stdout.write('-' * 50)
@@ -197,6 +194,7 @@ class Command(BaseCommand):
             owner_first_name=user_data['first_name'],
             owner_last_name=user_data['last_name'],
             owner_phone=user_data['phone'],
+            default_timezone='America/Caracas',
         )
         organization.payment_methods_accepted.set(payment_methods)
         return organization
@@ -324,6 +322,7 @@ class Command(BaseCommand):
                     'certification_number': fake.pyint(),
                     'custom_price': [{'place_id': 0, 'price': fake.pyint()}],
                     'created_by_id': 1,
+                    'role': 3
                 }
                 
                 user = self.create_kumbio_user(org)
@@ -352,12 +351,12 @@ class Command(BaseCommand):
 
         services:QuerySet[OrganizationService] = OrganizationService.objects.filter(organization=professional.organization.pk)
 
-        for day in range(1):
+        for day in range(self.DAY_AVAILABLE_FOR_PROFESSIONAL_TO_CREATE):
             day_data = {
                 'professional': professional.pk,
                 'week_day': day,
                 'exclude': [[0, random.randint(5, 8)], [random.randint(10, 12), random.randint(13, 16)], [random.randint(17, 20), 23]],
-                'services':{service.pk: {'time_interval': service.time_interval} for service in services},
+                'services':{f'#{service.pk}': {'time_interval': service.time_interval} for service in services},
                 'note': fake.text(),
             }
             serializer = DayAvailableForProfessionalSerializer(data=day_data)
@@ -446,7 +445,7 @@ class Command(BaseCommand):
                 serializer.save()
                 client_parent:ClientParent = serializer.instance
 
-                client_data['client_dependent'] = client_parent.pk
+                client_data['client_parent'] = client_parent.pk
                 serializer = OrganizationClientSerializer(data=client_data)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
