@@ -143,9 +143,9 @@ elif USE_VPS_TEST_DB:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'bk',
-            'USER': 'bkuser',
-            'PASSWORD': 'ZJTP5jGGtbah',
+            'NAME': 'dk',
+            'USER': 'dkuser',
+            'PASSWORD': 'arPDxC47p5Ke',
             'HOST': '167.235.147.49',
             'PORT': '5432',
         }

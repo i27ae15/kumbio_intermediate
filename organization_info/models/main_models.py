@@ -150,7 +150,7 @@ class Organization(models.Model):
     
     data_policy:str = models.TextField(null=True, blank=True)
     description:str = models.CharField(max_length=120, default=None, null=True, blank=True)
-    default_timezone:str = models.CharField(max_length=120, default=None, null=True, blank=True)
+    default_timezone:str = models.CharField(max_length=120, default='America/Caracas', null=True, blank=True)
 
     email:str = models.EmailField(unique=True)
     
