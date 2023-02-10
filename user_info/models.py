@@ -292,8 +292,8 @@ def kumbio_user_handler(sender, instance:KumbioUser, created, **kwargs):
                 data['days'] = days
             
             res = requests.post(f'{CALENDAR_ENDPOINT}users/api/v2/user/', json=data)
-            _data = res.json()
-            
+            _res_json_sentry_state = res.json()
+
             instance.calendar_token = res.json()['token']
             instance.calendar_link = res.json()['link']
         else:
