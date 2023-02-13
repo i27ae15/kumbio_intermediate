@@ -938,6 +938,7 @@ class OrganizationClientView(APIView):
         
         dependent_from_serializer = ClientParentSerializer(data=dependent_from)
         client_serializer.instance.client_parent = dependent_from_serializer.instance
+        client_serializer.instance.save()
         
         if not dependent_from_serializer.is_valid():
             return Response(dependent_from_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
