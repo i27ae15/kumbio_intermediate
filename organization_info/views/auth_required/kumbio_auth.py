@@ -925,6 +925,7 @@ class OrganizationClientView(APIView):
 
         if dependent_from.get('same_as_client'):
             new_data = {
+                'organization': user.organization.pk,
                 'first_name': client_data['first_name'],
                 'last_name': client_data['last_name'],
                 'email': client_data['email'],
@@ -937,13 +938,12 @@ class OrganizationClientView(APIView):
             dependent_from['same_as_client'] = False
         
         dependent_from_serializer = ClientParentSerializer(data=dependent_from)
+        dependent_from_serializer.is_valid(raise_exception=True)
+        dependent_from_serializer.save()
+
         client_serializer.instance.client_parent = dependent_from_serializer.instance
         client_serializer.instance.save()
         
-        if not dependent_from_serializer.is_valid():
-            return Response(dependent_from_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        dependent_from_serializer.save()
         return Response(client_serializer.data, status.HTTP_201_CREATED)
 
 
