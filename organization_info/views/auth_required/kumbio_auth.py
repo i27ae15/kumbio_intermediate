@@ -924,7 +924,6 @@ class OrganizationClientView(APIView):
 
         if dependent_from.get('same_as_client'):
             new_data = {
-                'organization': user.organization.pk,
                 'first_name': client_data['first_name'],
                 'last_name': client_data['last_name'],
                 'email': client_data['email'],
@@ -935,6 +934,8 @@ class OrganizationClientView(APIView):
             
         else:
             dependent_from['same_as_client'] = False
+        
+        dependent_from['organization'] = user.organization.pk
         
         dependent_from_serializer = ClientParentSerializer(data=dependent_from)
         dependent_from_serializer.is_valid(raise_exception=True)
