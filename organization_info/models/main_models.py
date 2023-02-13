@@ -151,6 +151,7 @@ class Organization(models.Model):
     data_policy:str = models.TextField(null=True, blank=True)
     description:str = models.CharField(max_length=120, default=None, null=True, blank=True)
     default_timezone:str = models.CharField(max_length=120, default='America/Caracas', null=True, blank=True)
+    default_client_type:int = models.IntegerField(default=5)
 
     email:str = models.EmailField(unique=True)
     
@@ -251,13 +252,16 @@ class Organization(models.Model):
             super().save(*args, **kwargs)
 
             # we need to create the default client_types for this organization
-            for client in DEFAULT_CLIENT_TYPES:
-                OrganizationClientType.objects.create(
-                    organization=self, 
-                    name=client['name'], 
-                    description=client['description'], 
-                    fields=client['fields'],
-                    created_by=None)
+            # we need to create the default client_types for this organization
+            client_fields = DEFAULT_CLIENT_TYPES[int(self.sector.pk) - 1]
+            client_type = OrganizationClientType.objects.create(
+                organization=self, 
+                name=client_fields['name'], 
+                description=client_fields['description'], 
+                fields=client_fields['fields'],
+                created_by=None)
+            self.default_client_type = client_type.pk
+            
             
             if not 'test' in sys.argv:
                 res = requests.post(
