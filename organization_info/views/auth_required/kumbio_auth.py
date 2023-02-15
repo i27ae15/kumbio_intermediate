@@ -941,8 +941,12 @@ class OrganizationClientView(APIView):
         dependent_from_serializer.is_valid(raise_exception=True)
         dependent_from_serializer.save()
 
-        client_serializer.instance.client_parent = dependent_from_serializer.instance
-        client_serializer.instance.save()
+        client:OrganizationClient = client_serializer.instance
+        client.client_parent = dependent_from_serializer.instance
+        client.save()
+
+        client.refresh_from_db()
+        client_serializer = OrganizationClientSerializer(client)
         
         return Response(client_serializer.data, status.HTTP_201_CREATED)
 
