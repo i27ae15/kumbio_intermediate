@@ -143,6 +143,8 @@ class Organization(models.Model):
     # Fields -----------------------------------------------------------------
 
     # data
+
+    about_us_image = models.ImageField(upload_to='about_us', null=True, blank=True, default=None)
     
     cancellation_policy:str = models.TextField(null=True, blank=True)
     country:str = models.CharField(max_length=120, default='')
