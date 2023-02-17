@@ -4,7 +4,7 @@ from .views.auth_required.kumbio_auth import (
     OrganizationServiceView, OrganizationClientView, get_organization_client_types
 )
 from .views.auth_required.dash_auth import (
-    OrganizationClientDashboardInfoView, OrganizationServiceDashboardInfoView, 
+    OrganizationDashboardInfoView, OrganizationServiceDashboardInfoView, 
     OrganizationProfessionalDashboardInfoView, OrganizationPlaceDashboardInfoView,
 )
 from .views.auth_required.calendar_auth import (
@@ -26,7 +26,7 @@ urlpatterns = [
 
     
     # For client dashboard
-    path('organization-dashboard-info/', OrganizationClientDashboardInfoView.as_view(), name='organization_dashboard_info'),
+    path('organization-dashboard-info/', OrganizationDashboardInfoView.as_view(), name='organization_dashboard_info'),
     path('service-dashboard-info/', OrganizationServiceDashboardInfoView.as_view(), name='service_dashboard_info'),
     path('staff-dashboard-info/', OrganizationProfessionalDashboardInfoView.as_view(), name='staff_dashboard_info'),
     path('place-dashboard-info/', OrganizationPlaceDashboardInfoView.as_view(), name='place_dashboard_info'),

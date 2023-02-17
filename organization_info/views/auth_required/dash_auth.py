@@ -25,7 +25,7 @@ from organization_info.serializers.dashboard_info_serializer import (
 from drf_yasg.utils import swagger_auto_schema
 
 
-class OrganizationClientDashboardInfoView(APIView):
+class OrganizationDashboardInfoView(APIView):
 
     # Using the class here cause for some reason the decorators does not take the authentication_classes and permission_classes
 
