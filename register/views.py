@@ -182,6 +182,7 @@ class CreateUserAPI(APIView):
                     phone (str): teléfono del usuario que creara la organización
                     email (str): email del usuario que creara la organización
                     sector (id): id del sector al que pertenece la organización
+                    default_timezone (str): zona horaria de la organización
                 }
                 phone (str): numero de teléfono del usuario que creara la organización
                 
@@ -221,6 +222,7 @@ class CreateUserAPI(APIView):
                 name=organization_data['name'],
                 email=organization_data['email'],
                 phone=organization_data['phone'],
+                default_timezone=organization_data['default_timezone'],
                 sector=Sector.objects.get(pk=int(organization_data['sector'])),
                 
                 # owner info
