@@ -463,6 +463,7 @@ class OrganizationProfessionalView(APIView):
             for service in professional.services.all():
                 service:OrganizationService
                 day.services[f'#{service.pk}'] = dict(time_interval=service.time_interval)
+            day.save()
 
         
         professional.save()
