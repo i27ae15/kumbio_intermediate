@@ -5,9 +5,16 @@ OrganizationProfessionalSerializer, OrganizationServiceSerializer, OrganizationP
 
 class OrganizationDashboardInfoSerializer(serializers.ModelSerializer):
 
-    organizationservice_set = OrganizationServiceSerializer(many=True, read_only=True)
+    
     organizationplace_set = OrganizationPlaceSerializer(many=True, read_only=True)
     organization_professionals = OrganizationProfessionalSerializer(many=True, read_only=True)
+
+
+    organizationservice_set = serializers.SerializerMethodField()
+
+    def get_organizationservice_set(self, instance:Organization):
+        services = instance.organizationservice_set.filter(deleted_at__isnull=True)
+        return OrganizationServiceSerializer(services, many=True).data
 
 
     class Meta:
