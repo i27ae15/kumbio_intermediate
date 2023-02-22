@@ -34,7 +34,7 @@ class DayAvailableForProfessionalExcludeInLocalSerializer(serializers.ModelSeria
 
     
     def get_exclusion(self, instance: DayAvailableForProfessional):
-        return change_exclusion_timezone(instance.exclusion, 'UTC', instance.professional.organization.default_timezone)
+        return change_exclusion_timezone(instance.exclude, 'UTC', instance.professional.organization.default_timezone)
 
     class Meta:
         model = DayAvailableForProfessional
