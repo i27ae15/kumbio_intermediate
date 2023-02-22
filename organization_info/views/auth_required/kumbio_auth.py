@@ -68,6 +68,10 @@ from authentication_manager.authenticate import KumbioAuthentication
 # views utils
 from organization_info.views.utils import check_if_user_is_admin, check_if_user_is_admin_decorator
 
+
+# utils
+from utils.time import change_exclusion_timezone
+
 from print_pp.logging import Print
 from dotenv import load_dotenv
 from user_info.info import PROFESSIONAL_ROLE_ID
@@ -365,6 +369,12 @@ class OrganizationProfessionalView(APIView):
 
                 available_day = professional_object.get_day_available(day['week_day'])
                 day_serializer = None
+
+                day['exclude'] = change_exclusion_timezone(
+                    exclusion_list=day['exclude'], 
+                    from_timezone=professional_object.organization.default_timezone, 
+                    to_timezone='UTC'
+                )
 
                 if available_day:
                     day_serializer = DayAvailableForProfessionalSerializer(available_day, data=day, partial=True)
@@ -710,12 +720,12 @@ class OrganizationServiceView(APIView):
         query_params = query_serializer.validated_data
         
         if query_params['service_id']:
-            services = OrganizationService.objects.filter(id=query_params['service_id'])
+            services = OrganizationService.objects.filter(id=query_params['service_id'], deleted_at__isnull=True)
             if not services:
                 raise exceptions.NotFound(_('el servicio no existe'))
         
         else:
-            services = OrganizationService.objects.filter(organization=request.user.organization)
+            services = OrganizationService.objects.filter(organization=request.user.organization, deleted_at__isnull=True)
 
 
         service_serializer = OrganizationServiceSerializer(services, many=True)
@@ -760,7 +770,7 @@ class OrganizationServiceView(APIView):
         """
 
         try:
-            service:OrganizationService = OrganizationService.objects.get(id=request.data['service_id'])
+            service:OrganizationService = OrganizationService.objects.get(id=request.data['service_id'], deleted_at__isnull=True)
         except OrganizationService.DoesNotExist:
             raise exceptions.NotFound(_('el servicio no existe'))
         except KeyError:
