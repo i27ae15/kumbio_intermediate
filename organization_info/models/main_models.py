@@ -208,7 +208,7 @@ class Organization(models.Model):
 
     @property
     def professionals(self) -> QuerySet['OrganizationProfessional']:
-        return self.organizationprofessional.all()
+        return self.organization_professionals.all()
 
     
     @property
