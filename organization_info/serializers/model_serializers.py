@@ -9,6 +9,8 @@ from ..utils.enums import FieldType
 
 from print_pp.logging import Print
 
+from utils.time import change_exclusion_timezone
+
 
 def organization_class_serializer():
     return OrganizationClientSerializer
@@ -22,6 +24,15 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 
 class DayAvailableForProfessionalSerializer(serializers.ModelSerializer):
+
+    exclude = serializers.SerializerMethodField()
+
+
+    def get_exclude(self, instance: DayAvailableForProfessional):
+        if not self.context.get('exclude_in_local_timezone'):
+            return instance.exclude
+        else: 
+            return change_exclusion_timezone(instance.exclude, 'UTC', instance.professional.organization.default_timezone)
 
     class Meta:
         model = DayAvailableForProfessional
@@ -39,7 +50,7 @@ class OrganizationProfessionalSerializer(serializers.ModelSerializer):
     services_ids = serializers.ListField(write_only=True, required=False)
     specialties_ids = serializers.ListField(write_only=True, required=False)
 
-    dayavailableforprofessional_set = DayAvailableForProfessionalSerializer(many=True, read_only=True)
+    dayavailableforprofessional_set = DayAvailableForProfessionalSerializer(many=True, read_only=True, context={'exclude_in_local_timezone': True})
 
     class Meta:
         model = OrganizationProfessional
