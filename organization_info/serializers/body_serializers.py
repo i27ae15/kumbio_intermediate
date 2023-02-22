@@ -170,6 +170,6 @@ class DeleteServiceSerializer(serializers.Serializer):
 
     def __convert_to_objects(self, attrs):
         try:
-            attrs['service'] = OrganizationService.objects.get(id=attrs['service_id'])
+            attrs['service'] = OrganizationService.objects.get(id=attrs['service_id'], deleted_at__isnull=True)
         except OrganizationService.DoesNotExist:
             raise serializers.ValidationError(_('Service does not exist'))
