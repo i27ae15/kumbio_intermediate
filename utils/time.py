@@ -7,6 +7,9 @@ import math
 import pandas as pd
 
 
+from print_pp.logging import Print
+
+
 def tz_diff(date, tz1:pytz.timezone, tz2:pytz.timezone):
     """
         Returns the difference in hours between timezone1 and timezone2
