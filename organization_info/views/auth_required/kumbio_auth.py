@@ -350,6 +350,8 @@ class OrganizationProfessionalView(APIView):
         professional_object.services.clear()
         for service_id in services:
             professional_object.services.add(service_id)
+        
+        # the services to the day of the professional
 
         specialties = body_data['professional_data'].get('specialties_ids', [])
 
@@ -372,6 +374,10 @@ class OrganizationProfessionalView(APIView):
 
                 day_serializer.is_valid(raise_exception=True)
                 day_serializer.save()
+            
+
+        professional_object.refresh_from_db()
+        self.__set_services_to_available_days(professional_object)
 
         return Response(professional_serializer.data, status=status.HTTP_200_OK)
     
@@ -442,6 +448,26 @@ class OrganizationProfessionalView(APIView):
         return professional_data
     
     
+    def __set_services_to_available_days(self, professional:OrganizationProfessional):
+        """
+        Asigna los servicios a los días disponibles del profesional.
+
+        Parameters:
+        - professional (OrganizationProfessional): Instancia del profesional.
+        """
+
+        days_available = professional.available_days
+
+        for day in days_available:
+            day.services.clear()
+            for service in professional.services.all():
+                service:OrganizationService
+                day.services[f'#{service.pk}'] = dict(time_interval=service.time_interval)
+
+        
+        professional.save()
+
+
 class OrganizationPlaceView(APIView):
     permission_classes = (IsAuthenticated,) 
     authentication_classes = (TokenAuthentication,) 

@@ -496,6 +496,7 @@ class DayAvailableForProfessional(models.Model):
             },
         }
     """
+   
 
     note:str = models.TextField(null=True, blank=True)
 
