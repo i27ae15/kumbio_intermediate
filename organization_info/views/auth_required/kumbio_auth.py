@@ -66,7 +66,7 @@ from authentication_manager.authenticate import KumbioAuthentication
 
 
 # views utils
-from organization_info.views.utils import check_if_user_is_admin, check_if_user_is_admin_decorator
+from organization_info.views.utils import check_if_user_is_admin, check_if_user_is_admin_decorator, delete_services_from_professionals_availability
 
 
 # utils
@@ -823,6 +823,7 @@ class OrganizationServiceView(APIView):
 
 
         service.delete()
+        delete_services_from_professionals_availability(service.organization, service)
         return Response({'message': 'servicio eliminado'}, status=status.HTTP_200_OK)
 
 

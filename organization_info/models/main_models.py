@@ -508,6 +508,33 @@ class DayAvailableForProfessional(models.Model):
     
     def get_start_and_end_time_for_service(self, service_id:int) -> tuple:
         return get_start_and_end_time(self.exclude)
+    
+
+    def delete_service(self, service_id:str|int) -> bool:
+        """
+            Returns True if the service was deleted and False if the service was not found
+        """
+        if not isinstance(service_id, str) and not isinstance(service_id, int):
+            raise TypeError(f'Expected str or int, got {type(service_id)}')
+
+        
+        if isinstance(service_id, int):
+            service_id = f'#{service_id}'
+        
+        
+        if '#' not in service_id:
+            service_id = f'#{service_id}'
+
+        
+        services = self.services
+        
+        try: services.pop(str(service_id))
+        except KeyError: return False
+        
+        self.services = services
+        self.save()
+        
+        return True
 
 
     def save(self, *args, **kwargs):
