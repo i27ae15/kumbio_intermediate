@@ -47,6 +47,7 @@ CALENDAR_ENDPOINT = os.getenv('CALENDAR_ENDPOINT')
 
 class Sector(models.Model):
     name:str = models.CharField(max_length=100)
+    spanish_name:str = models.CharField(max_length=100, default=None, null=True, blank=True)
     description:str = models.TextField()
     
     def __str__(self) -> str:
