@@ -25,8 +25,8 @@ from drf_yasg import openapi
 # models
 from user_info.models import KumbioUser, KumbioUserRole
 from organization_info.models.main_models import (
-    DayAvailableForProfessional, Organization, OrganizationProfessional, 
-    OrganizationPlace, Sector, OrganizationService, OrganizationClient
+    Organization, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService, 
+    OrganizationClient
 )
 from authentication_manager.models import KumbioToken
 
@@ -833,7 +833,7 @@ class OrganizationClientView(APIView):
     # this needs authorization from calendar
     # we need to create an authorization token for the calendar api to be able to access this endpoint
     permission_classes = (IsAuthenticated,) 
-    authentication_classes = (KumbioAuthentication,)
+    authentication_classes = (TokenAuthentication,)
     
     @swagger_auto_schema(
         query_serializer=OrganizationClientQuerySerializer(),
@@ -842,20 +842,20 @@ class OrganizationClientView(APIView):
     def get(self, request):
         """
             Get all clients
-        """
-        user:KumbioUser = None
+        # """
+        # user:KumbioUser = None
 
-        if not isinstance(request.user, KumbioToken):
-            raise exceptions.PermissionDenied(_('No tienes permiso para realizar esta acción'))
+        # if not isinstance(request.user, KumbioToken):
+        #     raise exceptions.PermissionDenied(_('No tienes permiso para realizar esta acción'))
 
-        user = request.user
+        user:KumbioUser = request.user
         
         query_serializer = OrganizationClientQuerySerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)
         query_params = query_serializer.validated_data
 
         if query_params['client_id']:
-            clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(id=query_params['client_id'], client_parent__organization=request.user.organization.id)
+            clients:QuerySet[OrganizationClient] = OrganizationClient.objects.filter(id=query_params['client_id'], client_parent__organization=user.organization.id)
             if not clients:
                 raise exceptions.NotFound(_('el cliente no existe'))
 
@@ -934,21 +934,13 @@ class OrganizationClientView(APIView):
         """
         
         # getting the data from the request that comes "separated"
-        user:KumbioUser | KumbioToken = None
-
-        if request.user == 'KUMBIO_TOKEN':
-            user = request.auth
-        else:
-            user = request.user
+        
+        user:KumbioUser = request.user
 
 
         client_data:dict = request.data['client']
         dependent_from:dict = request.data['dependent_from']
-
-        if isinstance(user, KumbioToken):
-            client_data['created_by'] = user.app
-        else:
-            client_data['created_by'] = 3 # use enums here
+        client_data['created_by'] = 3 # use enums here
 
 
         client_data['organization'] = user.organization.id
