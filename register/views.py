@@ -256,6 +256,7 @@ class CreateUserAPI(APIView):
             user.save()
 
             if is_owner:
+                # TODO: make the kumbio user object manages this
                 # create the default booking settings for calendar
                 res = requests.post(f'{CALENDAR_ENDPOINT}settings/api/v2/booking/', json={}, headers={'Authorization': f'Token {user.calendar_token}'})
             
