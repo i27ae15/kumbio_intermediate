@@ -244,8 +244,13 @@ class Organization(models.Model):
     @property
     def number_of_appointments(self) -> int:
         return self.appointment_set.count()
-            
+    
+
+    def set_default_client_type(self, client_type: 'OrganizationClientType'):
+        self.default_client_type = client_type.pk
+        self.save()
         
+
     # other methods    
     def save(self, *args, **kwargs):
         if not self.pk:
@@ -263,7 +268,7 @@ class Organization(models.Model):
                 description=client_fields['description'], 
                 fields=client_fields['fields'],
                 created_by=None)
-            self.default_client_type = client_type.pk
+            self.set_default_client_type(client_type)
             
             
             if not 'test' in sys.argv:

@@ -842,7 +842,7 @@ class OrganizationClientView(APIView):
     def get(self, request):
         """
             Get all clients
-        # """
+        """
         # user:KumbioUser = None
 
         # if not isinstance(request.user, KumbioToken):

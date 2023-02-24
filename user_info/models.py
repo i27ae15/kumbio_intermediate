@@ -303,6 +303,7 @@ def kumbio_user_handler(sender, instance:KumbioUser, created, **kwargs):
 
         NotificationsSettings.objects.create(user=instance)
         # create the default booking settings for calendar
+        return
         if os.environ.get('FILLING_DB', False):
             res = requests.post(f'{CALENDAR_ENDPOINT}settings/api/v2/booking/', json={'organization_id': instance.organization.pk}, headers={'Authorization': f'Token {instance.calendar_token}'})
         else:
