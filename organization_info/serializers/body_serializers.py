@@ -106,6 +106,7 @@ class OrganizationProfessionalPostBodySerializer(serializers.Serializer):
     username = serializers.CharField(required=True, help_text='Username of the professional')
     organization = serializers.CharField(required=True, help_text='Organization id of the professional')
     password = serializers.CharField(required=True, help_text='Password of the professional')
+    place_id = serializers.IntegerField(required=True, help_text='Place id of the professional')
 
 
 class OrganizationPlacePostSerializer(serializers.Serializer):

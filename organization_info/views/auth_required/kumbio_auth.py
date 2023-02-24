@@ -243,6 +243,7 @@ class OrganizationProfessionalView(APIView):
             - username (str): Nombre de usuario del profesional.
             - organization (int): ID de la organización del profesional.
             - password (str): Contraseña del profesional.
+            - place_id (int): ID del lugar del profesional.
         
         """
         
