@@ -1113,7 +1113,6 @@ def get_extra_fields_for_client_type(request):
     return Response(extra_fields, status=status.HTTP_200_OK)
 
 
-
 @swagger_auto_schema(request_body=DeleteDayAvailableForProfessionalSerializer(), method='DELETE', tags=['professionals'])
 @api_view(['DELETE'])
 @authentication_classes([TokenAuthentication])

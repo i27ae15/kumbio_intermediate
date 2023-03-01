@@ -20,6 +20,8 @@ from organization_info.serializers.model_serializers import (
 )
 
 
+from print_pp.logging import Print
+
 class ClientForCalendar(APIView):
 
     @swagger_auto_schema(tags=['client'])
@@ -89,10 +91,10 @@ class ClientForCalendar(APIView):
         }
 
         if parent.same_as_client:
-            new_client_data['fist_name'] = parent.first_name
+            new_client_data['first_name'] = parent.first_name
             new_client_data['last_name'] = parent.last_name
         else:
-            new_client_data['fist_name'] = body_data['client']['first_name']
+            new_client_data['first_name'] = body_data['client']['first_name']
             new_client_data['last_name'] = body_data['client']['last_name']
 
 
