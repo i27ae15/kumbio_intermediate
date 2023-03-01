@@ -25,7 +25,7 @@ from drf_yasg import openapi
 # models
 from user_info.models import KumbioUser, KumbioUserRole
 from organization_info.models.main_models import (
-    Organization, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService, 
+    DayAvailableForProfessional, Organization, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService, 
     OrganizationClient
 )
 from authentication_manager.models import KumbioToken
@@ -45,7 +45,7 @@ from organization_info.serializers.query_serializers import (
 
 # body serializers
 from organization_info.serializers.body_serializers import (
-    DeleteServiceSerializer, OrganizationProfessionalDeleteBodySerializer,
+    DeleteDayAvailableForProfessionalSerializer, DeleteServiceSerializer, OrganizationProfessionalDeleteBodySerializer,
     PlacePutSerializer, OrganizationClientPutSerializer, OrganizationProfessionalPostBodySerializer, 
     OrganizationProfessionalPutBodySerializer, OrganizationPlacePostSerializer, 
     OrganizationClientDeleteSerializer
@@ -411,14 +411,12 @@ class OrganizationProfessionalView(APIView):
             - professional_id (int): id of the professional to delete
         """
 
-        # TODO: Ask for confirmation to delete all the information
-
         body_serializer = OrganizationProfessionalDeleteBodySerializer(data=request.data)
         body_serializer.is_valid(raise_exception=True)
         body_data:dict = body_serializer.validated_data
         professional:OrganizationProfessional = body_data['professional']
 
-        res = requests.delete(f'{CALENDAR_ENDPOINT}users/api/v2/user/', data={'user_token': professional.kumbio_user.calendar_token, 'delete_all_information': False})
+        res = requests.delete(f'{CALENDAR_ENDPOINT}users/api/v2/user/', data={'user_token': professional.kumbio_user.calendar_token, 'delete_all_information': True})
 
         if res.status_code != 204:
             raise exceptions.ValidationError(_('Error al eliminar el usuario del calendario'))
@@ -1112,3 +1110,26 @@ def get_extra_fields_for_client_type(request):
     extra_fields = client_type[0].fields
     
     return Response(extra_fields, status=status.HTTP_200_OK)
+
+
+
+@swagger_auto_schema(request_body=DeleteDayAvailableForProfessionalSerializer(), method='DELETE', tags=['professionals'])
+@api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def delete_available_day_for_professional(request):
+    """
+        Elimina un día disponible para un profesional
+        
+        :Response 204:
+    """
+
+    body_serializer = DeleteDayAvailableForProfessionalSerializer(data=request.data)
+    body_serializer.is_valid(raise_exception=True)
+    body_data = body_serializer.validated_data
+
+    day:DayAvailableForProfessional = body_data['day']
+
+    day.delete()
+
+    return Response(status=status.HTTP_204_NO_CONTENT)

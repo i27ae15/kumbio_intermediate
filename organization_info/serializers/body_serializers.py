@@ -2,9 +2,13 @@ from rest_framework import serializers
 
 from django.utils.translation import gettext_lazy as _
 
-from .model_serializers import (ClientParentSerializer, OrganizationClientSerializer, OrganizationProfessionalSerializer, 
-OrganizationPlaceSerializer)
-from organization_info.models.main_models import Organization, OrganizationProfessional, OrganizationService
+from .model_serializers import (
+    ClientParentSerializer, OrganizationClientSerializer, OrganizationProfessionalSerializer, 
+    OrganizationPlaceSerializer
+)
+from organization_info.models.main_models import (
+    Organization, OrganizationProfessional, OrganizationService, DayAvailableForProfessional
+)
 
 from organization_info.utils.validators import get_places
 
@@ -148,11 +152,11 @@ class OrganizationProfessionalDeleteBodySerializer(serializers.Serializer):
 
 
     def validate(self, attrs:dict):
-        self.__convert_to_objects(attrs)
+        self.convert_to_objects(attrs)
         return super().validate(attrs)
 
 
-    def __convert_to_objects(self, attrs):
+    def convert_to_objects(self, attrs):
         try:
             attrs['professional'] = OrganizationProfessional.objects.get(id=attrs['professional_id'])
         except OrganizationProfessional.DoesNotExist:
@@ -174,3 +178,23 @@ class DeleteServiceSerializer(serializers.Serializer):
             attrs['service'] = OrganizationService.objects.get(id=attrs['service_id'], deleted_at__isnull=True)
         except OrganizationService.DoesNotExist:
             raise serializers.ValidationError(_('Service does not exist'))
+        
+
+class DeleteDayAvailableForProfessionalSerializer(OrganizationProfessionalDeleteBodySerializer):
+
+    week_day = serializers.IntegerField(required=True, help_text='dia de la semana')
+
+
+    def validate(self, attrs:dict):
+        self.convert_to_objects(attrs)
+        return super().validate(attrs)
+
+
+    def convert_to_objects(self, attrs):
+        super().convert_to_objects(attrs)
+        try:
+            professional:OrganizationProfessional = attrs['professional']
+            attrs['day'] = professional.available_days.get(week_day=attrs['week_day'])
+        except DayAvailableForProfessional.DoesNotExist:
+            raise serializers.ValidationError(_('Day does not exist'))
+        

@@ -599,9 +599,40 @@ class DayAvailableForProfessional(models.Model):
         if res.status_code != 200:
             try: raise exceptions.ValidationError(_(res.json()))
             except: raise exceptions.APIException(_('error in calendar api'))
+    
+
+    def __delete_days_on_calendar_api(self):
+        """
+        Elimina los días disponibles en el calendario.
+
+        Parameters:
+        - day_available (DayAvailable): Instancia del día disponible.
+        """
+        
+        data = {
+            'calendar_link': self.professional.kumbio_user.calendar_link,
+            'week_days': [self.week_day]
+        }
+
+        res = requests.delete(
+            f'{CALENDAR_ENDPOINT}calendar/api/v2/day-available-for-professional/',
+            headers={'authorization': f'Token {self.professional.kumbio_user.calendar_token}'},
+            json=data
+        )
+
+        if res.status_code != 204:
+            try: raise exceptions.ValidationError(_(res.json()))
+            except: raise exceptions.APIException(_('error in calendar api'))
+
+
+    def delete(self, *args, **kwargs):
+        self.__delete_days_on_calendar_api()
+        super().delete(*args, **kwargs)
+
 
     def __str__(self):
         return f'{self.professional.pk} - {self.day_name} - {self.professional.full_name}'
+    
 
 
 class OrganizationProfessional(models.Model):

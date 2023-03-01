@@ -8,6 +8,7 @@ from print_pp.logging import Print
 
 from organization_info.models.main_models import Organization, OrganizationPlace, OrganizationProfessional, OrganizationService
 
+
 class OrganizationQuerySerializer(serializers.Serializer):
         
     organization_id = serializers.CharField( 
@@ -52,6 +53,7 @@ class OrganizationProfessionalQuerySerializer(serializers.Serializer):
 
         else:
             attrs['professionals'] = OrganizationProfessional.objects.filter(organization__id=attrs['organization_id'])
+
 
 class OrganizationSectorQuerySerializer(serializers.Serializer):
         
