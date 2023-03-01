@@ -412,14 +412,12 @@ class OrganizationProfessionalView(APIView):
             - professional_id (int): id of the professional to delete
         """
 
-        # TODO: Ask for confirmation to delete all the information
-
         body_serializer = OrganizationProfessionalDeleteBodySerializer(data=request.data)
         body_serializer.is_valid(raise_exception=True)
         body_data:dict = body_serializer.validated_data
         professional:OrganizationProfessional = body_data['professional']
 
-        res = requests.delete(f'{CALENDAR_ENDPOINT}users/api/v2/user/', data={'user_token': professional.kumbio_user.calendar_token, 'delete_all_information': False})
+        res = requests.delete(f'{CALENDAR_ENDPOINT}users/api/v2/user/', data={'user_token': professional.kumbio_user.calendar_token, 'delete_all_information': True})
 
         if res.status_code != 204:
             raise exceptions.ValidationError(_('Error al eliminar el usuario del calendario'))
