@@ -25,58 +25,56 @@ DEFAULT_CLIENT_TYPES = [
         'name': 'Spa Client',
         'description': 'A spa client',
         'fields': [
-            ('Has received professional', FieldType.TEXT.value),
-            ('injuries or conditions', FieldType.TEXT.value),
-            ('diseases', FieldType.TEXT.value),
-            ('has received professional treatments on skin', FieldType.TEXT.value),
+            ('allergies_sensitivities', FieldType.TEXT.value),
+            ('injuries_surgeries', FieldType.TEXT.value),
+            ('illnesses', FieldType.TEXT.value),
+            ('professional_treatments', FieldType.TEXT.value),
+            ('recent_major_surgery', FieldType.TEXT.value),
+            ('list_injuries_surgeries', FieldType.TEXT.value),
+            ('specific_concerns', FieldType.TEXT.value),
+            ('skin_type', FieldType.TEXT.value),
+            ('special_requests', FieldType.TEXT.value),
+            ('visited_before', FieldType.TEXT.value),
+            ('how_heard_about', FieldType.TEXT.value),
+            ('confirmation_option', FieldType.TEXT.value)
         ]
     },
     {
         'organization' : str(), # id of the organization or the Organization object itself, depends on how it is created
-        'name': 'Pet',
-        'description': 'A medical pet',
+        'name': 'Consultant',
+        'description': 'Consultant',
         'fields': [
-            ('name', FieldType.TEXT.value),
-            ('birth_date', FieldType.TEXT.value),
-            ('age', FieldType.NUMBER.value),
-            ('sterilized', FieldType.TEXT.value),
-            ('weight', FieldType.NUMBER.value),
-            ('active', FieldType.TEXT.value),
-            ('species', FieldType.TEXT.value),
-            ('race', FieldType.TEXT.value),
-            ('gender', FieldType.TEXT.value),
-            ('conditions_known', FieldType.TEXT.value),
-            ('allergies', FieldType.TEXT.value),
-            ('taking_medications', FieldType.TEXT.value),
-            ('first_visit_reason', FieldType.TEXT.value),
-            ('behavior', FieldType.TEXT.value),
+            ('business_name', FieldType.TEXT.value),
+            ('industry', FieldType.TEXT.value),
+            ('years_in_service', FieldType.NUMBER.value),
+            ('strengths', FieldType.TEXT.value),
+            ('weaknesses', FieldType.TEXT.value),
+            ('unique_selling_proposition', FieldType.TEXT.value),
+            ('how_heard_about', FieldType.TEXT.value),
+            ('confirmation_option', FieldType.TEXT.value)
         ]
     },
     {
         'organization' : str(), # id of the organization or the Organization object itself, depends on how it is created
-        'name': 'Car',
-        'description': 'A car',
+        'name': 'Real State',
+        'description': 'Real State',
         'fields': [
-            ('brand', FieldType.TEXT.value),
-            ('model', FieldType.TEXT.value),
-            ('year', FieldType.NUMBER.value),
-            ('license_plate', FieldType.TEXT.value),
-            ('color', FieldType.TEXT.value),
+            ('buyer_or_seller', FieldType.TEXT.value),
+            ('property_type', FieldType.TEXT.value),
+            ('geographic_area', FieldType.TEXT.value),
+            ('price_range', FieldType.TEXT.value),
+            ('specific_questions', FieldType.TEXT.value),
+            ('worked_with_realtor_before', FieldType.TEXT.value),
+            ('how_heard_about', FieldType.TEXT.value),
+            ('confirmation_option', FieldType.TEXT.value)
         ]
     },
     {
         'organization' : str(), # id of the organization or the Organization object itself, depends on how it is created
-        'name': 'Medical Patient',
-        'description': 'A medical patient',
+        'name': 'Other',
+        'description': 'Other',
         'fields': [
-            ('conditions_known', FieldType.TEXT.value),
-            ('taking_medications', FieldType.TEXT.value),
-            ('allergies', FieldType.TEXT.value),
-            ('blood_type', FieldType.TEXT.value),
-            ('initial_weight', FieldType.NUMBER.value),
-            ('initial_height', FieldType.NUMBER.value),
-            ('first_visit_reason', FieldType.TEXT.value),
-            ('preferences', FieldType.TEXT.value)
+            ('', FieldType.TEXT.value),
         ]
     },
 ]
