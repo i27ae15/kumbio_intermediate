@@ -213,7 +213,7 @@ class Organization(models.Model):
 
     @property
     def services(self) -> QuerySet['OrganizationService']:
-        return self.organizationservice.all()
+        return self.organizationservice_set.all()
     
 
     @property
