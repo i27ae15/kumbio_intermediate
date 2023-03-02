@@ -1133,3 +1133,23 @@ def delete_available_day_for_professional(request):
     day.delete()
 
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@swagger_auto_schema(method='GET', tags=['organization'])
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_dashboard_information(request):
+
+    check_if_user_is_admin(request)
+    
+    organization:Organization = request.user.organization
+
+    data_to_return = {
+        'total_clients': organization.number_of_clients,
+        'active_appointments': organization.number_of_active_appointments,
+        'most_used_service': organization.most_used_service.service,
+        'most_used_service_appointments': organization.most_used_service.number_of_appointments,
+    } 
+
+    return Response(data_to_return, status=status.HTTP_200_OK)

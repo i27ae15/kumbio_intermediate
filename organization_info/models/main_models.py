@@ -227,7 +227,7 @@ class Organization(models.Model):
     
 
     @property
-    def most_used_service(self) -> tuple['OrganizationService', int]:
+    def most_used_service(self) -> 'OrganizationService':
         most_used = None
 
         for service in self.services:
@@ -237,7 +237,7 @@ class Organization(models.Model):
                 if service.number_of_appointments > most_used.number_of_appointments:
                     most_used = service
 
-        return most_used, most_used.number_of_appointments
+        return most_used
 
 
     # TODO: this must come from calendar api
