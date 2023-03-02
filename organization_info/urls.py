@@ -21,7 +21,7 @@ urlpatterns = [
     path('sectors/', OrganizationSectorView.as_view(), name='sector'),
     path('services/', OrganizationServiceView.as_view(), name='service'),
     path('clients/', OrganizationClientView.as_view(), name='client'),
-    path('dashboard-info/', get_dashboard_information, name='dashboard_info'),
+    path('principal-dashboard-info/', get_dashboard_information, name='dashboard_info'),
     
     path('professionals/day/', delete_available_day_for_professional, name='delete_available_day_for_professional'),
 
