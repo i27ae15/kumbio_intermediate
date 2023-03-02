@@ -196,6 +196,15 @@ class Organization(models.Model):
     deleted_at:datetime.datetime = models.DateTimeField(default=None, null=True, blank=True)
 
 
+    # ------------------------------------------------------------------------
+    # Organization related information
+    number_of_professionals:int = models.IntegerField(default=0)
+    number_of_clients:int = models.IntegerField(default=0)
+    number_of_services:int = models.IntegerField(default=0)
+    number_of_appointments:int = models.IntegerField(default=0)
+    number_of_active_appointments:int = models.IntegerField(default=0)
+
+
     # Properties -------------------------------------------------------------
     @property
     def owner(self) -> user_models.KumbioUser:
@@ -203,7 +212,7 @@ class Organization(models.Model):
     
 
     @property
-    def services(self) -> QuerySet:
+    def services(self) -> QuerySet['OrganizationService']:
         return self.organizationservice.all()
     
 
@@ -216,7 +225,21 @@ class Organization(models.Model):
     def client_types(self) -> QuerySet['OrganizationClientType']:
         return self.organization_client_type.all()
     
-    
+
+    @property
+    def most_used_service(self) -> tuple['OrganizationService', int]:
+        most_used = None
+
+        for service in self.services:
+            if most_used is None:
+                most_used = service
+            else:
+                if service.number_of_appointments > most_used.number_of_appointments:
+                    most_used = service
+
+        return most_used, most_used.number_of_appointments
+
+
     # TODO: this must come from calendar api
     @property
     def calendars(self) -> QuerySet:
@@ -224,26 +247,70 @@ class Organization(models.Model):
         return self.calendar_set.all()
     
 
-    @property
-    def number_of_professionals(self) -> int:
+    # Methods --------------------------------------------------------------
+
+    def increment_number_of_professionals(self):
+        self.number_of_professionals += 1
+        self.save()
+
+    
+    def increment_number_of_clients(self):
+        self.number_of_clients += 1
+        self.save()
+
+    
+    def increment_number_of_active_appointments(self):
+        self.number_of_active_appointments += 1
+        self.increment_number_of_appointments()
+
+    
+    def increment_number_of_appointments(self):
+        self.number_of_appointments += 1
+        self.save()
+
+        
+    def increment_number_of_services(self):
+        self.number_of_services += 1
+        self.save()
+
+    
+    def decrement_number_of_professionals(self):
+        self.number_of_professionals -= 1
+        self.save()
+    
+
+    def decrement_number_of_clients(self):
+        self.number_of_clients -= 1
+        self.save()
+
+    
+    def decrement_number_of_services(self):
+        self.number_of_services -= 1
+        self.save()
+    
+
+    def decrement_number_of_appointments(self):
+        self.number_of_appointments -= 1
+        self.save()
+    
+
+    def get_number_of_professionals(self) -> int:
         return self.professionals.count()
 
-
-    @property
-    def number_of_services(self) -> int:
+    
+    def get_number_of_services(self) -> int:
         return self.services.count()
     
 
-    # call a request to the calendar api to get the number of calendars
-    @property
-    def number_of_calendars(self) -> int:
-        return self.calendars.count()
-    
+    def get_number_of_calendars(self) -> int:
+        # TODO call a request to the calendar api to get the number of calendars
+        raise NotImplementedError('This method is not implemented yet')   
 
     # call a request to the calendar api to get the number of appointments
-    @property
-    def number_of_appointments(self) -> int:
-        return self.appointment_set.count()
+    
+    def get_number_of_appointments(self) -> int:
+        # TODO call a request to the calendar api to get the number of calendars
+        raise NotImplementedError('This method is not implemented yet')
     
 
     def set_default_client_type(self, client_type: 'OrganizationClientType'):
@@ -320,7 +387,11 @@ class OrganizationService(models.Model):
     updated_at:datetime.datetime = models.DateTimeField(null=True, blank=True, default=None)
     updated_by:user_models.KumbioUser = models.ForeignKey(user_models.KumbioUser, null=True, blank=True, on_delete=models.CASCADE, default=None, related_name='service_updated_by')
 
+
+    number_of_appointments:int = models.IntegerField(default=0)
+    number_of_active_appointments:int = models.IntegerField(default=0)
         
+
     @property
     def is_deleted(self) -> bool:
         return self.deleted_at is not None
@@ -329,6 +400,19 @@ class OrganizationService(models.Model):
     @property
     def is_updated(self) -> bool:
         return self.updated_at is not None
+    
+
+    # ---------------------------------------------------------------
+    # Methods
+
+    def increment_number_of_active_appointments(self):
+        self.number_of_active_appointments += 1
+        self.increment_number_of_appointments()
+
+
+    def increment_number_of_appointments(self):
+        self.number_of_appointments += 1
+        self.save()
 
 
     def set_updated_by(self, user:user_models.KumbioUser):
@@ -633,7 +717,6 @@ class DayAvailableForProfessional(models.Model):
     def __str__(self):
         return f'{self.professional.pk} - {self.day_name} - {self.professional.full_name}'
     
-
 
 class OrganizationProfessional(models.Model):
 

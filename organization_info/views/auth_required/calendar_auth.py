@@ -6,21 +6,27 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
+
 from drf_yasg.utils import swagger_auto_schema
 
 
 # models
 from organization_info.models import Organization, ClientParent, OrganizationClient
+from organization_info.models.main_models import OrganizationService
 
 
 # serializers
-from organization_info.serializers.body_serializers import OrganizationClientForCalendarBodySerializer
+from organization_info.serializers.body_serializers import (
+    OrganizationClientForCalendarBodySerializer, IncrementNumberOfAppointmentsBodySerializer
+)
 from organization_info.serializers.model_serializers import (
-    ClientParentSerializer, OrganizationClientSerializer, OrganizationClientRelatedFieldsSerializer
+    ClientParentSerializer, OrganizationClientSerializer, 
+    OrganizationClientRelatedFieldsSerializer,
 )
 
 
 from print_pp.logging import Print
+
 
 class ClientForCalendar(APIView):
 
@@ -109,18 +115,35 @@ class ClientForCalendar(APIView):
         return Response(data_to_return, status=status.HTTP_201_CREATED)
 
 
-
 @swagger_auto_schema(method='get', tags=['client'])
 @api_view(['GET'])
 def get_client_for_calendar(request):
 
     client_id = request.GET.get('client_id', None)
     
-    if not client_id:
-        raise exceptions.ValidationError(_('client_id is required'))
+    if not client_id: raise exceptions.ValidationError(_('client_id is required'))
     
     try: client = OrganizationClient.objects.get(id=client_id)
     except OrganizationClient.DoesNotExist: raise exceptions.NotFound(_('client not found'))
 
     client_serializer = OrganizationClientRelatedFieldsSerializer(client)
     return Response(client_serializer.data, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(method='post', tags=['organization'], request_body=IncrementNumberOfAppointmentsBodySerializer)
+@api_view(['POST'])
+def increment_number_of_appointments(request):
+
+
+    body_serializer = IncrementNumberOfAppointmentsBodySerializer(data=request.data)
+    body_serializer.is_valid(raise_exception=True)
+    body_data = body_serializer.validated_data
+    
+    organization:Organization = body_data['organization']
+    service:OrganizationService = body_data['service']
+
+    organization.increment_number_of_active_appointments()
+    service.increment_number_of_active_appointments()
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
