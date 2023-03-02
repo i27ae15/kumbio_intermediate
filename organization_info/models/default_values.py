@@ -64,5 +64,20 @@ DEFAULT_CLIENT_TYPES = [
             ('diseases', FieldType.TEXT.value),
             ('has received professional treatments on skin', FieldType.TEXT.value),
         ]
-    }
+    },
+    {
+        'organization' : str(), # id of the organization or the Organization object itself, depends on how it is created
+        'name': 'Medical Patient',
+        'description': 'A medical patient',
+        'fields': [
+            ('conditions_known', FieldType.TEXT.value),
+            ('taking_medications', FieldType.TEXT.value),
+            ('allergies', FieldType.TEXT.value),
+            ('blood_type', FieldType.TEXT.value),
+            ('initial_weight', FieldType.NUMBER.value),
+            ('initial_height', FieldType.NUMBER.value),
+            ('first_visit_reason', FieldType.TEXT.value),
+            ('preferences', FieldType.TEXT.value)
+        ]
+    },
 ]

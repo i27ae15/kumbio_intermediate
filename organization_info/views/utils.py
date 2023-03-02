@@ -28,11 +28,14 @@ def check_if_user_is_admin_decorator(func, *args, **kwargs):
     return wrapper
 
 
-def check_if_user_is_admin(request) -> 'True | Response':
+def check_if_user_is_admin(request, raise_exceptions=True) -> bool:
     if request.user.role.id == ADMIN_ROLE_ID:
         return True
     else:
-        return Response({"message": "You are not authorized to perform this action"}, status=status.HTTP_401_UNAUTHORIZED)
+        if raise_exceptions:
+            raise exceptions.PermissionDenied(_("You are not authorized to perform this action"))
+        else:
+            return False
 
 
 @start_new_thread

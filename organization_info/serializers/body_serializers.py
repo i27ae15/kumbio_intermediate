@@ -142,6 +142,29 @@ class OrganizationClientForCalendarBodySerializer(serializers.Serializer):
             attrs['organization'] = Organization.objects.get(id=attrs['organization_id'])
         except Organization.DoesNotExist:
             raise serializers.ValidationError(_('Organization does not exist'))
+        
+
+class IncrementNumberOfAppointmentsBodySerializer(serializers.Serializer):
+
+    organization_id = serializers.CharField(required=True, help_text='Organization id')
+    service_id = serializers.IntegerField(required=True, help_text='Service id')
+
+
+    def validate(self, attrs:dict):
+        self.__convert_to_objects(attrs)
+        return super().validate(attrs)
+    
+
+    def __convert_to_objects(self, attrs:dict):
+        try:
+            attrs['organization'] = Organization.objects.get(id=attrs['organization_id'])
+        except Organization.DoesNotExist:
+            raise serializers.ValidationError(_('Organization does not exist'))
+        
+        try:
+            attrs['service'] = OrganizationService.objects.get(id=attrs['service_id'])
+        except OrganizationService.DoesNotExist:
+            raise serializers.ValidationError(_('Service does not exist'))
     
 
 # serializers for delete requests

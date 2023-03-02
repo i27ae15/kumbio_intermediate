@@ -2,14 +2,14 @@ from django.urls import path
 from .views.auth_required.kumbio_auth import (
     OrganizationProfessionalView, OrganizationPlaceView, OrganizationView, OrganizationSectorView, 
     OrganizationServiceView, OrganizationClientView, get_organization_client_types, 
-    delete_available_day_for_professional
+    delete_available_day_for_professional, get_dashboard_information
 )
 from .views.auth_required.dash_auth import (
     OrganizationDashboardInfoView, OrganizationServiceDashboardInfoView, 
     OrganizationProfessionalDashboardInfoView, OrganizationPlaceDashboardInfoView,
 )
 from .views.auth_required.calendar_auth import (
-    ClientForCalendar, get_client_for_calendar
+    ClientForCalendar, get_client_for_calendar, increment_number_of_appointments
 )
 
 app_name = 'organization_info'
@@ -21,6 +21,7 @@ urlpatterns = [
     path('sectors/', OrganizationSectorView.as_view(), name='sector'),
     path('services/', OrganizationServiceView.as_view(), name='service'),
     path('clients/', OrganizationClientView.as_view(), name='client'),
+    path('principal-dashboard-info/', get_dashboard_information, name='dashboard_info'),
     
     path('professionals/day/', delete_available_day_for_professional, name='delete_available_day_for_professional'),
 
@@ -37,7 +38,8 @@ urlpatterns = [
     
     # For Calendar
     path('client-for-calendar/', ClientForCalendar.as_view(), name='client_for_calendar'),
-    path('get-client-for-calendar/', get_client_for_calendar, name='get_client_for_calendar')
+    path('get-client-for-calendar/', get_client_for_calendar, name='get_client_for_calendar'),
+    path('calendar/increment-number-of-appointments/', increment_number_of_appointments)
 
 
     # path('extra_fields_for_client_type/', get_extra_fields_for_client_type, name='extra_fields_for_client_type'),
