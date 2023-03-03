@@ -15,6 +15,8 @@ from django.utils import timezone
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 
 
 # rest_framework
@@ -1074,3 +1076,38 @@ class FrequentlyAskedQuestion(models.Model):
 
     def __str__(self):
         return f'{self.id} - {self.question[:20]} - {self.organization.name}'
+
+
+@receiver(post_save, sender=OrganizationProfessional)
+def increment_number_of_professionals(sender, instance:OrganizationProfessional, created, **kwargs):
+    if created:
+        instance.organization.increment_number_of_professionals()
+
+
+@receiver(post_delete, sender=OrganizationProfessional)
+def decrement_number_of_professionals(sender, instance:OrganizationProfessional, **kwargs):
+    instance.organization.decrement_number_of_professionals()
+
+
+# Signal-Handler für OrganizationClient-Modell
+@receiver(post_save, sender=OrganizationClient)
+def increment_number_of_clients(sender, instance:OrganizationClient, created, **kwargs):
+    if created:
+        instance.client_parent.organization.increment_number_of_clients()
+
+
+@receiver(post_delete, sender=OrganizationClient)
+def decrement_number_of_clients(sender, instance:OrganizationClient, **kwargs):
+    instance.client_parent.organization.decrement_number_of_clients()
+
+
+# Signal-Handler für OrganizationService-Modell
+@receiver(post_save, sender=OrganizationService)
+def increment_number_of_services(sender, instance:OrganizationService, created, **kwargs):
+    if created:
+        instance.organization.increment_number_of_services()
+
+
+@receiver(post_delete, sender=OrganizationService)
+def decrement_number_of_services(sender, instance:OrganizationService, **kwargs):
+    instance.organization.decrement_number_of_services()
