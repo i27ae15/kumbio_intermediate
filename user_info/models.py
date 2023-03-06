@@ -171,6 +171,11 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         if not prof.count():
             return None
         return prof
+    
+
+    @property
+    def to_do_list(self) -> 'ToDoList':
+        return self.todolist.all().first()
 
     # functions
     # -------------------------------------------------------------------
@@ -259,6 +264,25 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         except Exception: return f'{self.pk} - {self.email} - {self.organization} - {self.calendar_link}'
 
 
+class ToDoList(models.Model):
+
+    user:KumbioUser = models.ForeignKey(KumbioUser, on_delete=models.CASCADE, related_name='todolist')
+
+
+    def add_task(self, task:str):
+        ToDoListTask.objects.create(to_do_list=self, task=task)
+
+    
+    def delete_task(self, task_id:int):
+        self.tasks.filter(pk=task_id).delete()
+
+
+class ToDoListTask(models.Model):
+
+    to_do_list:ToDoList = models.ForeignKey(ToDoList, on_delete=models.CASCADE, related_name='tasks')
+    task = models.CharField(max_length=255)
+
+
 @receiver(post_save, sender=KumbioUser)
 def kumbio_user_handler(sender, instance:KumbioUser, created, **kwargs):
 
@@ -302,6 +326,9 @@ def kumbio_user_handler(sender, instance:KumbioUser, created, **kwargs):
         instance.save(set_verified_email=True)
 
         NotificationsSettings.objects.create(user=instance)
+
+        ToDoList.objects.create(user=instance)
+
         # create the default booking settings for calendar
         return
         if os.environ.get('FILLING_DB', False):

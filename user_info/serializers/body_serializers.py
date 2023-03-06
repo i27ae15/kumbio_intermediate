@@ -46,4 +46,19 @@ class RecoverPasswordBodySerializer(serializers.Serializer):
         try: attrs['user'] = KumbioUser.objects.get(email=attrs['email'])
         except KumbioUser.DoesNotExist: 
             return exceptions.NotFound(_('El usuario no existe'))
-    
+
+
+class TaskBodySerializer(serializers.Serializer):
+
+    task = serializers.CharField(required=True)
+
+
+class TaskToUpdateBodySerializer(serializers.Serializer):
+
+    task_id = serializers.IntegerField(required=True)
+    task = serializers.CharField(required=True)
+
+
+class TaskToDeleteBodySerializer(serializers.Serializer):
+
+    task_id = serializers.IntegerField(required=True)
