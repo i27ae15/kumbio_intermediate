@@ -18,11 +18,18 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 
 
 # models 
-from user_info.models import KumbioUser, NotificationsSettings
+from user_info.models import KumbioUser, NotificationsSettings, ToDoListTask
 
 # serializers 
-from .serializers.serializers import KumbioUserSerializer, KumbioUserAvailablePlacesSerializer, KumbioUserAvailableServicesSerializer, NotificationsSettingsSerializer
-from .serializers.body_serializers import ChangePasswordBodySerializer, RecoverPasswordBodySerializer
+from .serializers.serializers import (
+    KumbioUserSerializer, KumbioUserAvailablePlacesSerializer, 
+    KumbioUserAvailableServicesSerializer, NotificationsSettingsSerializer,
+    ToDoListSerializer, ToDoListTaskSerializer, 
+)
+from .serializers.body_serializers import (
+    ChangePasswordBodySerializer, RecoverPasswordBodySerializer, 
+    TaskBodySerializer, TaskToDeleteBodySerializer, TaskToUpdateBodySerializer
+    )
 from .serializers.query_serializers import VerifyCodeToRecoverPasswordQuerySerializer
 
 # others
@@ -180,3 +187,86 @@ class NotificationsSettingsView(APIView):
             return Response(serializer.data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+class ToDoListView(APIView):
+
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
+
+
+    @swagger_auto_schema(
+        responses={
+            200: ToDoListSerializer(),
+        },
+        tags=['to_do_list']
+    )
+    def get(self, request):
+
+        user:KumbioUser = request.user
+        to_do_list = ToDoListSerializer(user.to_do_list)
+
+        return Response(to_do_list.data)
+    
+
+class ToDoListTaskView(APIView):
+
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
+
+
+    @swagger_auto_schema(
+        request_body=TaskBodySerializer(),
+        tags=['to_do_list_task']
+    )
+    def post(self, request):
+
+        user:KumbioUser = request.user
+        body_serializer = TaskBodySerializer(data=request.data)
+        body_serializer.is_valid(raise_exception=True)
+        body_data = body_serializer.validated_data
+
+        user.to_do_list.add_task(body_data['task'])
+
+        return Response({'message': 'Tarea añadida'}, status=status.HTTP_200_OK)
+    
+
+    @swagger_auto_schema(
+        request_body=TaskToUpdateBodySerializer(),
+        tags=['to_do_list_task']
+    )
+    def put(self, request):
+
+        body_serializer = TaskToUpdateBodySerializer(data=request.data)
+        body_serializer.is_valid(raise_exception=True)
+        body_data = body_serializer.validated_data
+
+        user:KumbioUser = request.user
+
+        try: user.to_do_list.tasks.filter(id=body_data['task_id']).update(task=body_data['task'])
+        except ToDoListTask.DoesNotExist: raise exceptions.NotFound(_('La tarea no existe'))
+
+        return Response({'message': 'Tarea actualizada'}, status=status.HTTP_200_OK)
+    
+
+    @swagger_auto_schema(
+        request_body=TaskToDeleteBodySerializer(),
+        tags=['to_do_list_task']
+    )   
+    def delete(self, request):
+
+        body_serializer = TaskToDeleteBodySerializer(data=request.data)
+        body_serializer.is_valid(raise_exception=True)
+        body_data = body_serializer.validated_data
+        
+        user:KumbioUser = request.user
+
+        try: user.to_do_list.delete_task(body_data['task_id'])
+        except ToDoListTask.DoesNotExist: raise exceptions.NotFound(_('La tarea no existe'))
+
+        return Response({'message': 'Tarea eliminada'}, status=status.HTTP_200_OK)
+    
+
+
+        

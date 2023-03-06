@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ..models import KumbioUser, NotificationsSettings
+from ..models import KumbioUser, NotificationsSettings, ToDoList, ToDoListTask
 from organization_info.serializers.model_serializers import OrganizationPlaceSerializer
 
 from print_pp.logging import Print, check_caller_line
@@ -56,3 +56,19 @@ class KumbioUserAvailableServicesSerializer(serializers.ModelSerializer):
         model = KumbioUser
         fields = ("available_services",)
         depth = 1
+
+
+class ToDoListTaskSerializer(serializers.ModelSerializer):
+        
+    class Meta:
+        model = ToDoListTask
+        fields = '__all__'
+
+
+class ToDoListSerializer(serializers.ModelSerializer):
+
+    tasks = ToDoListTaskSerializer(many=True)
+        
+    class Meta:
+        model = ToDoList
+        fields = '__all__'
