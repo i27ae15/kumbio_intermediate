@@ -8,6 +8,7 @@ from rest_framework.decorators import api_view
 
 
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg.codecs import openapi
 
 
 # models
@@ -147,3 +148,39 @@ def increment_number_of_appointments(request):
 
     return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+
+@swagger_auto_schema(
+    method='get', 
+    tags=['for_calendar'],
+    manual_parameters=[
+        openapi.Parameter(
+            name='service_id',
+            in_=openapi.IN_QUERY,
+            type=openapi.TYPE_INTEGER,
+            required=True,
+            description='service id',
+        ),
+    ],
+    responses={
+        200: openapi.Response(
+            description='service name',
+            examples={
+                'application/json': {
+                    'service_name': 'service name'
+                }
+            },
+        ),
+    },
+)
+@api_view(['GET'])
+def get_service_name(request):
+
+    service_id = request.GET.get('service_id', None)
+    
+    if not service_id: raise exceptions.ValidationError(_('service_id is required'))
+    
+    try: service:OrganizationService = OrganizationService.objects.get(id=service_id)
+    except OrganizationService.DoesNotExist: raise exceptions.NotFound(_('service not found'))
+
+    return Response({'service_name': service.service}, status=status.HTTP_200_OK)
