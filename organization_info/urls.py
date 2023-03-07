@@ -9,7 +9,7 @@ from .views.auth_required.dash_auth import (
     OrganizationProfessionalDashboardInfoView, OrganizationPlaceDashboardInfoView,
 )
 from .views.auth_required.calendar_auth import (
-    ClientForCalendar, get_client_for_calendar, increment_number_of_appointments
+    ClientForCalendar, get_client_for_calendar, increment_number_of_appointments, get_service_name
 )
 
 app_name = 'organization_info'
@@ -39,7 +39,8 @@ urlpatterns = [
     # For Calendar
     path('client-for-calendar/', ClientForCalendar.as_view(), name='client_for_calendar'),
     path('get-client-for-calendar/', get_client_for_calendar, name='get_client_for_calendar'),
-    path('calendar/increment-number-of-appointments/', increment_number_of_appointments)
+    path('calendar/increment-number-of-appointments/', increment_number_of_appointments),
+    path('calendar/get-service-name/', get_service_name),
 
 
     # path('extra_fields_for_client_type/', get_extra_fields_for_client_type, name='extra_fields_for_client_type'),
