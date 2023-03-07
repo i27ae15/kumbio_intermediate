@@ -149,7 +149,6 @@ def increment_number_of_appointments(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-
 @swagger_auto_schema(
     method='get', 
     tags=['for_calendar'],

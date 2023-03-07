@@ -1,7 +1,7 @@
 from django.urls import path
 from .views.auth_required.kumbio_auth import (
     OrganizationProfessionalView, OrganizationPlaceView, OrganizationView, OrganizationSectorView, 
-    OrganizationServiceView, OrganizationClientView, get_organization_client_types, 
+    OrganizationServiceView, OrganizationClientView, OrganizationClientDocument, get_organization_client_types, 
     delete_available_day_for_professional, get_dashboard_information
 )
 from .views.auth_required.dash_auth import (
@@ -21,6 +21,7 @@ urlpatterns = [
     path('sectors/', OrganizationSectorView.as_view(), name='sector'),
     path('services/', OrganizationServiceView.as_view(), name='service'),
     path('clients/', OrganizationClientView.as_view(), name='client'),
+    path('client/documents/', OrganizationClientDocument.as_view(), name='client_document'),
     path('principal-dashboard-info/', get_dashboard_information, name='dashboard_info'),
     
     path('professionals/day/', delete_available_day_for_professional, name='delete_available_day_for_professional'),

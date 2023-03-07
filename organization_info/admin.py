@@ -1,8 +1,10 @@
 from django.contrib import admin
-from .models import (Organization, FrequentlyAskedQuestion, OrganizationCampaigns, OrganizationClient, OrganizationPlace, 
-                    OrganizationProfessional, OrganizationPromotion, OrganizationService, ProfessionalSpecialty, 
-                    PaymentMethodAcceptedByOrg, Sector, OrganizationClientType, DayAvailableForPlace, DayAvailableForProfessional,
-                    ClientParent)
+from .models import (
+    Organization, FrequentlyAskedQuestion, OrganizationCampaigns, OrganizationClient, OrganizationPlace, 
+    OrganizationProfessional, OrganizationPromotion, OrganizationService, ProfessionalSpecialty, 
+    PaymentMethodAcceptedByOrg, Sector, OrganizationClientType, DayAvailableForPlace, DayAvailableForProfessional,
+    ClientParent, OrganizationClientDocument
+)
 
 
 admin.site.register(Organization)
@@ -20,3 +22,4 @@ admin.site.register(OrganizationClientType)
 admin.site.register(DayAvailableForPlace)
 admin.site.register(DayAvailableForProfessional)
 admin.site.register(ClientParent)
+admin.site.register(OrganizationClientDocument)

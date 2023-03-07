@@ -25,7 +25,7 @@ from drf_yasg import openapi
 # models
 from user_info.models import KumbioUser, KumbioUserRole
 from organization_info.models.main_models import (
-    DayAvailableForProfessional, Organization, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService, 
+    DayAvailableForProfessional, Organization, OrganizationClientDocument, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService, 
     OrganizationClient
 )
 from authentication_manager.models import KumbioToken
@@ -37,7 +37,7 @@ from user_info.serializers.serializers import CreateKumbioUserSerializer, Kumbio
 
 # query serializers
 from organization_info.serializers.query_serializers import (
-    OrganizationPlaceQuerySerializer, OrganizationProfessionalQuerySerializer, 
+    OrganizationClientDocumentQuerySerializer, OrganizationPlaceQuerySerializer, OrganizationProfessionalQuerySerializer, 
     OrganizationSectorQuerySerializer, OrganizationServiceQuerySerializer, 
     OrganizationClientQuerySerializer, OrganizationClientTypeQuerySerializer, OrganizationQuerySerializer
 )
@@ -45,16 +45,16 @@ from organization_info.serializers.query_serializers import (
 
 # body serializers
 from organization_info.serializers.body_serializers import (
-    DeleteDayAvailableForProfessionalSerializer, DeleteServiceSerializer, OrganizationProfessionalDeleteBodySerializer,
-    PlacePutSerializer, OrganizationClientPutSerializer, OrganizationProfessionalPostBodySerializer, 
-    OrganizationProfessionalPutBodySerializer, OrganizationPlacePostSerializer, 
+    DeleteClientDocumentSerializer, DeleteDayAvailableForProfessionalSerializer, DeleteServiceSerializer, 
+    OrganizationProfessionalDeleteBodySerializer, PlacePutSerializer, OrganizationClientPutSerializer, 
+    OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySerializer, OrganizationPlacePostSerializer, 
     OrganizationClientDeleteSerializer
 )
 
 
 # model serializers
 from organization_info.serializers.model_serializers import (
-    OrganizationClientRelatedFieldsSerializer, OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, 
+    OrganizationClientDocumentModelSerializer, OrganizationClientRelatedFieldsSerializer, OrganizationProfessionalSerializer, OrganizationPlaceSerializer, OrganizationSerializer, 
     OrganizationSectorSerializer, OrganizationServiceSerializer, DayAvailableForPlaceSerializer, 
     OrganizationClientSerializer, ClientParentSerializer, OrganizationClientTypeSerializer, 
     DayAvailableForProfessionalSerializer
@@ -1027,6 +1027,68 @@ class OrganizationClientView(APIView):
             raise exceptions.NotFound(_("Client not found"))
 
         client.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class OrganizationClientDocument(APIView):
+
+
+    permission_classes = (IsAuthenticated,) 
+    authentication_classes = (TokenAuthentication,) 
+
+    @swagger_auto_schema(
+        tags=['client_documents'],
+        query_serializer=OrganizationClientDocumentQuerySerializer()
+    )
+    def get(self, request):
+        
+        query_serializer = OrganizationClientDocumentQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        query_data:dict = query_serializer.validated_data
+
+        documents = query_data['documents']
+
+        serializer = OrganizationClientDocumentModelSerializer(documents, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+    @swagger_auto_schema(
+        operation_description="""
+            body parameters:
+            client (int) (required): id del cliente
+            document (file) (required): documento
+        """,
+        tags=['client_documents'],
+    )
+    def post(self, request):
+    
+        serializer = OrganizationClientDocumentModelSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data,  status=status.HTTP_201_CREATED)
+
+
+    @swagger_auto_schema(
+        tags=['client_documents'],
+        request_body=DeleteClientDocumentSerializer()
+    )
+    def delete(self, request):
+
+        """
+            body parameters:
+            client_id (int) (required): id del cliente
+            document_id (int) (required): id del documento
+        """
+
+        body_serializer = DeleteClientDocumentSerializer(data=request.data)
+        body_serializer.is_valid(raise_exception=True)
+        body_data:dict = body_serializer.validated_data
+
+        document:OrganizationClientDocument = body_data['document']
+        document.delete()
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

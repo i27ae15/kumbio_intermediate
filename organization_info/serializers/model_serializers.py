@@ -2,9 +2,11 @@ from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
 
-from ..models.main_models import (Organization, OrganizationProfessional, OrganizationPlace, 
-OrganizationService, Sector, DayAvailableForPlace, OrganizationClient, ClientParent,
-OrganizationClientType, DayAvailableForProfessional)
+from ..models.main_models import (
+    Organization, OrganizationClientDocument, OrganizationProfessional, OrganizationPlace, 
+    OrganizationService, Sector, DayAvailableForPlace, OrganizationClient, ClientParent,
+    OrganizationClientType, DayAvailableForProfessional
+)
 from ..utils.enums import FieldType
 
 from print_pp.logging import Print
@@ -176,4 +178,9 @@ class OrganizationClientRelatedFieldsSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_at', 'updated_at', 'deleted_at', 'deleted_by', 'updated_by', 'referral_link')
 
 
+class OrganizationClientDocumentModelSerializer(serializers.ModelSerializer):
 
+    class Meta:
+        model = OrganizationClientDocument
+        fields = '__all__'
+        read_only_fields = ('created_at',)

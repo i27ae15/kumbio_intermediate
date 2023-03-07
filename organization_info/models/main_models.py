@@ -956,6 +956,11 @@ class OrganizationClient(models.Model):
     @property
     def full_name(self) -> str:
         return f'{self.first_name} {self.last_name}'
+    
+
+    @property
+    def documents_associated(self) -> QuerySet['OrganizationClientDocument']:
+        return self.client_document.all()
         
     
     def save(self, *args, **kwargs):
@@ -1080,6 +1085,15 @@ class FrequentlyAskedQuestion(models.Model):
     def __str__(self):
         return f'{self.id} - {self.question[:20]} - {self.organization.name}'
 
+
+class OrganizationClientDocument(models.Model):
+
+    client:OrganizationClient = models.ForeignKey(OrganizationClient, on_delete=models.CASCADE, related_name='client_document')
+
+    document = models.FileField(upload_to=f'clients/documents/')
+
+    created_at:datetime.datetime = models.DateTimeField(default=timezone.now)
+    
 
 @receiver(post_save, sender=OrganizationProfessional)
 def increment_number_of_professionals(sender, instance:OrganizationProfessional, created, **kwargs):
