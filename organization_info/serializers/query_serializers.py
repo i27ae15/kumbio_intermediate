@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from print_pp.logging import Print
 
-from organization_info.models.main_models import Organization, OrganizationPlace, OrganizationProfessional, OrganizationService
+from organization_info.models.main_models import Organization, OrganizationClient, OrganizationClientDocument, OrganizationPlace, OrganizationProfessional, OrganizationService
 
 
 class OrganizationQuerySerializer(serializers.Serializer):
@@ -150,3 +150,38 @@ class OrganizationServiceDashboardInfoQuerySerializer(serializers.Serializer):
             attrs['service'] = OrganizationService.objects.get(id=attrs['service_id'], deleted_at__isnull=True)
         except OrganizationService.DoesNotExist:
             raise serializers.ValidationError(_("El servicio no existe"))
+        
+
+class OrganizationClientDocumentQuerySerializer(serializers.Serializer):
+
+    client_id = serializers.IntegerField(
+        required=True,
+        help_text="Id del cliente que se quiere obtener"
+    )
+
+    document_id = serializers.IntegerField(
+        default=None,
+        help_text="Id del documento que se quiere obtener, por defecto es None y trae todos los documentos del cliente"
+    )
+
+
+    def validate(self, attrs:dict):
+        self.__convert_to_objects(attrs)
+        return super().validate(attrs)
+    
+
+    def __convert_to_objects(self, attrs:dict):
+        try:
+            attrs['client'] = OrganizationClient.objects.get(id=attrs['client_id'])
+        except OrganizationClient.DoesNotExist:
+            raise serializers.ValidationError(_("El cliente no existe"))
+
+        client:OrganizationClient = attrs['client']
+
+        if attrs['document_id']:
+            try:
+                attrs['documents'] = [client.documents_associated.get(id=attrs['document_id'])]
+            except OrganizationClientDocument.DoesNotExist: raise serializers.ValidationError(_("El documento no existe"))
+        
+        else:
+            attrs['documents'] = client.documents_associated.all()

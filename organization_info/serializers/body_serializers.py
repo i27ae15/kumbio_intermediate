@@ -7,7 +7,7 @@ from .model_serializers import (
     OrganizationPlaceSerializer
 )
 from organization_info.models.main_models import (
-    Organization, OrganizationProfessional, OrganizationService, DayAvailableForProfessional
+    Organization, OrganizationClient, OrganizationClientDocument, OrganizationProfessional, OrganizationService, DayAvailableForProfessional
 )
 
 from organization_info.utils.validators import get_places
@@ -220,4 +220,22 @@ class DeleteDayAvailableForProfessionalSerializer(OrganizationProfessionalDelete
             attrs['day'] = professional.available_days.get(week_day=attrs['week_day'])
         except DayAvailableForProfessional.DoesNotExist:
             raise serializers.ValidationError(_('Day does not exist'))
+
+
+class DeleteClientDocumentSerializer(serializers.Serializer):
+
+    document_id = serializers.IntegerField(required=True, help_text='Document id')
+    client_id = serializers.IntegerField(required=True, help_text='Client id')
+
+
+    def validate(self, attrs:dict):
+        self.__convert_to_objects(attrs)
+        return super().validate(attrs)
+
+
+    def __convert_to_objects(self, attrs):
+        client:OrganizationClient = OrganizationClient.objects.get(id=attrs['client_id'])
         
+        try: attrs['document'] = client.documents_associated.get(id=attrs['document_id'])
+        except OrganizationClientDocument.DoesNotExist: raise serializers.ValidationError(_('Document does not exist'))
+
