@@ -71,6 +71,7 @@ class OrganizationClientType(models.Model):
     description:str = models.TextField(blank=True, null=True, default='')
 
     fields:list[tuple] = models.JSONField(default=list)
+    spanish_fields:list[tuple] = models.JSONField(default=list)
 
     """
         fields is going to be a JSON object where the person is going to be able to save as many fields 
@@ -339,6 +340,7 @@ class Organization(models.Model):
                 name=client_fields['name'], 
                 description=client_fields['description'], 
                 fields=client_fields['fields'],
+                spanish_fields=client_fields['spanish_fields'],
                 created_by=None)
             self.set_default_client_type(client_type)
             

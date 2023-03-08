@@ -18,6 +18,15 @@ DEFAULT_CLIENT_TYPES = [
             ('allergies', FieldType.TEXT.value),
             ('conditions_known', FieldType.TEXT.value),
             ('preferences', FieldType.TEXT.value)
+        ],
+        'spanish_fields': [
+            ('tipo de sangre', FieldType.TEXT.value),
+            ('peso inicial', FieldType.NUMBER.value),
+            ('altura inicial', FieldType.NUMBER.value),
+            ('tomando medicamentos', FieldType.TEXT.value),
+            ('alergias', FieldType.TEXT.value),
+            ('condiciones conocidas', FieldType.TEXT.value),
+            ('preferencias', FieldType.TEXT.value)
         ]
     },
     {
@@ -37,6 +46,20 @@ DEFAULT_CLIENT_TYPES = [
             ('visited_before', FieldType.TEXT.value),
             ('how_heard_about', FieldType.TEXT.value),
             ('confirmation_option', FieldType.TEXT.value)
+        ],
+        'spanish_fields': [
+            ('alergias o sensibilidades', FieldType.TEXT.value),
+            ('lesiones cirugías', FieldType.TEXT.value),
+            ('enfermedades', FieldType.TEXT.value),
+            ('tratamientos profesionales', FieldType.TEXT.value),
+            ('cirugía importante reciente', FieldType.TEXT.value),
+            ('lista lesiones cirugías', FieldType.TEXT.value),
+            ('preocupaciones especificas', FieldType.TEXT.value),
+            ('tipo de piel', FieldType.TEXT.value),
+            ('solicitudes especiales', FieldType.TEXT.value),
+            ('visitado anteriormente', FieldType.TEXT.value),
+            ('como se entero', FieldType.TEXT.value),
+            ('opción de confirmación', FieldType.TEXT.value)
         ]
     },
     {
@@ -52,6 +75,16 @@ DEFAULT_CLIENT_TYPES = [
             ('unique_selling_proposition', FieldType.TEXT.value),
             ('how_heard_about', FieldType.TEXT.value),
             ('confirmation_option', FieldType.TEXT.value)
+        ],
+        'spanish_fields': [
+            ('nombre del negocio', FieldType.TEXT.value),
+            ('industria', FieldType.TEXT.value),
+            ('años de servicio', FieldType.NUMBER.value),
+            ('fortalezas', FieldType.TEXT.value),
+            ('debilidades', FieldType.TEXT.value),
+            ('propuesta única de venta', FieldType.TEXT.value),
+            ('cómo se enteró', FieldType.TEXT.value),
+            ('opción de confirmación', FieldType.TEXT.value)
         ]
     },
     {
@@ -67,6 +100,16 @@ DEFAULT_CLIENT_TYPES = [
             ('worked_with_realtor_before', FieldType.TEXT.value),
             ('how_heard_about', FieldType.TEXT.value),
             ('confirmation_option', FieldType.TEXT.value)
+        ],
+        'spanish_fields': [
+            ('comprador o vendedor', FieldType.TEXT.value),
+            ('tipo de propiedad', FieldType.TEXT.value),
+            ('área geográfica', FieldType.TEXT.value),
+            ('rango de precios', FieldType.TEXT.value),
+            ('preguntas específicas', FieldType.TEXT.value),
+            ('trabajado con un corredor antes', FieldType.TEXT.value),
+            ('cómo se enteró', FieldType.TEXT.value),
+            ('opción de confirmación', FieldType.TEXT.value)
         ]
     },
     {
@@ -74,6 +117,9 @@ DEFAULT_CLIENT_TYPES = [
         'name': 'Other',
         'description': 'Other',
         'fields': [
+            ('', FieldType.TEXT.value),
+        ],
+        'spanish_fields': [
             ('', FieldType.TEXT.value),
         ]
     },
