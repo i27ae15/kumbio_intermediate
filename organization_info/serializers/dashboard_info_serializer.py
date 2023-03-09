@@ -19,8 +19,8 @@ class OrganizationDashboardInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Organization
-        fields = [ 'id', 'name', 'logo', 'country', 'description', 'organizationservice_set', 'organizationplace_set', 'organization_professionals', 'about_us_image']
-        read_only_fields = [ 'id', 'name', 'logo', 'country', 'description', 'organizationservice_set', 'organizationplace_set', 'organization_professionals', 'about_us_image']
+        fields = [ 'id', 'name', 'logo', 'country', 'description', 'organizationservice_set', 'organizationplace_set', 'organization_professionals', 'about_us_image', 'banner_text', 'banner_image']
+        read_only_fields = [ 'id', 'name', 'logo', 'country', 'description', 'organizationservice_set', 'organizationplace_set', 'organization_professionals', 'about_us_image', 'banner_text', 'banner_image']
 
 
 class OrganizationServiceDashboardInfoSerializer(serializers.ModelSerializer):
