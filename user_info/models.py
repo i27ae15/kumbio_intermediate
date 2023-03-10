@@ -205,25 +205,27 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         if save:
             self.save()
     
-        send_notification(token_for_app=TOKEN_FOR_CALENDAR, 
-                          organization_id=self.organization.id if self.organization else 0,
-                          send_to=[self.email],
-                          templates=[3762],
-                          data_to_replace={'code': self.code_to_verify_email}),
-                        #   messages=[f'Your verification code is {self.code_to_verify_email}'],
-                        #   subjects=['Verify your email'])
+        send_notification(
+            token_for_app=TOKEN_FOR_CALENDAR, 
+            organization_id=self.organization.id if self.organization else 0,
+            send_to=[self.email],
+            templates=[3762],
+            data_to_replace={'code': self.code_to_verify_email}
+        )
 
-        send_notification(token_for_app=TOKEN_FOR_CALENDAR,
-                            organization_id=self.organization.id if self.organization else 0,
-                            send_to=[self.email],
-                            templates=[3763],
-                            data_to_replace={'name': self.get_full_name()})
-        
 
     def verify_code(self):
         self.is_email_verified = True
         self.code_to_verify_email = None
         self.save()
+
+        send_notification(
+            token_for_app=TOKEN_FOR_CALENDAR,
+            organization_id=self.organization.id if self.organization else 0,
+            send_to=[self.email],
+            templates=[3763],
+            data_to_replace={'name': self.get_full_name()}
+        )
         
     
     def set_role(self, role:KumbioUserRole):
