@@ -327,9 +327,9 @@ class Organization(models.Model):
     # other methods    
     def save(self, *args, **kwargs):
         if not self.pk:
-            self.invitation_link = secrets.token_urlsafe(21)
-            self.link_dashboard = secrets.token_urlsafe(21)
-            self.id = secrets.token_urlsafe(21)
+            self.invitation_link = secrets.token_urlsafe(8)
+            self.link_dashboard = secrets.token_urlsafe(8)
+            self.id = secrets.token_urlsafe(8)
             super().save(*args, **kwargs)
 
             # we need to create the default client_types for this organization
@@ -839,12 +839,14 @@ class OrganizationProfessional(models.Model):
     def __send_welcome_message(self):
         if 'test' in sys.argv or os.environ.get('FILLING_DB'): return
 
-        send_notification(token_for_app=COMMUNICATIONS_TOKEN, 
-                          organization_id=self.organization.id,
-                          send_to=[self.kumbio_user.email],
-                          messages=[f'Welcome to {self.organization.name}'],
-                          subjects=['Welcome to kumbio'])
-
+        send_notification(
+            token_for_app=TOKEN_FOR_CALENDAR,
+            organization_id=self.organization.id if self.organization else 0,
+            send_to=[self.kumbio_user.email],
+            templates=[3778],
+            data_to_replace={'organization_name': self.organization.name, 'user_email': self.kumbio_user.email}
+        )
+        
     
     def __str__(self) -> str:
         return f'{self.pk} - {self.kumbio_user.first_name} {self.kumbio_user.last_name} - {self.organization.name}'
