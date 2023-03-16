@@ -837,7 +837,7 @@ class OrganizationProfessional(models.Model):
 
 
     def __send_welcome_message(self):
-        if 'test' in sys.argv or os.environ.get('FILLING_DB'): return
+        if 'test' in sys.argv or os.environ.get('FILLING_TEST_DB'): return
 
         send_notification(
             token_for_app=TOKEN_FOR_CALENDAR,
