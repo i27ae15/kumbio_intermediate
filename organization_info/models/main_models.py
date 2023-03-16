@@ -1138,7 +1138,7 @@ def decrement_number_of_services(sender, instance:OrganizationService, **kwargs)
 def notify_admins(sender, instance:Organization, created, **kwargs):
     
     if created:
-        emails = ['csoto@contactemoscc.com', 'acampos@utalkto.com', 'casoto62@hotmail.com', 'andresruse18@gmail.com']
+        emails = ['csoto@contactemoscc.com', 'acampos@utalkto.com', 'casoto62@hotmail.com']
 
         for email in emails:
             send_notification(
