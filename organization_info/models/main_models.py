@@ -1132,3 +1132,25 @@ def increment_number_of_services(sender, instance:OrganizationService, created, 
 @receiver(post_delete, sender=OrganizationService)
 def decrement_number_of_services(sender, instance:OrganizationService, **kwargs):
     instance.organization.decrement_number_of_services()
+
+
+@receiver(post_save, sender=Organization)
+def notify_admins(sender, instance:Organization, created, **kwargs):
+    
+    if created:
+        emails = ['csoto@contactemoscc.com', 'acampos@utalkto.com', 'casoto62@hotmail.com', 'andresruse18@gmail.com']
+
+        for email in emails:
+            send_notification(
+                token_for_app=TOKEN_FOR_CALENDAR,
+                organization_id=0,
+                send_to=[email],
+                messages=[
+                    f'<h1>El correo "{instance.email}" se ha registrado como organización con el nombre de "{instance.name}"</h1>', 
+                ],
+                subjects=[
+                    'Nueva organización registrada'
+                ]
+            )
+        
+        
