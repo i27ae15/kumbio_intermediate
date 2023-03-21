@@ -234,7 +234,7 @@ class DeleteDayAvailableForPlaceSerializer(serializers.Serializer):
 
     def __convert_to_objects(self, attrs):
         try:
-            attrs['day_id'] = DayAvailableForPlace.objects.get(week_day=attrs['week_day'])
+            attrs['day'] = DayAvailableForPlace.objects.get(pk=attrs['day_id'])
         except DayAvailableForPlace.DoesNotExist:
             raise serializers.ValidationError(_('Day does not exist'))
 
