@@ -25,7 +25,7 @@ from drf_yasg import openapi
 # models
 from user_info.models import KumbioUser, KumbioUserRole
 from organization_info.models.main_models import (
-    DayAvailableForProfessional, Organization, OrganizationClientDocument, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService, 
+    DayAvailableForPlace, DayAvailableForProfessional, Organization, OrganizationClientDocument, OrganizationProfessional, OrganizationPlace, Sector, OrganizationService, 
     OrganizationClient
 )
 from authentication_manager.models import KumbioToken
@@ -45,7 +45,7 @@ from organization_info.serializers.query_serializers import (
 
 # body serializers
 from organization_info.serializers.body_serializers import (
-    DeleteClientDocumentSerializer, DeleteDayAvailableForProfessionalSerializer, DeleteServiceSerializer, 
+    DeleteClientDocumentSerializer, DeleteDayAvailableForPlaceSerializer, DeleteDayAvailableForProfessionalSerializer, DeleteServiceSerializer, 
     OrganizationProfessionalDeleteBodySerializer, PlacePutSerializer, OrganizationClientPutSerializer, 
     OrganizationProfessionalPostBodySerializer, OrganizationProfessionalPutBodySerializer, OrganizationPlacePostSerializer, 
     OrganizationClientDeleteSerializer
@@ -1195,6 +1195,29 @@ def delete_available_day_for_professional(request):
     day.delete()
 
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+@swagger_auto_schema(request_body=DeleteDayAvailableForPlaceSerializer(), method='DELETE', tags=['places'])
+@api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def delete_day_available_for_place(request):
+    """
+        Elimina un día disponible para un lugar
+        
+        :Response 204:
+    """
+
+    body_serializer = DeleteDayAvailableForPlaceSerializer(data=request.data)
+    body_serializer.is_valid(raise_exception=True)
+    body_data = body_serializer.validated_data
+
+    day:DayAvailableForPlace = body_data['day']
+    day.delete()
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 @swagger_auto_schema(method='GET', tags=['organization'])

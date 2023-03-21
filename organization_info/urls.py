@@ -2,7 +2,7 @@ from django.urls import path
 from .views.auth_required.kumbio_auth import (
     OrganizationProfessionalView, OrganizationPlaceView, OrganizationView, OrganizationSectorView, 
     OrganizationServiceView, OrganizationClientView, OrganizationClientDocument, get_organization_client_types, 
-    delete_available_day_for_professional, get_dashboard_information
+    delete_available_day_for_professional, get_dashboard_information, delete_day_available_for_place
 )
 from .views.auth_required.dash_auth import (
     OrganizationDashboardInfoView, OrganizationServiceDashboardInfoView, 
@@ -18,6 +18,7 @@ urlpatterns = [
     path('organization/', OrganizationView.as_view(), name='organization'),
     path('professionals/', OrganizationProfessionalView.as_view(), name='professional'),
     path('places/', OrganizationPlaceView.as_view(), name='place'),
+    path('places/delete-day/', delete_day_available_for_place, name='delete_day_available_for_place'),
     path('sectors/', OrganizationSectorView.as_view(), name='sector'),
     path('services/', OrganizationServiceView.as_view(), name='service'),
     path('clients/', OrganizationClientView.as_view(), name='client'),
