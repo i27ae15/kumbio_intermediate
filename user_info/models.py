@@ -332,7 +332,6 @@ def kumbio_user_handler(sender, instance:KumbioUser, created, **kwargs):
         else:
             instance.calendar_token = 'token-test-for-calendar'
             instance.calendar_link = 'link-test-for-calendar'
-        instance.save(set_verified_email=True)
 
         NotificationsSettings.objects.create(user=instance)
 
