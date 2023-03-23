@@ -155,6 +155,8 @@ class Organization(models.Model):
     
     cancellation_policy:str = models.TextField(null=True, blank=True)
     country:str = models.CharField(max_length=120, default='')
+    description:str = models.CharField(max_length=1000, default=None, null=True, blank=True)
+    slogan:str = models.CharField(max_length=1000, default=None, null=True, blank=True)
     currency:str = models.CharField(max_length=120, default=None, null=True, blank=True)
     
     data_policy:str = models.TextField(null=True, blank=True)
