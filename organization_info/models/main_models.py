@@ -21,6 +21,7 @@ from django.dispatch import receiver
 
 # rest_framework
 from rest_framework import exceptions
+import sentry_sdk
 
 # models
 import user_info.models as user_models
@@ -690,8 +691,11 @@ class DayAvailableForProfessional(models.Model):
         )
         
         if res.status_code != 200:
-            try: raise exceptions.ValidationError(_(res.json()))
-            except: raise exceptions.APIException(_('error in calendar api'))
+            try: 
+                raise exceptions.ValidationError(_(res.json()))
+            except Exception as e: 
+                sentry_sdk.capture_exception(e)
+                raise exceptions.APIException(_('Error in calendar api'))
     
 
     def __delete_days_on_calendar_api(self):
