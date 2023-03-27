@@ -144,7 +144,7 @@ class CustomObtainAuthToken(ObtainAuthToken):
             return Response({'error': 'Email no verificado', 'user_id': token.user.pk}, status=status.HTTP_401_UNAUTHORIZED)
             
 
-        organization:Organization = Organization.objects.get(id=token.user.organization.i)
+        organization:Organization = Organization.objects.get(id=token.user.organization.id)
         organization_serializer = OrganizationSerializer(organization)
         is_virgin = token.user.is_virgin
         token.user.not_longer_virgin()
