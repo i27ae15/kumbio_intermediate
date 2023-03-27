@@ -141,19 +141,22 @@ class CustomObtainAuthToken(ObtainAuthToken):
             
         
         if not token.user.is_email_verified:
-            return Response({'error': 'Email no verificado', 'user_id': token.user.id}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'Email no verificado', 'user_id': token.user.pk}, status=status.HTTP_401_UNAUTHORIZED)
             
 
-        organization:Organization = Organization.objects.get(id=token.user.organization.id)
+        organization:Organization = Organization.objects.get(id=token.user.organization.i)
         organization_serializer = OrganizationSerializer(organization)
+        is_virgin = token.user.is_virgin
+        token.user.not_longer_virgin()
         return Response(
             {
                 'token': token_to_return, 
                 'name': token.user.get_full_name(),
                 'role': token.user.role.name,
                 'calendar_token': token.user.calendar_token,
-                'id': token.user.id,
+                'id': token.user.pk,
                 'organization': organization_serializer.data,
+                'is_virgin': is_virgin,
             })
     
 

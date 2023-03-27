@@ -146,6 +146,8 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
     registration_date:datetime.datetime = models.DateTimeField(default=timezone.now)
     
     username:str = models.CharField(max_length=255, unique=True)
+
+    is_virgin:bool = models.BooleanField(default=True)
     
     # tokens
     calendar_link = models.CharField(max_length=255, default=None, null=True)
@@ -248,6 +250,11 @@ class KumbioUser(AbstractBaseUser, PermissionsMixin):
         self.set_password(new_password)
         self.code_to_recover_password = None
         self.code_to_recover_password_date_expiration = None
+        self.save()
+
+    
+    def not_longer_virgin(self):
+        self.is_virgin = False
         self.save()
 
 
