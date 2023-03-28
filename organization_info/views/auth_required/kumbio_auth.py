@@ -277,7 +277,6 @@ class OrganizationProfessionalView(APIView):
         professional_object:OrganizationProfessional = professional_serializer.instance
 
         if days:= body_data.get('days'):
-            Print(days)
             for day in days:
                 day['exclude'] = change_exclusion_timezone(
                     exclusion_list=day['exclude'],
