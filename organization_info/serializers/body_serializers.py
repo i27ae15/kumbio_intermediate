@@ -111,6 +111,8 @@ class OrganizationProfessionalPostBodySerializer(serializers.Serializer):
     organization = serializers.CharField(required=True, help_text='Organization id of the professional')
     password = serializers.CharField(required=True, help_text='Password of the professional')
     place_id = serializers.IntegerField(required=True, help_text='Place id of the professional')
+    days = serializers.ListField(allow_null=True, help_text='Days data', child=AvailableDaysPrivateSerializer())
+
 
 
 class OrganizationPlacePostSerializer(serializers.Serializer):

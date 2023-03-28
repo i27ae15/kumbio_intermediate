@@ -245,7 +245,7 @@ class OrganizationProfessionalView(APIView):
             - organization (int): ID de la organización del profesional.
             - password (str): Contraseña del profesional.
             - place_id (int): ID del lugar del profesional.
-        
+            - days (list): Lista de días en los que el profesional trabaja.
         """
         
         # OrganizationProfessional hereda de KumbioUser, por lo que para crear un nuevo profesional primero hay que crear 
@@ -273,8 +273,26 @@ class OrganizationProfessionalView(APIView):
         professional_serializer = OrganizationProfessionalSerializer(data=professional_data)
         professional_serializer.is_valid(raise_exception=True)
         professional_serializer.save()
-                
-        return Response(professional_serializer.data, status=status.HTTP_201_CREATED)
+
+        professional_object:OrganizationProfessional = professional_serializer.instance
+
+        if days:= body_data.get('days'):
+            Print(days)
+            for day in days:
+                day['exclude'] = change_exclusion_timezone(
+                    exclusion_list=day['exclude'],
+                    from_timezone=professional_object.organization.default_timezone, 
+                    to_timezone='UTC'
+                )
+
+                day['professional'] = professional_object.pk
+                day_serializer = DayAvailableForProfessionalSerializer(data=day)
+                day_serializer.is_valid(raise_exception=True)
+                day_serializer.save()
+            
+        professional_object.refresh_from_db()
+        serializer_to_return = OrganizationProfessionalSerializer(professional_object)
+        return Response(serializer_to_return.data, status=status.HTTP_201_CREATED)
 
 
     @swagger_auto_schema(

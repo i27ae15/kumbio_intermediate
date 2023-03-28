@@ -302,6 +302,7 @@ class ToDoListTask(models.Model):
 @receiver(post_save, sender=KumbioUser)
 def kumbio_user_handler(sender, instance:KumbioUser, created, **kwargs):
 
+    Print(MAKE_CONNECTIONS)
     if created:
         
         if MAKE_CONNECTIONS == "0":
