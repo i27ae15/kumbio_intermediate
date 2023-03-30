@@ -121,6 +121,7 @@ WSGI_APPLICATION = 'kumbio_api.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 USE_LOCAL_DB = os.environ.get('USE_LOCAL_DB', False)
 USE_VPS_TEST_DB = os.environ.get('USE_VPS_TEST_DB', False)
+DEV_SERVER = os.environ.get('DEV_SERVER', False)
 
 if 'test' in sys.argv:
     DATABASES = {
@@ -147,6 +148,17 @@ elif USE_VPS_TEST_DB:
             'USER': 'dkuser',
             'PASSWORD': 'arPDxC47p5Ke',
             'HOST': '167.235.147.49',
+            'PORT': '5432',
+        }
+    }
+elif DEV_SERVER:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'kumbiodb',
+            'USER': 'kumbiotesting',
+            'PASSWORD': 'exzfwpT35ntF',
+            'HOST': '5.161.200.125',
             'PORT': '5432',
         }
     }
