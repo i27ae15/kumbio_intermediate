@@ -47,7 +47,7 @@ SECRET_KEY = 'django-insecure-41nwz$6_#7(+h)-#6ek7dkuwnvz_+p!ft=ayw=sktx-5q7wd7s
 DEBUG = True
 
 
-ALLOWED_HOSTS = ["api.kumbio.com"]
+ALLOWED_HOSTS = ["api.kumbio.com", "localhost"]
 CSRF_TRUSTED_ORIGINS = ['https://api.kumbio.com']
 
 # Application definition
@@ -129,58 +129,18 @@ WSGI_APPLICATION = 'kumbio_api.wsgi.application'
 USE_LOCAL_DB = os.environ.get('USE_LOCAL_DB', False)
 USE_VPS_TEST_DB = os.environ.get('USE_VPS_TEST_DB', False)
 DEV_SERVER = os.environ.get('DEV_SERVER', False)
+INTERMEDIATE_SERVER = os.environ.get('INTERMEDIATE_SERVER', False)
 
-if 'test' in sys.argv:
-    DATABASES = {
-        'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'mydatabase'
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'kumbio_copied',
+        'USER': 'postgres',
+        'PASSWORD': '1234',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
-elif USE_LOCAL_DB:
-        DATABASES = {
-        'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'local_db.sqlite3',
-        'OPTIONS': {
-            'timeout': 60,  # in seconds
-        }
-        }
-    }
-elif USE_VPS_TEST_DB:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'dk',
-            'USER': 'dkuser',
-            'PASSWORD': 'arPDxC47p5Ke',
-            'HOST': '167.235.147.49',
-            'PORT': '5432',
-        }
-    }
-elif DEV_SERVER:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'kumbiodb',
-            'USER': 'kumbiotesting',
-            'PASSWORD': 'exzfwpT35ntF',
-            'HOST': '5.161.200.125',
-            'PORT': '5432',
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'kumbiodb',
-            'USER': 'kumbio',
-            'PASSWORD': 'fcAaFhJWMaBr',
-            'HOST': '167.235.147.49',
-            'PORT': '5432',
-        }
-    }
-
+}
 
 REST_FRAMEWORK = {
    'DEFAULT_AUTHENTICATION_CLASSES': (
